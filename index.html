@@ -289,6 +289,7 @@
             <label>URL Сервиса</label><input type="text" id="set-url" onchange="saveSets()" placeholder="https://...">
             <label>Логин</label><input type="text" id="set-user" onchange="saveSets()">
             <label>Пароль</label><input type="password" id="set-pass" onchange="saveSets()">
+            <button class="btn-outline w-full mt-2" onclick="test1CConnection()">📡 Проверить связь с 1С</button>
         </div>
 
         <button class="btn-success w-full mt-4" style="height: 60px;" onclick="closeSettings()">ГОТОВО</button>
@@ -321,8 +322,8 @@
         <h2 id="conf-title">Вы уверены?</h2>
         <p id="conf-msg" class="mb-4 text-sec"></p>
         <div class="flex gap-2">
-            <button class="btn-outline w-full" id="conf-cancel">Отмена</button>
-            <button class="btn-danger w-full" id="conf-ok">Да</button>
+            <button class="btn-outline w-full" id="confirm-cancel">Отмена</button>
+            <button class="btn-danger w-full" id="confirm-ok">Да</button>
         </div>
     </div>
 </div>
@@ -361,39 +362,18 @@
     async function shareLogFile() {
         const logs = safeLoad('app_error_logs', []);
         if (!logs.length) { showToast("Логи пусты", "danger"); return; }
-        
         const text = logs.join('\n---\n');
         const fileName = `logs_${new Date().getTime()}.txt`;
         const file = new File([text], fileName, { type: 'text/plain' });
-
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            try {
-                await navigator.share({
-                    files: [file],
-                    title: 'Логи приложения',
-                    text: 'Файл отладки складского терминала'
-                });
-            } catch (err) { logError(`Ошибка шеринга файла: ${err.message}`); }
+            try { await navigator.share({ files: [file], title: 'Логи приложения', text: 'Файл отладки складского терминала' }); } catch (err) { logError(`Ошибка шеринга файла: ${err.message}`); }
         } else {
-            // Фолбэк на текстовый шеринг
-            if (navigator.share) {
-                await navigator.share({ title: 'Логи терминала', text: text });
-            } else {
-                const el = document.createElement('textarea');
-                el.value = text;
-                document.body.appendChild(el);
-                el.select();
-                document.execCommand('copy');
-                document.body.removeChild(el);
-                showToast("Текст логов скопирован");
-            }
+            if (navigator.share) { await navigator.share({ title: 'Логи терминала', text: text }); }
+            else { const el = document.createElement('textarea'); el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); showToast("Текст логов скопирован"); }
         }
     }
 
-    function clearLogs() {
-        localStorage.removeItem('app_error_logs');
-        document.getElementById('log-area').textContent = "Журнал очищен";
-    }
+    function clearLogs() { localStorage.removeItem('app_error_logs'); document.getElementById('log-area').textContent = "Журнал очищен"; }
 
     /* БЕЗОПАСНАЯ ЗАГРУЗКА */
     function safeLoad(key, def){ try { const val = localStorage.getItem(key); return val ? JSON.parse(val) : def; } catch(e) { return def; } }
@@ -420,30 +400,16 @@
             if (e.key === 'Enter') { if (scanBuf.length > 2) handleScan(scanBuf); scanBuf = ""; } 
             else if (e.key.length === 1) { scanBuf += e.key; }
         });
-
-        if (isMgr) {
-            document.getElementById('screen-kiosk').classList.add('hidden');
-            document.getElementById('manager-view').classList.remove('hidden');
-            switchTab(curTab);
-            if (curDocId) openDoc(curDocId);
-        }
-
+        if (isMgr) { document.getElementById('screen-kiosk').classList.add('hidden'); document.getElementById('manager-view').classList.remove('hidden'); switchTab(curTab); if (curDocId) openDoc(curDocId); }
         updateDataLists();
     };
 
-    function saveAppState() {
-        localStorage.setItem('app_last_tab', curTab);
-        localStorage.setItem('app_last_doc_id', curDocId);
-        localStorage.setItem('app_is_mgr', isMgr);
-    }
+    function saveAppState() { localStorage.setItem('app_last_tab', curTab); localStorage.setItem('app_last_doc_id', curDocId); localStorage.setItem('app_is_mgr', isMgr); }
 
     function handleScan(code) {
         if (code === "ADMIN") { loginSuccess(); return; }
         if (!isMgr) search1C(code);
-        else {
-            const inp = document.querySelector('input[data-art-field]');
-            if (inp) { inp.value = code; inp.dispatchEvent(new Event('input')); }
-        }
+        else { const inp = document.querySelector('input[data-art-field]'); if (inp) { inp.value = code; inp.dispatchEvent(new Event('input')); } }
     }
 
     async function search1C(id) {
@@ -461,18 +427,12 @@
     /* ПЕЧАТЬ */
     async function printLabel(art, comp, width, name) {
         const zpl = `^XA^CI28^FO50,50^A0N,40,40^FD${name || 'Товар'}^FS^FO50,110^A0N,30,30^FDАрт: ${art}^FS^FO50,150^A0N,25,25^FDСостав: ${comp || '-'}^FS^FO100,190^BY2^BCN,60,Y,N,N^FD${art}^FS^XZ`;
-        
         if (sets.printMethod === 'printnode') {
             if (!sets.pnKey || !sets.pnPrinter) { showToast("PrintNode не настроен", "danger"); return; }
             const encoded = btoa(new TextEncoder().encode(zpl).reduce((d,b)=>d+String.fromCharCode(b),''));
             try {
-                const res = await fetch('https://api.printnode.com/printjobs', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Basic ' + btoa(sets.pnKey + ':'), 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ printerId: parseInt(sets.pnPrinter), title: "Label", contentType: "raw_base64", content: encoded })
-                });
-                if(res.ok) showToast("Отправлено на PrintNode");
-                else showToast("Ошибка PrintNode", "danger");
+                const res = await fetch('https://api.printnode.com/printjobs', { method: 'POST', headers: { 'Authorization': 'Basic ' + btoa(sets.pnKey + ':'), 'Content-Type': 'application/json' }, body: JSON.stringify({ printerId: parseInt(sets.pnPrinter), title: "Label", contentType: "raw_base64", content: encoded }) });
+                if(res.ok) showToast("Отправлено на PrintNode"); else showToast("Ошибка PrintNode", "danger");
             } catch(e) { showToast("Ошибка сети PrintNode", "danger"); logError(`Печать PN: ${e.message}`); }
         } else {
             const utf8Zpl = btoa(new TextEncoder().encode(zpl).reduce((d,b)=>d+String.fromCharCode(b),''));
@@ -480,55 +440,17 @@
         }
     }
 
-    function printFromForm() {
-        const art = document.getElementById('f-art').value;
-        const comp = document.getElementById('f-comp') ? document.getElementById('f-comp').value : '';
-        printLabel(art, comp, '', "Приёмка");
-    }
-
-    function printLabelRawBT() {
-        const cA = document.getElementById('c-art').textContent;
-        const cC = document.getElementById('c-comp').textContent;
-        const cN = document.getElementById('c-name').textContent;
-        printLabel(cA, cC, '', cN);
-    }
+    function printFromForm() { const art = document.getElementById('f-art').value; const comp = document.getElementById('f-comp') ? document.getElementById('f-comp').value : ''; printLabel(art, comp, '', "Приёмка"); }
+    function printLabelRawBT() { const cA = document.getElementById('c-art').textContent; const cC = document.getElementById('c-comp').textContent; const cN = document.getElementById('c-name').textContent; printLabel(cA, cC, '', cN); }
 
     /* ШЕРИНГ */
     async function shareDoc() {
         const d = db[curTab].find(x => x.id === curDocId);
         if (!d || !d.items.length) return;
-
-        let text = `ДОКУМЕНТ: ${d.name}\n`;
-        text += `ТИП: ${document.getElementById('list-title').textContent}\n`;
-        text += `ДАТА: ${new Date(d.createdAt).toLocaleDateString()}\n`;
-        text += `--------------------------\n`;
-        
-        d.items.forEach((it, idx) => {
-            text += `${idx + 1}. Арт: ${it.art}\n`;
-            if (it.cuts) {
-                const total = it.cuts.reduce((s, c) => s + (parseFloat(c.m) || 0), 0);
-                text += `   Метраж: ${total.toFixed(2)} м (${it.cuts.length} отр.)\n`;
-            } else if (it.m) {
-                text += `   Метраж: ${it.m} м\n`;
-                if (it.fromWh) text += `   ${it.fromWh} -> ${it.toWh}\n`;
-            } else if (it.p) {
-                text += `   Цена: ${it.p} €\n`;
-            }
-        });
-
-        if (navigator.share) {
-            try {
-                await navigator.share({ title: d.name, text: text });
-            } catch (err) { console.log('Share canceled'); }
-        } else {
-            const el = document.createElement('textarea');
-            el.value = text;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-            showToast("Текст скопирован в буфер");
-        }
+        let text = `ДОКУМЕНТ: ${d.name}\nТИП: ${document.getElementById('list-title').textContent}\nДАТА: ${new Date(d.createdAt).toLocaleDateString()}\n--------------------------\n`;
+        d.items.forEach((it, idx) => { text += `${idx + 1}. Арт: ${it.art}\n`; if (it.cuts) { const total = it.cuts.reduce((s, c) => s + (parseFloat(c.m) || 0), 0); text += `   Метраж: ${total.toFixed(2)} м (${it.cuts.length} отр.)\n`; } else if (it.m) { text += `   Метраж: ${it.m} м\n`; if (it.fromWh) text += `   ${it.fromWh} -> ${it.toWh}\n`; } else if (it.p) { text += `   Цена: ${it.p} €\n`; } });
+        if (navigator.share) { try { await navigator.share({ title: d.name, text: text }); } catch (err) { console.log('Share canceled'); } }
+        else { const el = document.createElement('textarea'); el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); showToast("Текст скопирован в буфер"); }
     }
 
     /* МЕНЕДЖЕР */
@@ -538,8 +460,7 @@
     function logout() { isMgr = false; curDocId = null; saveAppState(); document.getElementById('manager-view').classList.add('hidden'); document.getElementById('screen-kiosk').classList.remove('hidden'); }
     
     function switchTab(id) {
-        curTab = id; curDocId = null; editingItemId = null;
-        saveAppState();
+        curTab = id; curDocId = null; editingItemId = null; saveAppState();
         const titles = {receive:"Приёмка", move:"Перемещение", writeoff:"Списание", price:"Цены"};
         document.getElementById('list-title').textContent = titles[id];
         document.querySelectorAll('#tab-bar button').forEach(b => b.classList.remove('active'));
@@ -549,166 +470,65 @@
     }
 
     function openCreateDocModal() { openModal('modal-create-doc'); document.getElementById('input-new-doc-name').value = "Документ " + new Date().toLocaleDateString(); setTimeout(()=>document.getElementById('input-new-doc-name').focus(), 300); }
-    function executeCreateDoc() {
-        const name = document.getElementById('input-new-doc-name').value.trim(); if(!name) return;
-        const newDoc = { id: Date.now().toString(36), name, status: 'active', createdAt: new Date().toISOString(), items: [] };
-        db[curTab].unshift(newDoc); save(); closeModal('modal-create-doc'); renderDocList(); openDoc(newDoc.id);
-    }
+    function executeCreateDoc() { const name = document.getElementById('input-new-doc-name').value.trim(); if(!name) return; const newDoc = { id: Date.now().toString(36), name, status: 'active', createdAt: new Date().toISOString(), items: [] }; db[curTab].unshift(newDoc); save(); closeModal('modal-create-doc'); renderDocList(); openDoc(newDoc.id); }
 
-    function renderDocList() {
-        const q = document.getElementById('doc-search')?.value?.toLowerCase() || "";
-        const cont = document.getElementById('docs-list-container'); cont.innerHTML = "";
-        const list = db[curTab] || [];
-        list.filter(d => d.name.toLowerCase().includes(q)).forEach(d => {
-            const card = document.createElement('div'); card.className = `card doc-card ${d.status}`; card.onclick = () => openDoc(d.id);
-            card.innerHTML = `<div class="flex justify-between font-bold"><span>${d.name}</span><span>${d.status==='active'?'🟡':'✅'}</span></div><div>Записей: ${d.items.length}</div>`;
-            cont.appendChild(card);
-        });
-    }
+    function renderDocList() { const q = document.getElementById('doc-search')?.value?.toLowerCase() || ""; const cont = document.getElementById('docs-list-container'); cont.innerHTML = ""; const list = db[curTab] || []; list.filter(d => d.name.toLowerCase().includes(q)).forEach(d => { const card = document.createElement('div'); card.className = `card doc-card ${d.status}`; card.onclick = () => openDoc(d.id); card.innerHTML = `<div class="flex justify-between font-bold"><span>${d.name}</span><span>${d.status==='active'?'🟡':'✅'}</span></div><div>Записей: ${d.items.length}</div>`; cont.appendChild(card); }); }
 
     function openDoc(id) {
         curDocId = id; saveAppState();
         const d = db[curTab].find(x=>x.id===id);
         if(!d) { switchTab(curTab); return; }
-        
         document.getElementById('screen-list').classList.add('hidden'); document.getElementById('screen-work').classList.remove('hidden');
         document.getElementById('work-title').textContent = d.name;
         document.getElementById('work-status').textContent = d.status==='active'?'ОТКРЫТ':'ЗАВЕРШЕН';
-        
-        const acts = document.getElementById('closed-actions');
-        const formCont = document.getElementById('form-container');
-        if(d.status === 'active') { formCont.classList.remove('hidden'); acts.classList.add('hidden'); }
-        else { formCont.classList.add('hidden'); acts.classList.remove('hidden'); }
-
+        const acts = document.getElementById('closed-actions'); const formCont = document.getElementById('form-container');
+        if(d.status === 'active') { formCont.classList.remove('hidden'); acts.classList.add('hidden'); } else { formCont.classList.add('hidden'); acts.classList.remove('hidden'); }
         renderForm(); renderRows();
     }
 
     function renderForm() {
         const cont = document.getElementById('form-container'); const d = db[curTab].find(x=>x.id===curDocId);
         if(!d || d.status !== 'active') return;
-        
         let artVal = sets.prefix + String(sets.nextNum).padStart(4,'0');
-
         if(curTab === 'receive') {
-            cont.innerHTML = `
-                <div class="input-group"><label>APT</label><input type="text" id="f-art" data-art-field value="${artVal}" class="monospace font-bold"></div>
-                <div class="input-group"><label>ШИРИНА</label><input type="text" id="f-width" inputmode="decimal"></div>
-                ${sets.showDensity ? '<div class="input-group"><label>ПЛОТНОСТЬ</label><input type="text" id="f-density" inputmode="numeric"></div>' : ''}
-                ${sets.showBrand ? '<div class="input-group"><label>БРЕНД</label><input type="text" id="f-brand"></div>' : ''}
-                ${sets.showComp ? '<div class="input-group"><label>СОСТАВ</label><input type="text" id="f-comp" oninput="this.value = this.value.toUpperCase()"></div>' : ''}
-                <div id="receive-cuts"></div>
-                <button class="btn-outline w-full mb-3" style="border-style:dashed; font-size:14px;" onclick="addCut()">+ Добавить отрез</button>
-                <div class="flex gap-2">
-                    <button class="btn-outline" style="flex:1" onclick="printFromForm()">🖨️ Печать</button>
-                    <button class="btn-success" style="flex:2" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>
-                </div>
-                ${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}
-            `;
+            cont.innerHTML = `<div class="input-group"><label>APT</label><input type="text" id="f-art" data-art-field value="${artVal}" class="monospace font-bold"></div><div class="input-group"><label>ШИРИНА</label><input type="text" id="f-width" inputmode="decimal"></div>${sets.showDensity ? '<div class="input-group"><label>ПЛОТНОСТЬ</label><input type="text" id="f-density" inputmode="numeric"></div>' : ''}${sets.showBrand ? '<div class="input-group"><label>БРЕНД</label><input type="text" id="f-brand"></div>' : ''}${sets.showComp ? '<div class="input-group"><label>СОСТАВ</label><input type="text" id="f-comp" oninput="this.value = this.value.toUpperCase()"></div>' : ''}<div id="receive-cuts"></div><button class="btn-outline w-full mb-3" style="border-style:dashed; font-size:14px;" onclick="addCut()">+ Добавить отрез</button><div class="flex gap-2"><button class="btn-outline" style="flex:1" onclick="printFromForm()">🖨️ Печать</button><button class="btn-success" style="flex:2" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button></div>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
             if (!editingItemId) activeCuts = [{id:1, m:'', wh:sets.warehouses[0] || "", c:''}];
             renderCuts();
         } else if(curTab === 'move'){
-            cont.innerHTML = `
-                <div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"></div>
-                <div class="flex gap-2">
-                    <div style="flex:1"><label>ОТКУДА (СКЛАД)</label><select id="f-wh-from">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div>
-                    <div style="flex:1"><label>ОТКУДА (ЯЧ)</label><input type="text" id="f-cell-from" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div>
-                </div>
-                <div class="flex gap-2">
-                    <div style="flex:1"><label>КУДА (СКЛАД)</label><select id="f-wh-to">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div>
-                    <div style="flex:1"><label>КУДА (ЯЧ)</label><input type="text" id="f-cell-to" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div>
-                </div>
-                <div class="input-group"><label>МЕТРАЖ</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal"></div>
-                <button class="btn-primary w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>
-                ${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}
-            `;
+            cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"></div><div class="flex gap-2"><div style="flex:1"><label>ОТКУДА (СКЛАД)</label><select id="f-wh-from">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ОТКУДА (ЯЧ)</label><input type="text" id="f-cell-from" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="flex gap-2"><div style="flex:1"><label>КУДА (СКЛАД)</label><select id="f-wh-to">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>КУДА (ЯЧ)</label><input type="text" id="f-cell-to" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="input-group"><label>МЕТРАЖ</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal"></div><button class="btn-primary w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
         } else if(curTab === 'writeoff'){
-            cont.innerHTML = `
-                <div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"></div>
-                <div class="flex gap-2">
-                    <div style="flex:1"><label>СКЛАД</label><select id="f-wh">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div>
-                    <div style="flex:1"><label>ЯЧЕЙКА</label><input type="text" id="f-cell" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div>
-                </div>
-                <div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal"></div>
-                <button class="btn-danger w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>
-                ${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}
-            `;
+            cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"></div><div class="flex gap-2"><div style="flex:1"><label>СКЛАД</label><select id="f-wh">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ЯЧЕЙКА</label><input type="text" id="f-cell" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal"></div><button class="btn-danger w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
         } else if(curTab === 'price'){
             cont.innerHTML = `<label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"><label>Цена (€)</label><input type="text" id="f-p" inputmode="decimal"><button class="btn-primary w-full" style="background:var(--price-color)" id="btn-save-line" onclick="saveLine()">ОК</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
         }
     }
 
-    function renderCuts() { 
-        const box = document.getElementById('receive-cuts'); if(!box) return; 
-        box.innerHTML = activeCuts.map(c=>`<div class="cut-row"><select onchange="uCut(${c.id},'wh',this.value)">${sets.warehouses.length > 0 ? sets.warehouses.map(w=>`<option ${c.wh===w?'selected':''}>${w}</option>`) : '<option value="">-</option>'}</select><input type="text" placeholder="М" value="${c.m}" oninput="uCut(${c.id},'m',this.value)" inputmode="decimal"><input type="text" placeholder="Яч" value="${c.c}" oninput="this.value = this.value.toUpperCase(); uCut(${c.id},'c',this.value)" list="list-cells"><button class="btn-icon" onclick="remCut(${c.id})">✕</button></div>`).join(''); 
-    }
-    function addCut() { 
-        const newId = Date.now();
-        activeCuts.push({id: newId, m:'', wh:sets.warehouses[0] || "", c:''}); 
-        renderCuts();
-        setTimeout(() => {
-            const inputs = document.querySelectorAll('#receive-cuts input[placeholder="М"]');
-            if(inputs.length) inputs[inputs.length-1].focus();
-        }, 50);
-    }
+    function renderCuts() { const box = document.getElementById('receive-cuts'); if(!box) return; box.innerHTML = activeCuts.map(c=>`<div class="cut-row"><select onchange="uCut(${c.id},'wh',this.value)">${sets.warehouses.length > 0 ? sets.warehouses.map(w=>`<option ${c.wh===w?'selected':''}>${w}</option>`) : '<option value="">-</option>'}</select><input type="text" placeholder="М" value="${c.m}" oninput="uCut(${c.id},'m',this.value)" inputmode="decimal"><input type="text" placeholder="Яч" value="${c.c}" oninput="this.value = this.value.toUpperCase(); uCut(${c.id},'c',this.value)" list="list-cells"><button class="btn-icon" onclick="remCut(${c.id})">✕</button></div>`).join(''); }
+    function addCut() { const newId = Date.now(); activeCuts.push({id: newId, m:'', wh:sets.warehouses[0] || "", c:''}); renderCuts(); setTimeout(() => { const inputs = document.querySelectorAll('#receive-cuts input[placeholder="М"]'); if(inputs.length) inputs[inputs.length-1].focus(); }, 50); }
     function remCut(id) { if(activeCuts.length > 1) { activeCuts = activeCuts.filter(x=>x.id!==id); renderCuts(); } }
     function uCut(id, f, v) { const c = activeCuts.find(x=>x.id===id); if(c) c[f]=v.replace(',','.'); }
 
     function saveLine() {
-        const d = db[curTab].find(x=>x.id===curDocId); const artInp = document.getElementById('f-art'); if(!artInp) return;
-        const art = artInp.value; if(!art) return;
+        const d = db[curTab].find(x=>x.id===curDocId); const artInp = document.getElementById('f-art'); if(!artInp) return; const art = artInp.value; if(!art) return;
         let item = { id: editingItemId || Date.now(), art, ts: new Date().toISOString() };
-        
-        if(curTab === 'receive'){ 
-            const v = activeCuts.filter(c => !isNaN(parseFloat(c.m)) && parseFloat(c.m) > 0);
-            if(!v.length) return; 
-            item.cuts = JSON.parse(JSON.stringify(v));
-            item.w = document.getElementById('f-width').value;
-            if(sets.showDensity && document.getElementById('f-density')) item.dens = document.getElementById('f-density').value;
-            if(sets.showBrand && document.getElementById('f-brand')) item.brand = document.getElementById('f-brand').value;
-            if(sets.showComp && document.getElementById('f-comp')) item.comp = document.getElementById('f-comp').value;
-            if (!editingItemId) sets.nextNum++;
-        } else if(curTab === 'move'){
-            item.m = document.getElementById('f-m').value;
-            item.fromWh = document.getElementById('f-wh-from').value;
-            item.fromCell = document.getElementById('f-cell-from').value;
-            item.toWh = document.getElementById('f-wh-to').value;
-            item.toCell = document.getElementById('f-cell-to').value;
-        } else if(curTab === 'writeoff'){
-            item.m = document.getElementById('f-m').value;
-            item.wh = document.getElementById('f-wh').value;
-            item.cell = document.getElementById('f-cell').value;
-        } else if(curTab === 'price'){ item.p = document.getElementById('f-p').value; }
-        
-        if(editingItemId){ const idx = d.items.findIndex(i=>i.id===editingItemId); d.items[idx]=item; editingItemId=null; }
-        else d.items.unshift(item);
+        if(curTab === 'receive'){ const v = activeCuts.filter(c => !isNaN(parseFloat(c.m)) && parseFloat(c.m) > 0); if(!v.length) return; item.cuts = JSON.parse(JSON.stringify(v)); item.w = document.getElementById('f-width').value; if(sets.showDensity && document.getElementById('f-density')) item.dens = document.getElementById('f-density').value; if(sets.showBrand && document.getElementById('f-brand')) item.brand = document.getElementById('f-brand').value; if(sets.showComp && document.getElementById('f-comp')) item.comp = document.getElementById('f-comp').value; if (!editingItemId) sets.nextNum++; }
+        else if(curTab === 'move'){ item.m = document.getElementById('f-m').value; item.fromWh = document.getElementById('f-wh-from').value; item.fromCell = document.getElementById('f-cell-from').value; item.toWh = document.getElementById('f-wh-to').value; item.toCell = document.getElementById('f-cell-to').value; }
+        else if(curTab === 'writeoff'){ item.m = document.getElementById('f-m').value; item.wh = document.getElementById('f-wh').value; item.cell = document.getElementById('f-cell').value; }
+        else if(curTab === 'price'){ item.p = document.getElementById('f-p').value; }
+        if(editingItemId){ const idx = d.items.findIndex(i=>i.id===editingItemId); d.items[idx]=item; editingItemId=null; } else d.items.unshift(item);
         save(); renderForm(); renderRows(); showToast("Записано");
     }
 
     function editItem(id) {
         const d = db[curTab].find(x=>x.id===curDocId); const it = d.items.find(i=>i.id===id); if(!it) return;
         editingItemId = id; renderForm();
-        
         const fA = document.getElementById('f-art'); if(fA) fA.value = it.art;
         if(curTab==='receive'){
-            const fW = document.getElementById('f-width'); if(fW) fW.value = it.w || '';
-            const fD = document.getElementById('f-density'); if(fD) fD.value = it.dens || '';
-            const fB = document.getElementById('f-brand'); if(fB) fB.value = it.brand || '';
-            const fC = document.getElementById('f-comp'); if(fC) fC.value = it.comp || '';
+            const fW = document.getElementById('f-width'); if(fW) fW.value = it.w || ''; const fD = document.getElementById('f-density'); if(fD) fD.value = it.dens || ''; const fB = document.getElementById('f-brand'); if(fB) fB.value = it.brand || ''; const fC = document.getElementById('f-comp'); if(fC) fC.value = it.comp || '';
             activeCuts = JSON.parse(JSON.stringify(it.cuts)); renderCuts();
-        } else if(curTab === 'move') {
-            document.getElementById('f-m').value = it.m;
-            document.getElementById('f-wh-from').value = it.fromWh;
-            document.getElementById('f-cell-from').value = it.fromCell;
-            document.getElementById('f-wh-to').value = it.toWh;
-            document.getElementById('f-cell-to').value = it.toCell;
-        } else if(curTab === 'writeoff') {
-            document.getElementById('f-m').value = it.m;
-            document.getElementById('f-wh').value = it.wh;
-            document.getElementById('f-cell').value = it.cell;
-        } else if(curTab==='price') {
-            const fP = document.getElementById('f-p'); if(fP) fP.value = it.p || '';
-        }
-        
+        } else if(curTab === 'move') { document.getElementById('f-m').value = it.m; document.getElementById('f-wh-from').value = it.fromWh; document.getElementById('f-cell-from').value = it.fromCell; document.getElementById('f-wh-to').value = it.toWh; document.getElementById('f-cell-to').value = it.toCell; }
+        else if(curTab === 'writeoff') { document.getElementById('f-m').value = it.m; document.getElementById('f-wh').value = it.wh; document.getElementById('f-cell').value = it.cell; }
+        else if(curTab==='price') { const fP = document.getElementById('f-p'); if(fP) fP.value = it.p || ''; }
         const bSave = document.getElementById('btn-save-line'); if(bSave) bSave.textContent = "ОБНОВИТЬ";
         renderRows(); window.scrollTo({top: 0, behavior: 'smooth'});
     }
@@ -717,17 +537,7 @@
 
     function renderRows() {
         const cont = document.getElementById('rows-container'); const d = db[curTab].find(x=>x.id===curDocId); cont.innerHTML = "";
-        d.items.forEach(it => {
-            const div = document.createElement('div'); div.className = 'history-item' + (editingItemId===it.id?' editing':'');
-            let info = "";
-            if(curTab === 'move') info = `<div class="text-sm text-sec">${it.fromWh} → ${it.toWh} | ${it.m}м</div>`;
-            else if(curTab === 'writeoff') info = `<div class="text-sm text-sec">${it.wh} | ${it.m}м</div>`;
-            else if(curTab === 'price') info = `<div class="text-sm font-bold" style="color:var(--price-color)">${it.p} €</div>`;
-            else info = `<div class="text-sm text-sec">${it.cuts ? it.cuts.length : 0} отр.</div>`;
-
-            div.innerHTML = `<div><div class="font-bold">${it.art}</div>${info}</div><div class="flex gap-2">${d.status==='active' ? `<button class="btn-icon" onclick="editItem(${it.id})">✏️</button><button class="btn-icon text-danger" onclick="delRow(${it.id})">🗑️</button>` : ''}</div>`;
-            cont.appendChild(div);
-        });
+        d.items.forEach(it => { const div = document.createElement('div'); div.className = 'history-item' + (editingItemId===it.id?' editing':''); let info = ""; if(curTab === 'move') info = `<div class="text-sm text-sec">${it.fromWh} → ${it.toWh} | ${it.m}м</div>`; else if(curTab === 'writeoff') info = `<div class="text-sm text-sec">${it.wh} | ${it.m}м</div>`; else if(curTab === 'price') info = `<div class="text-sm font-bold" style="color:var(--price-color)">${it.p} €</div>`; else info = `<div class="text-sm text-sec">${it.cuts ? it.cuts.length : 0} отр.</div>`; div.innerHTML = `<div><div class="font-bold">${it.art}</div>${info}</div><div class="flex gap-2">${d.status==='active' ? `<button class="btn-icon" onclick="editItem(${it.id})">✏️</button><button class="btn-icon text-danger" onclick="delRow(${it.id})">🗑️</button>` : ''}</div>`; cont.appendChild(div); });
         document.getElementById('work-counter').textContent = "Записей: " + d.items.length;
     }
 
@@ -738,43 +548,11 @@
     function closeModal(id) { document.getElementById(id).classList.remove('open'); }
     function showToast(m, t) { const c = document.getElementById('toast-container'); if(c.children.length > 3) c.removeChild(c.firstChild); const d = document.createElement('div'); d.className = `toast`; d.style.background = t === 'danger' ? 'var(--danger)' : 'var(--primary)'; d.textContent = m; c.appendChild(d); setTimeout(()=>d.remove(), 2500); }
     
-    function openSettings() { 
-        document.getElementById('set-show-density').checked = sets.showDensity; 
-        document.getElementById('set-show-brand').checked = sets.showBrand; 
-        document.getElementById('set-show-comp').checked = sets.showComp; 
-        document.getElementById('set-prefix').value = sets.prefix; 
-        document.getElementById('set-next-num').value = sets.nextNum; 
-        document.getElementById('set-url').value = sets.url; 
-        document.getElementById('set-user').value = sets.user; 
-        document.getElementById('set-pass').value = sets.pass || ""; 
-        document.getElementById('set-pn-key').value = sets.pnKey || "";
-        document.getElementById('set-pn-printer').value = sets.pnPrinter || "";
-        document.getElementById('set-print-method').value = sets.printMethod || "rawbt";
-        togglePrintSettingsUI();
-        renderSettingsWh(); 
-        openModal('modal-settings'); 
-    }
+    function openSettings() { document.getElementById('set-show-density').checked = sets.showDensity; document.getElementById('set-show-brand').checked = sets.showBrand; document.getElementById('set-show-comp').checked = sets.showComp; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "rawbt"; togglePrintSettingsUI(); renderSettingsWh(); openModal('modal-settings'); }
 
-    function togglePrintSettingsUI() {
-        const method = document.getElementById('set-print-method').value;
-        const block = document.getElementById('printnode-block');
-        if (block) block.style.display = (method === 'printnode') ? 'block' : 'none';
-    }
+    function togglePrintSettingsUI() { const method = document.getElementById('set-print-method').value; const block = document.getElementById('printnode-block'); if (block) block.style.display = (method === 'printnode') ? 'block' : 'none'; }
     
-    function saveSets() { 
-        sets.showDensity = document.getElementById('set-show-density').checked; 
-        sets.showBrand = document.getElementById('set-show-brand').checked; 
-        sets.showComp = document.getElementById('set-show-comp').checked; 
-        sets.prefix = document.getElementById('set-prefix').value; 
-        sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; 
-        sets.url = document.getElementById('set-url').value; 
-        sets.user = document.getElementById('set-user').value; 
-        sets.pass = document.getElementById('set-pass').value; 
-        sets.pnKey = document.getElementById('set-pn-key').value;
-        sets.pnPrinter = document.getElementById('set-pn-printer').value;
-        sets.printMethod = document.getElementById('set-print-method').value;
-        save(); 
-    }
+    function saveSets() { sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; save(); }
     
     function renderSettingsWh() { document.getElementById('settings-warehouses').innerHTML = sets.warehouses.map(w=>`<div class="wh-item"><span>${w}</span><button class="btn-icon text-danger" onclick="delWh('${w}')">🗑️</button></div>`).join(''); }
     function addWh() { const n = document.getElementById('new-wh-name'); if(n.value){sets.warehouses.push(n.value); n.value=''; renderSettingsWh(); saveSets();}}
@@ -782,26 +560,24 @@
     function closeSettings() { saveSets(); closeModal('modal-settings'); }
     function exitWork() { curDocId = null; saveAppState(); switchTab(curTab); }
 
-    async function customConfirm(msg) { 
-        return new Promise(res => { 
-            document.getElementById('conf-msg').textContent = msg; 
-            openModal('modal-confirm'); 
-            document.getElementById('conf-ok').onclick = () => { closeModal('modal-confirm'); res(true); }; 
-            document.getElementById('conf-cancel').onclick = () => { closeModal('modal-confirm'); res(false); }; 
-        }); 
-    }
+    async function customConfirm(msg) { return new Promise(res => { document.getElementById('conf-msg').textContent = msg; openModal('modal-confirm'); document.getElementById('conf-ok').onclick = () => { closeModal('modal-confirm'); res(true); }; document.getElementById('conf-cancel').onclick = () => { closeModal('modal-confirm'); res(false); }; }); }
 
     async function completeDoc() { if(!await customConfirm("Завершить документ?")) return; const d = db[curTab].find(x=>x.id===curDocId); d.status = 'closed'; save(); openDoc(curDocId); }
     function reopenDoc() { const d = db[curTab].find(x=>x.id===curDocId); d.status = 'active'; save(); openDoc(curDocId); }
     
     async function syncWith1C() {
-        const d = db[curTab].find(x=>x.id===curDocId);
-        if(!sets.url) { showToast("URL 1С не настроен", "danger"); return; }
+        const d = db[curTab].find(x=>x.id===curDocId); if(!sets.url) { showToast("URL 1С не настроен", "danger"); return; }
         showToast("Отправка в 1С...");
-        try {
-            const res = await fetch(`${sets.url}/post-document`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Basic '+btoa(sets.user+":"+(sets.pass||""))}, body:JSON.stringify({type:curTab.toUpperCase(), data:d}) });
-            if(res.ok) showToast("Успешно проведено!"); else showToast("1С вернула ошибку", "danger");
-        } catch(e) { showToast("Сервер 1С недоступен", "danger"); logError(`Синхронизация 1С: ${e.message}`); }
+        try { const res = await fetch(`${sets.url}/post-document`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Basic '+btoa(sets.user+":"+(sets.pass||""))}, body:JSON.stringify({type:curTab.toUpperCase(), data:d}) }); if(res.ok) showToast("Успешно проведено!"); else showToast("1С вернула ошибку", "danger"); } catch(e) { showToast("Сервер 1С недоступен", "danger"); logError(`Синхронизация 1С: ${e.message}`); }
+    }
+
+    async function test1CConnection() {
+        const url = document.getElementById('set-url').value; const user = document.getElementById('set-user').value; const pass = document.getElementById('set-pass').value;
+        if (!url) { showToast("Сначала введите URL", "danger"); return; }
+        showToast("Проверка связи...");
+        try { const res = await fetch(`${url}/product?id=ping`, { headers: { 'Authorization': 'Basic ' + btoa(user + ":" + pass) } });
+            if (res.ok || res.status === 404) { showToast("Связь с 1С установлена!", "success"); } else { showToast(`Ошибка: ${res.status}`, "danger"); }
+        } catch (e) { showToast("Ошибка соединения", "danger"); logError(`Тест 1С: ${e.message}`); }
     }
 
     async function delRow(rid) { if(!await customConfirm("Удалить строку?")) return; const d = db[curTab].find(x=>x.id===curDocId); d.items = d.items.filter(x=>x.id!==rid); save(); renderRows(); }
@@ -810,11 +586,6 @@
     function doManualSearch() { const v = document.getElementById('manual-search-input').value.trim(); if(v){ closeModal('modal-search'); search1C(v); } }
     function exportData() { const blob = new Blob([JSON.stringify({db, sets})], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='backup.json'; a.click(); }
     function importData(event) { const file = event.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(e){ try{ const d = JSON.parse(e.target.result); if(d.db && d.sets){ db = d.db; sets = d.sets; save(); location.reload(); } }catch(err){showToast('Ошибка файла','danger');} }; reader.readAsText(file); }
-    function printFromForm() { 
-        const art = document.getElementById('f-art').value; 
-        const comp = document.getElementById('f-comp') ? document.getElementById('f-comp').value : ''; 
-        printLabel(art, comp, '', "Приёмка"); 
-    }
 </script>
 </body>
 </html>
