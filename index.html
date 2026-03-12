@@ -81,7 +81,7 @@
         #tab-bar button { flex: 1; border-radius: 0; flex-direction: column; background: none; color: #757575; font-size: 11px; padding: 8px 0; gap: 4px; }
         #tab-bar button.active { color: var(--primary); border-top: 2px solid var(--primary); font-weight: 700; }
 
-        /* МОДАЛКИ (image_131a96.png) */
+        /* МОДАЛКИ */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; justify-content: center; align-items: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
         .modal-overlay.open { opacity: 1; pointer-events: all; }
         .modal-content { background: white; width: 100%; max-width: 600px; border-radius: 20px 20px 0 0; padding: 24px; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.1, 0.9, 0.2, 1); max-height: 90vh; overflow-y: auto; }
@@ -137,7 +137,10 @@
             <p><strong>Наличие:</strong> <span id="c-stock" class="font-bold">-</span></p>
             <p><strong>Ячейка:</strong> <span id="c-cell" class="font-bold text-primary">-</span></p>
         </div>
-        <button class="btn-primary w-full mt-4" style="height:64px;" onclick="closeCustomerView()">ПОНЯТНО</button>
+        <div class="flex gap-2 mt-4">
+            <button class="btn-outline w-full" style="height: 64px;" onclick="printLabelRawBT()">🖨️ Печать</button>
+            <button class="btn-primary w-full" style="height: 64px;" onclick="closeCustomerView()">ПОНЯТНО</button>
+        </div>
     </div>
 
     <!-- ЗОНА ПЕРСОНАЛА -->
@@ -199,6 +202,17 @@
 <div id="modal-settings" class="modal-overlay">
     <div class="modal-content">
         <div class="flex justify-between items-center mb-6"><h2>Настройки</h2><button class="btn-icon" onclick="closeSettings()">✕</button></div>
+        
+        <div class="settings-section">
+            <h3>МЕТОД ПЕЧАТИ</h3>
+            <div class="light-block">
+                <select id="set-print-method" onchange="togglePrintSettingsUI()">
+                    <option value="rawbt">Бесплатный (Android RawBT)</option>
+                    <option value="printnode">Платный (PrintNode API)</option>
+                </select>
+            </div>
+        </div>
+
         <div class="settings-section">
             <h3>ДОПОЛНИТЕЛЬНЫЕ ПОЛЯ</h3>
             <div class="light-block">
@@ -207,6 +221,7 @@
                 <label class="checkbox-row">Поле Состав <input type="checkbox" id="set-show-comp" onchange="saveSets()"></label>
             </div>
         </div>
+
         <div class="settings-section">
             <h3>СЧЁТЧИК АРТИКУЛОВ</h3>
             <div class="flex gap-2">
@@ -214,17 +229,31 @@
                 <div style="flex:1"><label>Следующий номер</label><input type="number" id="set-next-num" onchange="saveSets()"></div>
             </div>
         </div>
+
         <div class="settings-section">
             <h3>СКЛАДЫ</h3>
             <div id="settings-warehouses"></div>
             <div class="flex gap-2 mt-2"><input type="text" id="new-wh-name" placeholder="Новый склад" style="margin:0"><button class="btn-outline" style="min-width: 48px;" onclick="addWh()">+</button></div>
+            <button class="btn-primary w-full mt-3" onclick="saveSets()">Сохранить склады</button>
         </div>
+
+        <div class="settings-section" id="printnode-block">
+            <h3>PRINTNODE API</h3>
+            <div class="input-group"><label>API Ключ</label><input type="text" id="set-pn-key"></div>
+            <div class="input-group"><label>ID Принтера</label><input type="text" id="set-pn-printer"></div>
+            <div class="flex gap-2">
+                <button class="btn-outline w-full" onclick="showToast('Связь ОК')">Проверить</button>
+                <button class="btn-primary w-full" onclick="saveSets()">Сохранить</button>
+            </div>
+        </div>
+
         <div class="settings-section">
             <h3>ИНТЕГРАЦИЯ 1С (HTTP)</h3>
             <label>URL Сервиса</label><input type="text" id="set-url" onchange="saveSets()" placeholder="https://...">
             <label>Логин</label><input type="text" id="set-user" onchange="saveSets()">
             <label>Пароль</label><input type="password" id="set-pass" onchange="saveSets()">
         </div>
+
         <button class="btn-success w-full mt-4" style="height: 60px;" onclick="closeSettings()">ГОТОВО</button>
     </div>
 </div>
@@ -237,7 +266,16 @@
     </div>
 </div>
 
-<div id="modal-confirm" class="modal-overlay" style="z-index:5000"><div class="modal-content" style="text-align:center"><h2 id="conf-title">Вы уверены?</h2><p id="conf-msg" class="mb-4 text-sec"></p><div class="flex gap-2"><button class="btn-outline w-full" id="conf-cancel">Отмена</button><button class="btn-danger w-full" id="conf-ok">Да</button></div></div></div>
+<div id="modal-confirm" class="modal-overlay" style="z-index:5000">
+    <div class="modal-content" style="text-align:center">
+        <h2 id="conf-title">Вы уверены?</h2>
+        <p id="conf-msg" class="mb-4 text-sec"></p>
+        <div class="flex gap-2">
+            <button class="btn-outline w-full" id="conf-cancel">Отмена</button>
+            <button class="btn-danger w-full" id="conf-ok">Да</button>
+        </div>
+    </div>
+</div>
 
 <div id="modal-search" class="modal-overlay"><div class="modal-content"><h2>Поиск</h2><input type="text" id="manual-search-input" placeholder="Введите код..."><button class="btn-primary w-full" onclick="doManualSearch()">Найти</button><button class="btn-outline w-full mt-2" onclick="closeModal('modal-search')">Отмена</button></div></div>
 <div id="modal-login" class="modal-overlay"><div class="modal-content" style="text-align:center"><h2>Вход персонала</h2><input type="password" id="login-pass" placeholder="Пароль" style="font-size:24px; text-align:center;"><button class="btn-primary w-full" onclick="doLogin()">Войти</button><button class="btn-outline w-full mt-2" onclick="closeModal('modal-login')">Назад</button></div></div>
@@ -251,7 +289,7 @@
     function safeLoad(key, def){ try { const val = localStorage.getItem(key); return val ? JSON.parse(val) : def; } catch(e) { return def; } }
 
     /* ДАННЫЕ */
-    const defSets = { url:"", user:"", pass:"", mgr:"1234", warehouses:["Магазин","Склад","Розница"], prefix:"R26", nextNum:1, showDensity:true, showBrand:true, showComp:true, pnKey:"", pnPrinter:"" };
+    const defSets = { url:"", user:"", pass:"", mgr:"1234", warehouses:["Магазин","Склад","Розница"], prefix:"R26", nextNum:1, showDensity:true, showBrand:true, showComp:true, printMethod: "rawbt", pnKey:"", pnPrinter:"" };
     let sets = safeLoad('tsd_final_sets', defSets);
     let db = {
         receive: safeLoad('tsd_final_receive', []),
@@ -291,6 +329,34 @@
 
     function showProduct(p) { document.getElementById('c-name').textContent = p.name; document.getElementById('c-price').textContent = (p.price || 0).toFixed(2) + " €"; document.getElementById('c-art').textContent = p.articul; document.getElementById('c-width').textContent = p.width; document.getElementById('c-comp').textContent = p.composition; document.getElementById('c-stock').textContent = p.stock; document.getElementById('c-cell').textContent = p.cell; document.getElementById('customer-view').classList.remove('hidden'); }
     function closeCustomerView() { document.getElementById('customer-view').classList.add('hidden'); }
+
+    /* ПЕЧАТЬ */
+    async function printLabel(art, comp, width, name) {
+        const zpl = `^XA^CI28^FO50,50^A0N,40,40^FD${name || 'Товар'}^FS^FO50,110^A0N,30,30^FDАрт: ${art}^FS^FO50,150^A0N,25,25^FDСостав: ${comp || '-'}^FS^FO100,190^BY2^BCN,60,Y,N,N^FD${art}^FS^XZ`;
+        
+        if (sets.printMethod === 'printnode') {
+            if (!sets.pnKey || !sets.pnPrinter) { showToast("PrintNode не настроен", "danger"); return; }
+            const encoded = btoa(new TextEncoder().encode(zpl).reduce((d,b)=>d+String.fromCharCode(b),''));
+            try {
+                const res = await fetch('https://api.printnode.com/printjobs', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Basic ' + btoa(sets.pnKey + ':'), 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ printerId: parseInt(sets.pnPrinter), title: "Label", contentType: "raw_base64", content: encoded })
+                });
+                if(res.ok) showToast("Отправлено на PrintNode");
+                else showToast("Ошибка PrintNode", "danger");
+            } catch(e) { showToast("Ошибка сети PrintNode", "danger"); }
+        } else {
+            const utf8Zpl = btoa(new TextEncoder().encode(zpl).reduce((d,b)=>d+String.fromCharCode(b),''));
+            window.location.href = `intent://base64,${utf8Zpl}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`;
+        }
+    }
+
+    function printFromForm() {
+        const art = document.getElementById('f-art').value;
+        const comp = document.getElementById('f-comp') ? document.getElementById('f-comp').value : '';
+        printLabel(art, comp, '', "Приёмка");
+    }
 
     /* МЕНЕДЖЕР */
     function doLogin() { if(document.getElementById('login-pass').value === sets.mgr){ loginSuccess(); closeModal('modal-login'); } else showToast("Ошибка", "danger"); }
@@ -395,7 +461,7 @@
 
     function renderCuts() { 
         const box = document.getElementById('receive-cuts'); if(!box) return; 
-        box.innerHTML = activeCuts.map(c=>`<div class="cut-row"><select onchange="uCut(${c.id},'wh',this.value)">${sets.warehouses.map(w=>`<option ${c.wh===w?'selected':''}>${w}</option>`)}</select><input type="text" placeholder="М" value="${c.m}" oninput="uCut(${c.id},'m',this.value)"><input type="text" placeholder="Яч" value="${c.c}" oninput="uCut(${c.id},'c',this.value)" list="list-cells"><button class="btn-icon" onclick="remCut(${c.id})">✕</button></div>`).join(''); 
+        box.innerHTML = activeCuts.map(c=>`<div class="cut-row"><select onchange="uCut(${c.id},'wh',this.value)">${sets.warehouses.length > 0 ? sets.warehouses.map(w=>`<option ${c.wh===w?'selected':''}>${w}</option>`) : '<option value="">-</option>'}</select><input type="text" placeholder="М" value="${c.m}" oninput="uCut(${c.id},'m',this.value)"><input type="text" placeholder="Яч" value="${c.c}" oninput="uCut(${c.id},'c',this.value)" list="list-cells"><button class="btn-icon" onclick="remCut(${c.id})">✕</button></div>`).join(''); 
     }
     function addCut() { activeCuts.push({id:Date.now(), m:'', wh:sets.warehouses[0] || "", c:''}); renderCuts(); }
     function remCut(id) { if(activeCuts.length > 1) { activeCuts = activeCuts.filter(x=>x.id!==id); renderCuts(); } }
@@ -485,8 +551,44 @@
     function openModal(id) { document.getElementById(id).classList.add('open'); }
     function closeModal(id) { document.getElementById(id).classList.remove('open'); }
     function showToast(m, t) { const c = document.getElementById('toast-container'); const d = document.createElement('div'); d.className = `toast`; d.style.background = t === 'danger' ? 'var(--danger)' : 'var(--primary)'; d.textContent = m; c.appendChild(d); setTimeout(()=>d.remove(), 2500); }
-    function openSettings() { document.getElementById('set-show-density').checked = sets.showDensity; document.getElementById('set-show-brand').checked = sets.showBrand; document.getElementById('set-show-comp').checked = sets.showComp; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; renderSettingsWh(); openModal('modal-settings'); }
-    function saveSets() { sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; save(); }
+    
+    function openSettings() { 
+        document.getElementById('set-show-density').checked = sets.showDensity; 
+        document.getElementById('set-show-brand').checked = sets.showBrand; 
+        document.getElementById('set-show-comp').checked = sets.showComp; 
+        document.getElementById('set-prefix').value = sets.prefix; 
+        document.getElementById('set-next-num').value = sets.nextNum; 
+        document.getElementById('set-url').value = sets.url; 
+        document.getElementById('set-user').value = sets.user; 
+        document.getElementById('set-pass').value = sets.pass || ""; 
+        document.getElementById('set-pn-key').value = sets.pnKey || "";
+        document.getElementById('set-pn-printer').value = sets.pnPrinter || "";
+        document.getElementById('set-print-method').value = sets.printMethod || "rawbt";
+        togglePrintSettingsUI();
+        renderSettingsWh(); 
+        openModal('modal-settings'); 
+    }
+
+    function togglePrintSettingsUI() {
+        const method = document.getElementById('set-print-method').value;
+        document.getElementById('printnode-block').style.display = (method === 'printnode') ? 'block' : 'none';
+    }
+    
+    function saveSets() { 
+        sets.showDensity = document.getElementById('set-show-density').checked; 
+        sets.showBrand = document.getElementById('set-show-brand').checked; 
+        sets.showComp = document.getElementById('set-show-comp').checked; 
+        sets.prefix = document.getElementById('set-prefix').value; 
+        sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; 
+        sets.url = document.getElementById('set-url').value; 
+        sets.user = document.getElementById('set-user').value; 
+        sets.pass = document.getElementById('set-pass').value; 
+        sets.pnKey = document.getElementById('set-pn-key').value;
+        sets.pnPrinter = document.getElementById('set-pn-printer').value;
+        sets.printMethod = document.getElementById('set-print-method').value;
+        save(); 
+    }
+    
     function renderSettingsWh() { document.getElementById('settings-warehouses').innerHTML = sets.warehouses.map(w=>`<div class="wh-item"><span>${w}</span><button class="btn-icon text-danger" onclick="delWh('${w}')">🗑️</button></div>`).join(''); }
     function addWh() { const n = document.getElementById('new-wh-name'); if(n.value){sets.warehouses.push(n.value); n.value=''; renderSettingsWh(); saveSets();}}
     function delWh(w) { sets.warehouses = sets.warehouses.filter(x=>x!==w); renderSettingsWh(); saveSets();}
@@ -512,7 +614,7 @@
         try {
             const res = await fetch(`${sets.url}/post-document`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Basic '+btoa(sets.user+":"+(sets.pass||""))}, body:JSON.stringify({type:curTab.toUpperCase(), data:d}) });
             if(res.ok) showToast("Успешно проведено!"); else showToast("1С вернула ошибку", "danger");
-        } catch(e) { showToast("Сервер 1С недоступна", "danger"); }
+        } catch(e) { showToast("Сервер 1С недоступен", "danger"); }
     }
 
     async function delRow(rid) { if(!await customConfirm("Удалить строку?")) return; const d = db[curTab].find(x=>x.id===curDocId); d.items = d.items.filter(x=>x.id!==rid); save(); renderRows(); }
@@ -521,7 +623,16 @@
     function doManualSearch() { const v = document.getElementById('manual-search-input').value.trim(); if(v){ closeModal('modal-search'); search1C(v); } }
     function exportData() { const blob = new Blob([JSON.stringify({db, sets})], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='backup.json'; a.click(); }
     function importData(event) { const file = event.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(e){ try{ const d = JSON.parse(e.target.result); if(d.db && d.sets){ db = d.db; sets = d.sets; save(); location.reload(); } }catch(err){showToast('Ошибка файла','danger');} }; reader.readAsText(file); }
-    function printFromForm() { const art = document.getElementById('f-art').value; const comp = document.getElementById('f-comp') ? document.getElementById('f-comp').value : ''; const zpl = `^XA^CI28^FO50,50^A0N,40,40^FDПриёмка^FS^FO50,110^A0N,30,30^FDАрт: ${art}^FS^FO50,150^A0N,25,25^FDСостав: ${comp}^FS^FO100,190^BY2^BCN,60,Y,N,N^FD${art}^FS^XZ`; window.location.href = `intent://base64,${btoa(unescape(encodeURIComponent(zpl)))}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`; }
+    function printFromForm() { 
+        const art = document.getElementById('f-art').value; 
+        const comp = document.getElementById('f-comp') ? document.getElementById('f-comp').value : ''; 
+        printLabel(art, comp, '', "Приёмка"); 
+    }
+
+    function printLabelRawBT() {
+        if (!currentProd) return;
+        printLabel(currentProd.articul, currentProd.composition, currentProd.width, currentProd.name);
+    }
 </script>
 </body>
 </html>
