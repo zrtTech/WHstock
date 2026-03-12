@@ -672,4 +672,12 @@
     function openManualSearch() { openModal('modal-search'); setTimeout(() => document.getElementById('manual-search-input').focus(), 300); }
     function doManualSearch() { const v = document.getElementById('manual-search-input').value.trim(); if(v){ closeModal('modal-search'); search1C(v); } }
     function exportData() { const blob = new Blob([JSON.stringify({db, sets})], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='backup.json'; a.click(); }
-    function importData(event) { const file = event.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(e){ try{ const d = JSON.parse(e.target.result); if(d.db && d.sets){ db = d.db; sets = d.sets; save();
+    function importData(event) { const file = event.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(e){ try{ const d = JSON.parse(e.target.result); if(d.db && d.sets){ db = d.db; sets = d.sets; save(); location.reload(); } }catch(err){showToast('Ошибка файла','danger');} }; reader.readAsText(file); }
+    function printFromForm() { 
+        const art = document.getElementById('f-art').value; 
+        const comp = document.getElementById('f-comp') ? document.getElementById('f-comp').value : ''; 
+        printLabel(art, comp, '', "Приёмка"); 
+    }
+</script>
+</body>
+</html>
