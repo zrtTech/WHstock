@@ -29,7 +29,7 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-        body { font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); line-height: 1.5; }
+        body { font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); line-height: 1.5; -webkit-font-smoothing: antialiased; }
         .hidden { display: none !important; }
         .flex { display: flex; }
         .items-center { align-items: center; }
@@ -43,7 +43,7 @@
         .text-primary { color: var(--primary); }
         .gap-2 { gap: 8px; }
 
-        #app { max-width: 768px; margin: 0 auto; min-height: 100vh; position: relative; padding-bottom: 80px; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
+        #app { max-width: 1200px; margin: 0 auto; min-height: 100vh; position: relative; padding-bottom: 80px; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
 
         /* ЭКРАН КИОСКА */
         #screen-kiosk {
@@ -55,7 +55,7 @@
         /* КНОПКИ */
         button {
             border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; padding: 12px 16px;
-            transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px;
+            transition: background 0.2s, transform 0.1s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px;
         }
         button:active { transform: scale(0.98); }
         .btn-main { background: white; color: var(--primary); height: 64px; font-size: 18px; font-weight: 800; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
@@ -66,7 +66,7 @@
         .btn-icon { background: none; color: var(--text-sec); font-size: 20px; padding: 0; min-width: 44px; min-height: 44px; }
 
         /* КАРТОЧКИ */
-        .card { background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); }
+        .card { background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); transition: box-shadow 0.2s; }
         .doc-card { cursor: pointer; border-left: 6px solid var(--border); transition: 0.1s; margin-bottom: 12px; }
         .doc-card:active { background: #f9f9f9; }
         .doc-card.active { border-left-color: var(--primary); }
@@ -74,16 +74,23 @@
 
         /* ВВОД */
         .input-group { margin-bottom: 12px; }
-        input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; background: white; color: var(--text); }
+        input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; background: white; color: var(--text); transition: border-color 0.2s; }
         input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px var(--focus-ring); }
         label { display: block; margin-bottom: 6px; font-size: 12px; color: var(--text-sec); font-weight: 700; text-transform: uppercase; }
 
         /* ТАБ БАР */
-        #tab-bar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: white; border-top: 1px solid var(--border); z-index: 100; max-width: 768px; margin: 0 auto; }
+        #tab-bar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: white; border-top: 1px solid var(--border); z-index: 100; max-width: 1200px; margin: 0 auto; }
         #tab-bar button { flex: 1; border-radius: 0; flex-direction: column; background: none; color: #757575; font-size: 11px; padding: 8px 0; gap: 4px; }
         #tab-bar button.active { color: var(--primary); border-top: 2px solid var(--primary); font-weight: 700; }
 
-        /* МОДАЛКИ (Восстановлено точно по image_131a96.png) */
+        /* ПЛАНШЕТНАЯ СЕТКА (Горизонтальный режим) */
+        .work-layout { display: flex; flex-direction: column; gap: 16px; }
+        @media (min-width: 900px) {
+            .work-layout { display: grid; grid-template-columns: 450px 1fr; align-items: start; }
+            .sticky-form { position: sticky; top: 110px; }
+        }
+
+        /* МОДАЛКИ */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; justify-content: center; align-items: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
         .modal-overlay.open { opacity: 1; pointer-events: all; }
         .modal-content { background: white; width: 100%; max-width: 600px; border-radius: 20px 20px 0 0; padding: 24px; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.1, 0.9, 0.2, 1); max-height: 90vh; overflow-y: auto; }
@@ -97,7 +104,8 @@
         .wh-item { display: flex; justify-content: space-between; align-items: center; background: #f0f0f0; padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; }
 
         /* ЖУРНАЛ */
-        .history-item { border-bottom: 1px solid #eee; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; }
+        .history-item { border-bottom: 1px solid #eee; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
+        .history-item:last-child { border-bottom: none; }
         .history-item.editing { background: #E3F2FD; border-radius: 8px; padding: 12px; border: 1px solid var(--primary); }
 
         #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 3000; width: 90%; max-width: 400px; pointer-events: none; }
@@ -105,7 +113,7 @@
         @keyframes slideIn { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
         .header-fixed { position: sticky; top: 0; z-index: 50; background: #F5F7FA; padding: 16px; border-bottom: 1px solid var(--border); }
-        .cut-row { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 8px; align-items: center; margin-bottom: 10px; }
+        .cut-row { display: grid; grid-template-columns: 1.5fr 1.2fr 1fr auto; gap: 8px; align-items: center; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -139,7 +147,10 @@
             <p><strong>Наличие:</strong> <span id="c-stock" class="font-bold">-</span></p>
             <p><strong>Ячейка:</strong> <span id="c-cell" class="font-bold text-primary">-</span></p>
         </div>
-        <button class="btn-primary w-full mt-4" style="height:64px;" onclick="closeCustomerView()">ПОНЯТНО</button>
+        <div class="flex gap-2 mt-4">
+            <button class="btn-outline w-full" style="height: 64px;" onclick="printLabelRawBT()">🖨️ Печать</button>
+            <button class="btn-primary w-full" style="height: 64px; font-size: 20px;" onclick="closeCustomerView()">ПОНЯТНО</button>
+        </div>
     </div>
 
     <!-- ЗОНА ПЕРСОНАЛА -->
@@ -170,22 +181,25 @@
                 </div>
             </div>
             <div class="p-4 pt-0">
-                <!-- Контейнер синхронизации закрытого документа -->
-                <div id="closed-actions" class="hidden card text-center" style="border: 2px solid var(--success);">
-                    <h3 style="color: var(--success); margin-bottom: 10px;">ДОКУМЕНТ ЗАКРЫТ</h3>
-                    <button class="btn-primary w-full mb-3" style="height: 64px; font-size: 18px;" onclick="syncWith1C()">🚀 ОТПРАВИТЬ В 1С</button>
-                    <div class="flex gap-2">
-                        <button class="btn-outline w-full" onclick="reopenDoc()">🔄 Правка</button>
-                        <button class="btn-outline w-full" onclick="shareDoc()">📤 Поделиться</button>
+                <div class="work-layout">
+                    <!-- Форма (левая колонка на планшетах) -->
+                    <div class="sticky-form">
+                        <div id="closed-actions" class="hidden card text-center" style="border: 2px solid var(--success);">
+                            <h3 style="color: var(--success); margin-bottom: 10px;">ДОКУМЕНТ ЗАКРЫТ</h3>
+                            <button class="btn-primary w-full mb-3" style="height: 64px; font-size: 18px;" onclick="syncWith1C()">🚀 ОТПРАВИТЬ В 1С</button>
+                            <div class="flex gap-2">
+                                <button class="btn-outline w-full" onclick="reopenDoc()">🔄 Правка</button>
+                                <button class="btn-outline w-full" onclick="shareDoc()">📤 Поделиться</button>
+                            </div>
+                        </div>
+                        <div id="form-container" class="card" style="border: 2px solid #eee; position: relative;"></div>
                     </div>
-                </div>
-
-                <!-- Форма записи -->
-                <div id="form-container" class="card" style="border: 2px solid #eee; position: relative;"></div>
-                
-                <div class="card">
-                    <h3 class="text-sm mb-3">Журнал</h3>
-                    <div id="rows-container"></div>
+                    
+                    <!-- Журнал (правая колонка на планшетах) -->
+                    <div class="card">
+                        <h3 class="text-sm mb-3">Журнал записей</h3>
+                        <div id="rows-container"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -463,8 +477,8 @@
         if(curTab === 'receive') {
             cont.innerHTML = `
                 <div class="input-group"><label>APT</label><input type="text" id="f-art" data-art-field value="${artVal}" class="monospace font-bold"></div>
-                <div class="input-group"><label>ШИРИНА</label><input type="text" id="f-width"></div>
-                ${sets.showDensity ? '<div class="input-group"><label>ПЛОТНОСТЬ</label><input type="text" id="f-density"></div>' : ''}
+                <div class="input-group"><label>ШИРИНА</label><input type="text" id="f-width" inputmode="decimal"></div>
+                ${sets.showDensity ? '<div class="input-group"><label>ПЛОТНОСТЬ</label><input type="text" id="f-density" inputmode="numeric"></div>' : ''}
                 ${sets.showBrand ? '<div class="input-group"><label>БРЕНД</label><input type="text" id="f-brand"></div>' : ''}
                 ${sets.showComp ? '<div class="input-group"><label>СОСТАВ</label><input type="text" id="f-comp"></div>' : ''}
                 <div id="receive-cuts"></div>
@@ -482,13 +496,13 @@
                 <div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"></div>
                 <div class="flex gap-2">
                     <div style="flex:1"><label>ОТКУДА (СКЛАД)</label><select id="f-wh-from">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div>
-                    <div style="flex:1"><label>ОТКУДА (ЯЧЕЙКА)</label><input type="text" id="f-cell-from" list="list-cells"></div>
+                    <div style="flex:1"><label>ОТКУДА (ЯЧ)</label><input type="text" id="f-cell-from" list="list-cells"></div>
                 </div>
                 <div class="flex gap-2">
                     <div style="flex:1"><label>КУДА (СКЛАД)</label><select id="f-wh-to">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div>
-                    <div style="flex:1"><label>КУДА (ЯЧЕЙКА)</label><input type="text" id="f-cell-to" list="list-cells"></div>
+                    <div style="flex:1"><label>КУДА (ЯЧ)</label><input type="text" id="f-cell-to" list="list-cells"></div>
                 </div>
-                <div class="input-group"><label>МЕТРАЖ</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')"></div>
+                <div class="input-group"><label>МЕТРАЖ</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal"></div>
                 <button class="btn-primary w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>
                 ${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}
             `;
@@ -499,20 +513,29 @@
                     <div style="flex:1"><label>СКЛАД</label><select id="f-wh">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div>
                     <div style="flex:1"><label>ЯЧЕЙКА</label><input type="text" id="f-cell" list="list-cells"></div>
                 </div>
-                <div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')"></div>
+                <div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal"></div>
                 <button class="btn-danger w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>
                 ${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}
             `;
         } else if(curTab === 'price'){
-            cont.innerHTML = `<label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"><label>Цена (€)</label><input type="text" id="f-p"><button class="btn-primary w-full" style="background:var(--price-color)" id="btn-save-line" onclick="saveLine()">ОК</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+            cont.innerHTML = `<label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"><label>Цена (€)</label><input type="text" id="f-p" inputmode="decimal"><button class="btn-primary w-full" style="background:var(--price-color)" id="btn-save-line" onclick="saveLine()">ОК</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
         }
     }
 
     function renderCuts() { 
         const box = document.getElementById('receive-cuts'); if(!box) return; 
-        box.innerHTML = activeCuts.map(c=>`<div class="cut-row"><select onchange="uCut(${c.id},'wh',this.value)">${sets.warehouses.length > 0 ? sets.warehouses.map(w=>`<option ${c.wh===w?'selected':''}>${w}</option>`) : '<option value="">-</option>'}</select><input type="text" placeholder="М" value="${c.m}" oninput="uCut(${c.id},'m',this.value)"><input type="text" placeholder="Яч" value="${c.c}" oninput="uCut(${c.id},'c',this.value)" list="list-cells"><button class="btn-icon" onclick="remCut(${c.id})">✕</button></div>`).join(''); 
+        box.innerHTML = activeCuts.map(c=>`<div class="cut-row"><select onchange="uCut(${c.id},'wh',this.value)">${sets.warehouses.length > 0 ? sets.warehouses.map(w=>`<option ${c.wh===w?'selected':''}>${w}</option>`) : '<option value="">-</option>'}</select><input type="text" placeholder="М" value="${c.m}" oninput="uCut(${c.id},'m',this.value)" inputmode="decimal"><input type="text" placeholder="Яч" value="${c.c}" oninput="uCut(${c.id},'c',this.value)" list="list-cells"><button class="btn-icon" onclick="remCut(${c.id})">✕</button></div>`).join(''); 
     }
-    function addCut() { activeCuts.push({id:Date.now(), m:'', wh:sets.warehouses[0] || "", c:''}); renderCuts(); }
+    function addCut() { 
+        const newId = Date.now();
+        activeCuts.push({id: newId, m:'', wh:sets.warehouses[0] || "", c:''}); 
+        renderCuts();
+        // Автофокус в новое поле метража
+        setTimeout(() => {
+            const inputs = document.querySelectorAll('#receive-cuts input[placeholder="М"]');
+            if(inputs.length) inputs[inputs.length-1].focus();
+        }, 50);
+    }
     function remCut(id) { if(activeCuts.length > 1) { activeCuts = activeCuts.filter(x=>x.id!==id); renderCuts(); } }
     function uCut(id, f, v) { const c = activeCuts.find(x=>x.id===id); if(c) c[f]=v.replace(',','.'); }
 
@@ -573,7 +596,7 @@
         }
         
         const bSave = document.getElementById('btn-save-line'); if(bSave) bSave.textContent = "ОБНОВИТЬ";
-        renderRows(); window.scrollTo({top:0, behavior:'smooth'});
+        renderRows(); window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
     function cancelEdit() { editingItemId = null; renderForm(); renderRows(); }
