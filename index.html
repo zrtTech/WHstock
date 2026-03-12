@@ -137,10 +137,7 @@
             <p><strong>Наличие:</strong> <span id="c-stock" class="font-bold">-</span></p>
             <p><strong>Ячейка:</strong> <span id="c-cell" class="font-bold text-primary">-</span></p>
         </div>
-        <div class="flex gap-2 mt-4">
-            <button class="btn-outline w-full" style="height: 64px;" onclick="printLabelRawBT()">🖨️ Печать</button>
-            <button class="btn-primary w-full" style="height: 64px;" onclick="closeCustomerView()">ПОНЯТНО</button>
-        </div>
+        <button class="btn-primary w-full mt-4" style="height:64px;" onclick="closeCustomerView()">ПОНЯТНО</button>
     </div>
 
     <!-- ЗОНА ПЕРСОНАЛА -->
@@ -175,7 +172,10 @@
                 <div id="closed-actions" class="hidden card text-center" style="border: 2px solid var(--success);">
                     <h3 style="color: var(--success); margin-bottom: 10px;">ДОКУМЕНТ ЗАКРЫТ</h3>
                     <button class="btn-primary w-full mb-3" style="height: 64px; font-size: 18px;" onclick="syncWith1C()">🚀 ОТПРАВИТЬ В 1С</button>
-                    <button class="btn-outline w-full" onclick="reopenDoc()">🔄 Открыть для правок</button>
+                    <div class="flex gap-2">
+                        <button class="btn-outline w-full" onclick="reopenDoc()">🔄 Правка</button>
+                        <button class="btn-outline w-full" onclick="shareDoc()">📤 Поделиться</button>
+                    </div>
                 </div>
 
                 <!-- Форма записи -->
@@ -358,6 +358,51 @@
         printLabel(art, comp, '', "Приёмка");
     }
 
+    function printLabelRawBT() {
+        const cA = document.getElementById('c-art').textContent;
+        const cC = document.getElementById('c-comp').textContent;
+        const cN = document.getElementById('c-name').textContent;
+        printLabel(cA, cC, '', cN);
+    }
+
+    /* ШЕРИНГ (restored) */
+    async function shareDoc() {
+        const d = db[curTab].find(x => x.id === curDocId);
+        if (!d || !d.items.length) return;
+
+        let text = `ДОКУМЕНТ: ${d.name}\n`;
+        text += `ТИП: ${document.getElementById('list-title').textContent}\n`;
+        text += `ДАТА: ${new Date(d.createdAt).toLocaleDateString()}\n`;
+        text += `--------------------------\n`;
+        
+        d.items.forEach((it, idx) => {
+            text += `${idx + 1}. Арт: ${it.art}\n`;
+            if (it.cuts) {
+                const total = it.cuts.reduce((s, c) => s + (parseFloat(c.m) || 0), 0);
+                text += `   Метраж: ${total.toFixed(2)} м (${it.cuts.length} отр.)\n`;
+            } else if (it.m) {
+                text += `   Метраж: ${it.m} м\n`;
+                if (it.fromWh) text += `   ${it.fromWh} -> ${it.toWh}\n`;
+            } else if (it.p) {
+                text += `   Цена: ${it.p} €\n`;
+            }
+        });
+
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: d.name, text: text });
+            } catch (err) { console.log('Share canceled'); }
+        } else {
+            const el = document.createElement('textarea');
+            el.value = text;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            showToast("Текст скопирован в буфер");
+        }
+    }
+
     /* МЕНЕДЖЕР */
     function doLogin() { if(document.getElementById('login-pass').value === sets.mgr){ loginSuccess(); closeModal('modal-login'); } else showToast("Ошибка", "danger"); }
     function openLogin() { openModal('modal-login'); setTimeout(() => document.getElementById('login-pass').focus(), 300); }
@@ -366,7 +411,8 @@
     
     function switchTab(id) {
         curTab = id; curDocId = null; editingItemId = null;
-        document.getElementById('list-title').textContent = {receive:"Приёмка", move:"Перемещение", writeoff:"Списание", price:"Цены"}[id];
+        const titles = {receive:"Приёмка", move:"Перемещение", writeoff:"Списание", price:"Цены"};
+        document.getElementById('list-title').textContent = titles[id];
         document.querySelectorAll('#tab-bar button').forEach(b => b.classList.remove('active'));
         document.getElementById('tab-'+id).classList.add('active');
         document.getElementById('screen-list').classList.remove('hidden'); document.getElementById('screen-work').classList.add('hidden');
@@ -386,7 +432,7 @@
         const list = db[curTab] || [];
         list.filter(d => d.name.toLowerCase().includes(q)).forEach(d => {
             const card = document.createElement('div'); card.className = `card doc-card ${d.status}`; card.onclick = () => openDoc(d.id);
-            card.innerHTML = `<div class="flex justify-between font-bold"><span style="font-size:18px">${d.name}</span><span>${d.status==='active'?'🟡':'✅'}</span></div><div>Записей: ${d.items.length}</div>`;
+            card.innerHTML = `<div class="flex justify-between font-bold"><span>${d.name}</span><span>${d.status==='active'?'🟡':'✅'}</span></div><div>Записей: ${d.items.length}</div>`;
             cont.appendChild(card);
         });
     }
@@ -571,7 +617,8 @@
 
     function togglePrintSettingsUI() {
         const method = document.getElementById('set-print-method').value;
-        document.getElementById('printnode-block').style.display = (method === 'printnode') ? 'block' : 'none';
+        const block = document.getElementById('printnode-block');
+        if (block) block.style.display = (method === 'printnode') ? 'block' : 'none';
     }
     
     function saveSets() { 
@@ -627,11 +674,6 @@
         const art = document.getElementById('f-art').value; 
         const comp = document.getElementById('f-comp') ? document.getElementById('f-comp').value : ''; 
         printLabel(art, comp, '', "Приёмка"); 
-    }
-
-    function printLabelRawBT() {
-        if (!currentProd) return;
-        printLabel(currentProd.articul, currentProd.composition, currentProd.width, currentProd.name);
     }
 </script>
 </body>
