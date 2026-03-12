@@ -83,7 +83,7 @@
         #tab-bar button { flex: 1; border-radius: 0; flex-direction: column; background: none; color: #757575; font-size: 11px; padding: 8px 0; gap: 4px; }
         #tab-bar button.active { color: var(--primary); border-top: 2px solid var(--primary); font-weight: 700; }
 
-        /* ПЛАНШЕТНАЯ СЕТКА (Горизонтальный режим) */
+        /* ПЛАНШЕТНАЯ СЕТКА */
         .work-layout { display: flex; flex-direction: column; gap: 16px; }
         @media (min-width: 900px) {
             .work-layout { display: grid; grid-template-columns: 420px 1fr; align-items: start; }
@@ -299,6 +299,7 @@
     <div class="modal-content">
         <h2>Журнал ошибок</h2>
         <div id="log-area">Нет ошибок</div>
+        <button class="btn-outline w-full mb-2" onclick="shareLogFile()">📤 Поделиться файлом лога</button>
         <button class="btn-outline w-full mb-2" onclick="clearLogs()">Очистить</button>
         <button class="btn-primary w-full" onclick="closeModal('modal-logs')">Закрыть</button>
     </div>
@@ -307,8 +308,11 @@
 <div id="modal-create-doc" class="modal-overlay">
     <div class="modal-content">
         <h2 id="create-doc-title">Новый документ</h2>
-        <input type="text" id="input-new-doc-name" class="mt-4" placeholder="Название документа">
-        <div class="flex gap-2 mt-4"><button class="btn-outline w-full" onclick="closeModal('modal-create-doc')">Отмена</button><button class="btn-primary w-full" onclick="executeCreateDoc()">Создать</button></div>
+        <input type="text" id="input-new-doc-name" class="mt-4" placeholder="Название документа" onkeydown="if(event.key==='Enter') executeCreateDoc()">
+        <div class="flex gap-2 mt-4">
+            <button class="btn-outline w-full" onclick="closeModal('modal-create-doc')">Отмена</button>
+            <button class="btn-primary w-full" onclick="executeCreateDoc()">Создать</button>
+        </div>
     </div>
 </div>
 
@@ -323,8 +327,8 @@
     </div>
 </div>
 
-<div id="modal-search" class="modal-overlay"><div class="modal-content"><h2>Поиск</h2><input type="text" id="manual-search-input" placeholder="Введите код..."><button class="btn-primary w-full" onclick="doManualSearch()">Найти</button><button class="btn-outline w-full mt-2" onclick="closeModal('modal-search')">Отмена</button></div></div>
-<div id="modal-login" class="modal-overlay"><div class="modal-content" style="text-align:center"><h2>Вход персонала</h2><input type="password" id="login-pass" placeholder="Пароль" style="font-size:24px; text-align:center;"><button class="btn-primary w-full" onclick="doLogin()">Войти</button><button class="btn-outline w-full mt-2" onclick="closeModal('modal-login')">Назад</button></div></div>
+<div id="modal-search" class="modal-overlay"><div class="modal-content"><h2>Поиск</h2><input type="text" id="manual-search-input" placeholder="Введите код..." onkeydown="if(event.key==='Enter') doManualSearch()"><div class="flex gap-2 mt-4"><button class="btn-outline w-full" onclick="closeModal('modal-search')">Отмена</button><button class="btn-primary w-full" onclick="doManualSearch()">Найти</button></div></div></div>
+<div id="modal-login" class="modal-overlay"><div class="modal-content" style="text-align:center"><h2>Вход персонала</h2><input type="password" id="login-pass" placeholder="Пароль" style="font-size:24px; text-align:center;" onkeydown="if(event.key==='Enter') doLogin()"><button class="btn-primary w-full" onclick="doLogin()">Войти</button><button class="btn-outline w-full mt-2" onclick="closeModal('modal-login')">Назад</button></div></div>
 
 <div id="toast-container"></div>
 <datalist id="list-arts"></datalist>
@@ -352,6 +356,38 @@
         const logs = safeLoad('app_error_logs', []);
         document.getElementById('log-area').textContent = logs.length ? logs.join('\n---\n') : "Нет записей об ошибках";
         openModal('modal-logs');
+    }
+
+    async function shareLogFile() {
+        const logs = safeLoad('app_error_logs', []);
+        if (!logs.length) { showToast("Логи пусты", "danger"); return; }
+        
+        const text = logs.join('\n---\n');
+        const fileName = `logs_${new Date().getTime()}.txt`;
+        const file = new File([text], fileName, { type: 'text/plain' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({
+                    files: [file],
+                    title: 'Логи приложения',
+                    text: 'Файл отладки складского терминала'
+                });
+            } catch (err) { logError(`Ошибка шеринга файла: ${err.message}`); }
+        } else {
+            // Фолбэк на текстовый шеринг
+            if (navigator.share) {
+                await navigator.share({ title: 'Логи терминала', text: text });
+            } else {
+                const el = document.createElement('textarea');
+                el.value = text;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                showToast("Текст логов скопирован");
+            }
+        }
     }
 
     function clearLogs() {
@@ -385,7 +421,6 @@
             else if (e.key.length === 1) { scanBuf += e.key; }
         });
 
-        // Восстановление состояния после перезагрузки
         if (isMgr) {
             document.getElementById('screen-kiosk').classList.add('hidden');
             document.getElementById('manager-view').classList.remove('hidden');
@@ -697,14 +732,7 @@
     }
 
     /* УТИЛИТЫ */
-    function save() { 
-        localStorage.setItem('tsd_final_sets', JSON.stringify(sets)); 
-        localStorage.setItem('tsd_final_receive', JSON.stringify(db.receive)); 
-        localStorage.setItem('tsd_final_move', JSON.stringify(db.move)); 
-        localStorage.setItem('tsd_final_writeoff', JSON.stringify(db.writeoff)); 
-        localStorage.setItem('tsd_final_price', JSON.stringify(db.price)); 
-        updateDataLists(); 
-    }
+    function save() { localStorage.setItem('tsd_final_sets', JSON.stringify(sets)); localStorage.setItem('tsd_final_receive', JSON.stringify(db.receive)); localStorage.setItem('tsd_final_move', JSON.stringify(db.move)); localStorage.setItem('tsd_final_writeoff', JSON.stringify(db.writeoff)); localStorage.setItem('tsd_final_price', JSON.stringify(db.price)); updateDataLists(); }
     function updateDataLists() { const arts = new Set(), cells = new Set(); Object.values(db).forEach(list => { if(list) list.forEach(d => d.items.forEach(i => { if(i.art) arts.add(i.art); if(i.cuts) i.cuts.forEach(c => { if(c.c) cells.add(c.c); }); if(i.cell) cells.add(i.cell); } )) }); document.getElementById('list-arts').innerHTML = Array.from(arts).map(a=>`<option value="${a}">`).join(''); document.getElementById('list-cells').innerHTML = Array.from(cells).map(c=>`<option value="${c}">`).join(''); }
     function openModal(id) { document.getElementById(id).classList.add('open'); }
     function closeModal(id) { document.getElementById(id).classList.remove('open'); }
