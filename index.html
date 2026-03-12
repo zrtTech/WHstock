@@ -3,1317 +3,525 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Приёмка товара</title>
+    <title>Складской Терминал</title>
     
-    <!-- НОВОЕ: Настройки PWA (Progressive Web App) -->
     <meta name="theme-color" content="#1976D2">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Приёмка">
-    <!-- Иконка для Apple -->
+    <meta name="apple-mobile-web-app-title" content="Склад">
     <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%231976D2'/%3E%3Cpath d='M256 120L120 188v136l136 68 136-68V188L256 120z' fill='%23fff'/%3E%3C/svg%3E">
-    <!-- Манифест приложения для Android и ПК -->
-    <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22%D0%9F%D1%80%D0%B8%D1%91%D0%BC%D0%BA%D0%B0%20%D1%82%D0%BE%D0%B2%D0%B0%D1%80%D0%B0%22%2C%22short_name%22%3A%22%D0%9F%D1%80%D0%B8%D1%91%D0%BC%D0%BA%D0%B0%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23F5F5F5%22%2C%22theme_color%22%3A%22%231976D2%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20512%20512%27%253E%253Crect%20width%3D%27512%27%20height%3D%27512%27%20rx%3D%27112%27%20fill%3D%27%25231976D2%27%2F%253E%253Cpath%20d%3D%27M256%20120L120%20188v136l136%2068%20136-68V188L256%20120z%27%20fill%3D%27%2523fff%27%2F%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D">
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkNrbGFkc2tvaiBUZXJtaW5hbCAxQyIsCiAgInNob3J0X25hbWUiOiAiU2tsYWQiLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiI0Y1RjdGQSIsCiAgInRoZW1lX2NvbG9yIjogIiMxOTc2RDIiCn0=">
 
     <style>
         :root {
-            --bg-color: #F5F5F5;
-            --card-bg: #FFFFFF;
             --primary: #1976D2;
             --primary-hover: #1565C0;
             --success: #388E3C;
-            --success-hover: #2E7D32;
             --danger: #D32F2F;
-            --text-main: #212121;
+            --price-color: #00897B;
+            --bg: #F5F7FA;
+            --card: #FFFFFF;
+            --text: #212121;
             --text-sec: #757575;
-            --border-color: #E0E0E0;
-            --focus-ring: rgba(25, 118, 210, 0.4);
+            --border: #E0E0E0;
+            --focus-ring: rgba(25, 118, 210, 0.3);
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            font-family: system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            line-height: 1.5;
-            font-size: 16px;
-        }
-
-        /* Утилиты */
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, system-ui, sans-serif; background-color: var(--bg); color: var(--text); line-height: 1.5; }
         .hidden { display: none !important; }
         .flex { display: flex; }
         .items-center { align-items: center; }
         .justify-between { justify-content: space-between; }
         .text-center { text-align: center; }
-        .text-right { text-align: right; }
-        .mt-2 { margin-top: 8px; }
-        .mt-3 { margin-top: 12px; }
-        .mt-4 { margin-top: 16px; }
-        .mb-2 { margin-bottom: 8px; }
-        .mb-3 { margin-bottom: 12px; }
-        .mb-4 { margin-bottom: 16px; }
         .p-4 { padding: 16px; }
         .w-full { width: 100%; }
-        .text-sm { font-size: 14px; }
-        .text-success { color: var(--success); }
-        .text-danger { color: var(--danger); }
         .font-bold { font-weight: bold; }
-        .monospace { font-family: monospace; font-size: 1.1em; }
+        .monospace { font-family: "SF Mono", "Courier New", monospace; }
+        .text-sm { font-size: 13px; }
+        .text-primary { color: var(--primary); }
+        .gap-2 { gap: 8px; }
 
-        /* Макет */
-        #app {
-            max-width: 768px; /* Оптимизировано для планшетов */
-            margin: 0 auto;
-            min-height: 100vh;
-            position: relative;
-            background-color: var(--bg-color);
-            padding-bottom: 24px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+        #app { max-width: 768px; margin: 0 auto; min-height: 100vh; position: relative; padding-bottom: 80px; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
+
+        /* КИОСК */
+        #screen-kiosk {
+            height: 100vh; background: linear-gradient(135deg, var(--primary) 0%, #0D47A1 100%);
+            color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 32px;
         }
 
-        /* Заголовки */
-        h1 { font-size: 24px; color: var(--text-main); }
-        h2 { font-size: 20px; color: var(--text-main); margin-bottom: 12px; }
-        h3 { font-size: 16px; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.5px; }
-
-        /* Кнопки */
+        /* КНОПКИ */
         button {
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            padding: 12px 16px;
-            min-height: 48px;
-            transition: background 0.2s, opacity 0.2s, transform 0.1s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; padding: 12px 16px;
+            transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px;
         }
         button:active { transform: scale(0.98); }
-        button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        
-        .btn-primary { background-color: var(--primary); color: white; }
-        .btn-primary:hover:not(:disabled) { background-color: var(--primary-hover); }
-        .btn-success { background-color: var(--success); color: white; height: 64px; font-size: 18px; width: 100%; }
-        .btn-success:hover:not(:disabled) { background-color: var(--success-hover); }
-        .btn-outline { background-color: transparent; border: 1px solid var(--border-color); color: var(--text-main); }
-        .btn-icon { background: none; border: none; font-size: 20px; min-height: 48px; min-width: 48px; padding: 0; color: var(--text-sec); }
-        .btn-icon:hover { color: var(--primary); }
+        .btn-main { background: white; color: var(--primary); height: 64px; font-size: 18px; font-weight: 800; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-icon { background: none; color: var(--text-sec); font-size: 20px; padding: 0; min-width: 44px; min-height: 44px; }
 
-        /* Поля ввода */
-        input:not([type="checkbox"]), select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 16px;
-            min-height: 48px;
-            font-family: inherit;
-            background-color: var(--card-bg);
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        input:not([type="checkbox"]):focus, select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--focus-ring);
-        }
-        input:disabled { background-color: #F0F0F0; color: var(--text-sec); }
-        
-        input[type="checkbox"] {
-            width: 24px;
-            height: 24px;
-            accent-color: var(--primary);
-            cursor: pointer;
-        }
+        /* КАРТОЧКИ */
+        .card { background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); }
+        .doc-card { cursor: pointer; border-left: 6px solid var(--border); transition: 0.1s; margin-bottom: 12px; }
+        .doc-card:active { background: #f9f9f9; }
+        .doc-card.active { border-left-color: var(--primary); }
+        .doc-card.closed { opacity: 0.7; border-left-color: var(--text-sec); }
 
-        label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; color: var(--text-sec); }
+        /* ВВОД */
+        .input-group { margin-bottom: 12px; }
+        input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; background: white; color: var(--text); }
+        input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px var(--focus-ring); }
+        label { display: block; margin-bottom: 6px; font-size: 12px; color: var(--text-sec); font-weight: 700; text-transform: uppercase; }
 
-        /* Карточки */
-        .card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 16px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .doc-card { cursor: pointer; border: 2px solid transparent; transition: border-color 0.2s; }
-        .doc-card:active { background-color: #f9f9f9; }
-        .doc-card.active-doc { border-left: 6px solid var(--primary); }
-        .doc-card.closed-doc { border-left: 6px solid var(--text-sec); opacity: 0.8; }
+        /* ТАБ БАР */
+        #tab-bar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: white; border-top: 1px solid var(--border); z-index: 100; max-width: 768px; margin: 0 auto; }
+        #tab-bar button { flex: 1; border-radius: 0; flex-direction: column; background: none; color: #757575; font-size: 11px; padding: 8px 0; gap: 4px; }
+        #tab-bar button.active { color: var(--primary); border-top: 2px solid var(--primary); font-weight: 700; }
 
-        /* Форма добавления отреза */
-        .cut-row {
-            display: grid;
-            grid-template-columns: 2fr 1.5fr 1.5fr auto;
-            gap: 8px;
-            align-items: center;
-            margin-bottom: 12px;
-            animation: slideDown 0.2s ease-out;
-        }
-        @media (max-width: 480px) {
-            .cut-row { grid-template-columns: 2fr 1fr 1fr auto; }
-        }
-        .cut-row > div { margin-bottom: 0; }
-
-        /* Верхняя панель (Фиксированная) */
-        .header-fixed {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            background: var(--bg-color);
-            padding: 16px;
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 16px;
-        }
-
-        /* Таблица журнала */
-        .history-item { border-bottom: 1px solid var(--border-color); padding: 12px 0; }
-        .history-item:last-child { border-bottom: none; }
-        .history-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-        .history-details { margin-top: 12px; padding: 12px; background: #FAFAFA; border-radius: 8px; font-size: 14px; }
-        .history-cut-row { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 8px; align-items: center; margin-bottom: 8px; border-bottom: 1px dashed #E0E0E0; padding-bottom: 8px;}
-        .history-cut-row:last-child { margin-bottom: 0; border-bottom: none; padding-bottom: 0;}
-
-        /* Модальные окна */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
-            display: flex; justify-content: center; align-items: flex-end;
-            z-index: 1000;
-            opacity: 0; pointer-events: none; transition: opacity 0.25s;
-        }
+        /* МОДАЛКИ (image_131a96.png) */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; justify-content: center; align-items: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
         .modal-overlay.open { opacity: 1; pointer-events: all; }
-        .modal-content {
-            background: var(--card-bg);
-            width: 100%; max-width: 600px;
-            border-radius: 16px 16px 0 0;
-            padding: 24px;
-            transform: translateY(100%);
-            transition: transform 0.25s cubic-bezier(0.1, 0.9, 0.2, 1);
-            max-height: 90vh;
-            overflow-y: auto;
-        }
+        .modal-content { background: white; width: 100%; max-width: 600px; border-radius: 20px 20px 0 0; padding: 24px; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.1, 0.9, 0.2, 1); max-height: 90vh; overflow-y: auto; }
         .modal-overlay.open .modal-content { transform: translateY(0); }
 
-        /* Уведомления (Toasts) */
-        #toast-container { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 2000; display: flex; flex-direction: column; gap: 8px; width: 90%; max-width: 400px; }
-        .toast { padding: 12px 16px; border-radius: 8px; color: white; font-weight: 500; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: slideUpToast 0.3s forwards; }
-        .toast.error { background: var(--danger); }
-        .toast.success { background: var(--success); }
+        .settings-section { margin-bottom: 24px; }
+        .settings-section h3 { font-size: 14px; color: var(--text-sec); text-transform: uppercase; margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 4px; font-weight: 700; letter-spacing: 0.5px; }
+        .light-block { background: #f9f9f9; padding: 16px; border-radius: 12px; margin-bottom: 12px; border: 1px solid #f0f0f0; }
+        .checkbox-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; cursor: pointer; color: var(--text-sec); font-size: 14px; }
+        .checkbox-row input { width: 22px; height: 22px; margin: 0; cursor: pointer; accent-color: var(--primary); }
+        .wh-item { display: flex; justify-content: space-between; align-items: center; background: #f0f0f0; padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; }
 
-        /* Баджи статусов */
-        .badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
-        .badge.active { background: #E3F2FD; color: var(--primary); }
-        .badge.closed { background: #E8F5E9; color: var(--success); }
+        /* ЖУРНАЛ */
+        .history-item { border-bottom: 1px solid #eee; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; }
+        .history-item.editing { background: #E3F2FD; border-radius: 8px; padding: 12px; border: 1px solid var(--primary); }
 
-        /* Анимации */
-        @keyframes flashGreen { 0% { background-color: var(--card-bg); } 50% { background-color: #C8E6C9; } 100% { background-color: var(--card-bg); } }
-        .flash-success { animation: flashGreen 0.4s ease-out; }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideUpToast { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 3000; width: 90%; max-width: 400px; pointer-events: none; }
+        .toast { padding: 14px; border-radius: 8px; color: white; margin-bottom: 8px; text-align: center; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.1); animation: slideIn 0.3s forwards; }
+        @keyframes slideIn { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .header-fixed { position: sticky; top: 0; z-index: 50; background: #F5F7FA; padding: 16px; border-bottom: 1px solid var(--border); }
+        .cut-row { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 8px; align-items: center; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
 <div id="app">
-    <!-- ЭКРАН 1: Список документов -->
-    <div id="screen-list" class="p-4">
+    <!-- ЭКРАН КИОСКА -->
+    <div id="screen-kiosk">
+        <div style="font-size: 64px; margin-bottom: 10px;">📦</div>
+        <h1 style="font-size: 32px; font-weight: 900; margin-bottom: 8px;">СКЛАД-ЦЕНТР</h1>
+        <p style="font-size: 18px; opacity: 0.8; margin-bottom: 40px;">информационный терминал</p>
+        <div class="w-full" style="max-width: 320px;">
+            <div class="text-center mb-6" style="font-size: 22px; font-weight: 800; animation: pulse 2s infinite;">ПОДНЕСИТЕ ШТРИХКОД</div>
+            <button class="btn-main w-full mb-4" onclick="openManualSearch()">🔍 Найти по артикулу</button>
+            <button class="btn-outline w-full" style="color: white; border-color: rgba(255,255,255,0.4);" onclick="openLogin()">🔒 Меню персонала</button>
+        </div>
+        <input type="text" id="kiosk-scanner-input" style="position: absolute; opacity: 0; pointer-events: none;">
+    </div>
+
+    <!-- КАРТОЧКА КЛИЕНТА -->
+    <div id="customer-view" class="hidden" style="position:fixed; inset:0; background:white; z-index:1500; padding:24px; display:flex; flex-direction:column;">
         <div class="flex justify-between items-center mb-4">
-            <h1>Приёмка товара</h1>
-            <button class="btn-icon" onclick="openSettings()">⚙️</button>
+            <h1 id="c-name" style="font-size: 24px; flex: 1;">Товар</h1>
+            <button class="btn-icon" onclick="closeCustomerView()">✕</button>
         </div>
-        <div class="mb-4">
-            <input type="text" id="search-docs" placeholder="🔍 Поиск по документам..." oninput="filterDocs()" style="background: #fff;">
+        <div id="c-img-box" style="width:100%; height:240px; background:#f0f0f0; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:20px;">Фото</div>
+        <div id="c-price" style="font-size: 48px; font-weight: 900; color: var(--price-color); margin-bottom: 15px;">0.00 €</div>
+        <div class="card" style="background:#f8f9fa; border:none; flex-grow:1;">
+            <p><strong>Артикул:</strong> <span id="c-art">-</span></p>
+            <p><strong>Ширина:</strong> <span id="c-width">-</span></p>
+            <p><strong>Состав:</strong> <span id="c-comp">-</span></p>
+            <p><strong>Наличие:</strong> <span id="c-stock" class="font-bold">-</span></p>
+            <p><strong>Ячейка:</strong> <span id="c-cell" class="font-bold text-primary">-</span></p>
         </div>
-        <button class="btn-primary w-full mb-4" onclick="openNewDocModal()" style="height: 64px; font-size: 18px;">
-            + Новое поступление
-        </button>
-        <div id="doc-list-container">
-            <!-- Список генерируется JS -->
-        </div>
+        <button class="btn-primary w-full mt-4" style="height:64px;" onclick="closeCustomerView()">ПОНЯТНО</button>
     </div>
 
-    <!-- ЭКРАН 2: Рабочий экран документа -->
-    <div id="screen-doc" class="hidden">
-        <div class="header-fixed">
-            <div class="flex justify-between items-center mb-2">
-                <button class="btn-icon" onclick="showScreen('list')">← Назад</button>
-                <div class="flex items-center gap-2">
-                    <button class="btn-icon hidden" id="btn-complete-doc" onclick="completeDocument()">✅ Завершить</button>
-                    <button class="btn-icon" onclick="openSettings()">⚙️</button>
-                </div>
+    <!-- ЗОНА ПЕРСОНАЛА -->
+    <div id="manager-view" class="hidden">
+        <div id="screen-list" class="p-4">
+            <div class="flex justify-between items-center mb-4">
+                <h1 id="list-title">Приёмка</h1>
+                <button class="btn-icon" onclick="openSettings()">⚙️</button>
             </div>
-            <h2 id="doc-title" class="mb-1">Название документа</h2>
-            <div class="flex justify-between items-center">
-                <span id="doc-status-badge" class="badge">Статус</span>
-                <div class="font-bold text-sm" style="color: var(--primary);">
-                    Рулонов: <span id="stat-rolls">0</span> | Итого: <span id="stat-meters">0</span> м
-                </div>
-            </div>
+            <input type="text" id="doc-search" placeholder="🔍 Поиск документа..." oninput="renderDocList()" style="margin-bottom: 16px;">
+            <button class="btn-primary w-full mb-4" style="height: 56px;" onclick="openCreateDocModal()">+ Создать документ</button>
+            <div id="docs-list-container"></div>
         </div>
 
-        <div class="p-4 pt-0">
-            <!-- Блок если документ закрыт -->
-            <div id="doc-closed-actions" class="card hidden text-center">
-                <h3 class="mb-3 text-success">Документ завершён</h3>
-                <div id="closed-doc-totals" class="mb-3 text-sm text-sec"></div>
-                <div class="flex gap-2 mb-2">
-                    <button class="btn-outline w-full" onclick="exportCSV(currentDocId)">📥 Скачать</button>
-                    <button class="btn-primary w-full" onclick="shareCSV(currentDocId)">📤 Поделиться</button>
+        <div id="screen-work" class="hidden">
+            <div class="header-fixed">
+                <div class="flex justify-between items-center mb-2">
+                    <button class="btn-icon" onclick="exitWork()">← Назад</button>
+                    <div class="flex gap-2">
+                        <button class="btn-icon text-danger" onclick="deleteFullDoc()">🗑️</button>
+                        <button class="btn-icon text-success" id="btn-complete-doc" onclick="completeDoc()">✅ Готово</button>
+                    </div>
                 </div>
-                <button class="btn-outline w-full" onclick="reopenDocument()" style="border-color: var(--primary); color: var(--primary);">🔄 Вернуть в работу</button>
+                <h2 id="work-title">Документ</h2>
+                <div class="flex justify-between items-center mt-1">
+                    <span id="work-status" class="monospace text-sm font-bold">АКТИВЕН</span>
+                    <span id="work-counter" class="text-sm font-bold text-primary">Записей: 0</span>
+                </div>
             </div>
-
-            <!-- Форма добавления (только для active) -->
-            <div id="form-container" class="card">
-                <h3>Новый товар</h3>
-                <div class="flex gap-2 mt-3 mb-3">
-                    <div style="flex: 2;">
-                        <label>Артикул</label>
-                        <input type="text" id="input-articul" disabled class="monospace font-bold">
-                    </div>
-                    <div>
-                        <label>&nbsp;</label>
-                        <button class="btn-outline w-full" onclick="unlockArticul()">✏️</button>
-                    </div>
+            <div class="p-4 pt-0">
+                <!-- Контейнер синхронизации закрытого документа -->
+                <div id="closed-actions" class="hidden card text-center" style="border: 2px solid var(--success);">
+                    <h3 style="color: var(--success); margin-bottom: 10px;">ДОКУМЕНТ ЗАКРЫТ</h3>
+                    <button class="btn-primary w-full mb-3" style="height: 64px; font-size: 18px;" onclick="syncWith1C()">🚀 ОТПРАВИТЬ В 1С</button>
+                    <button class="btn-outline w-full" onclick="reopenDoc()">🔄 Открыть для правок</button>
                 </div>
+
+                <!-- Форма записи -->
+                <div id="form-container" class="card" style="border: 2px solid #eee; position: relative;"></div>
                 
-                <div class="mb-4">
-                    <label>Ширина (см)</label>
-                    <input type="text" inputmode="numeric" id="input-width" placeholder="Например: 150">
-                </div>
-
-                <!-- Новые дополнительные поля -->
-                <div id="field-density" class="mb-4 hidden">
-                    <label>Плотность (г/м²)</label>
-                    <input type="text" inputmode="numeric" id="input-density" placeholder="Например: 240">
-                </div>
-                <div id="field-brand" class="mb-4 hidden">
-                    <label>Бренд</label>
-                    <input type="text" id="input-brand" placeholder="Например: Zara">
-                </div>
-                <div id="field-comp" class="mb-4 hidden">
-                    <label>Состав</label>
-                    <input type="text" id="input-comp" placeholder="Например: 100% Хлопок">
-                </div>
-
-                <div class="mb-2 mt-2">
-                    <div class="flex justify-between items-center">
-                        <label>ОТРЕЗЫ</label>
-                        <span class="font-bold text-primary" style="color: var(--primary);">Итого: <span id="form-total-meters">0</span> м</span>
-                    </div>
-                    <div id="cuts-container" class="mt-2">
-                        <!-- Строки отрезов -->
-                    </div>
-                    <button class="btn-outline w-full mt-2" onclick="addCutRow()" style="border-style: dashed;">
-                        + Добавить отрез
-                    </button>
-                </div>
-
-                <div class="flex gap-2 items-end mb-4 mt-4" style="background: #F5F5F5; padding: 12px; border-radius: 8px;">
-                    <div style="flex: 1;">
-                        <label>Этикеток</label>
-                        <input type="text" inputmode="numeric" id="input-copies" value="1">
-                    </div>
-                    <button class="btn-outline" onclick="printCurrentFormLabel()">🖨️ Печать</button>
-                </div>
-
-                <div class="flex gap-2">
-                    <button id="btn-cancel-edit" class="btn-outline hidden" onclick="cancelEdit()" style="flex: 1; height: 64px;">ОТМЕНА</button>
-                    <button id="btn-save-item" class="btn-success" onclick="saveItem()" style="flex: 2;">
-                        ЗАПИСАТЬ ТОВАР
-                    </button>
-                </div>
-            </div>
-
-            <!-- Журнал -->
-            <div class="card" id="history-card">
-                <h3>Принятые товары</h3>
-                <div class="flex gap-2 mt-2 mb-2">
-                    <input type="text" id="search-history" placeholder="Поиск по артикулу..." oninput="filterHistory()">
-                    <button class="btn-outline" onclick="document.getElementById('search-history').value=''; filterHistory()" style="min-width: 48px;">×</button>
-                </div>
-                <div id="history-container" class="mt-2">
-                    <!-- История -->
+                <div class="card">
+                    <h3 class="text-sm mb-3">Журнал</h3>
+                    <div id="rows-container"></div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- Модальное окно: Новое поступление -->
-<div id="modal-new-doc" class="modal-overlay">
-    <div class="modal-content">
-        <h2>Новое поступление</h2>
-        <div class="mb-4 mt-4">
-            <label>Название документа (например: Фура №123)</label>
-            <input type="text" id="input-new-doc-name" placeholder="Введите название...">
-        </div>
-        <div class="flex gap-2">
-            <button class="btn-outline w-full" onclick="closeModal('modal-new-doc')">Отмена</button>
-            <button class="btn-primary w-full" onclick="createNewDoc()">Создать</button>
+        <div id="tab-bar">
+            <button onclick="switchTab('receive')" id="tab-receive"><span>📦</span>Приёмка</button>
+            <button onclick="switchTab('move')" id="tab-move"><span>🔄</span>Перемещение</button>
+            <button onclick="switchTab('writeoff')" id="tab-writeoff"><span>📋</span>Списание</button>
+            <button onclick="switchTab('price')" id="tab-price"><span>🏷️</span>Цены</button>
+            <button onclick="logout()" style="color: var(--danger);"><span>🚪</span>Выход</button>
         </div>
     </div>
 </div>
 
-<!-- Модальное окно: Кастомный Confirm -->
-<div id="modal-confirm" class="modal-overlay" style="z-index: 2500;">
-    <div class="modal-content" style="max-width: 400px; border-radius: 16px;">
-        <h2 id="confirm-title" class="mb-2">Подтверждение</h2>
-        <p id="confirm-message" class="mb-4" style="color: var(--text-sec);"></p>
-        <div class="flex gap-2">
-            <button class="btn-outline w-full" id="confirm-cancel">Отмена</button>
-            <button class="btn-danger w-full" id="confirm-ok" style="background: var(--danger); color: white;">Да</button>
-        </div>
-    </div>
-</div>
-
-<!-- Модальное окно: Настройки -->
+<!-- МОДАЛЬНЫЕ ОКНА -->
 <div id="modal-settings" class="modal-overlay">
     <div class="modal-content">
-        <h2 class="mb-3">Настройки</h2>
-        
-        <div class="mb-4">
-            <h3>Дополнительные поля</h3>
-            <div class="mt-2" style="background: #f9f9f9; padding: 12px; border-radius: 8px;">
-                <label class="flex items-center gap-2 mb-2" style="cursor: pointer; margin-bottom: 12px;">
-                    <input type="checkbox" id="set-show-density"> Поле Плотность (г/м²)
-                </label>
-                <label class="flex items-center gap-2 mb-2" style="cursor: pointer; margin-bottom: 12px;">
-                    <input type="checkbox" id="set-show-brand"> Поле Бренд
-                </label>
-                <label class="flex items-center gap-2" style="cursor: pointer; margin-bottom: 0;">
-                    <input type="checkbox" id="set-show-comp"> Поле Состав
-                </label>
-                <button class="btn-primary w-full mt-3" onclick="saveSettings('fields')">Применить поля</button>
+        <div class="flex justify-between items-center mb-6"><h2>Настройки</h2><button class="btn-icon" onclick="closeSettings()">✕</button></div>
+        <div class="settings-section">
+            <h3>ДОПОЛНИТЕЛЬНЫЕ ПОЛЯ</h3>
+            <div class="light-block">
+                <label class="checkbox-row">Поле Плотность (г/м²) <input type="checkbox" id="set-show-density" onchange="saveSets()"></label>
+                <label class="checkbox-row">Поле Бренд <input type="checkbox" id="set-show-brand" onchange="saveSets()"></label>
+                <label class="checkbox-row">Поле Состав <input type="checkbox" id="set-show-comp" onchange="saveSets()"></label>
             </div>
         </div>
-
-        <div class="mb-4">
-            <h3>Счётчик артикулов</h3>
-            <p class="text-sm text-danger mt-1 mb-2">⚠️ Изменение может привести к дублированию</p>
+        <div class="settings-section">
+            <h3>СЧЁТЧИК АРТИКУЛОВ</h3>
             <div class="flex gap-2">
-                <div style="flex: 1;">
-                    <label>Префикс</label>
-                    <input type="text" id="set-prefix">
-                </div>
-                <div style="flex: 1;">
-                    <label>Следующий номер</label>
-                    <input type="text" inputmode="numeric" id="set-next-number">
-                </div>
-            </div>
-            <button class="btn-primary w-full mt-2" onclick="saveSettings('counter')">Сохранить счётчик</button>
-        </div>
-
-        <div class="mb-4">
-            <h3>Склады</h3>
-            <div id="settings-warehouses" class="mt-2 mb-2">
-                <!-- Склады -->
-            </div>
-            <div class="flex gap-2">
-                <input type="text" id="set-new-warehouse" placeholder="Новый склад">
-                <button class="btn-outline" onclick="addWarehouse()">+</button>
-            </div>
-            <button class="btn-primary w-full mt-2" onclick="saveSettings('warehouses')">Сохранить склады</button>
-        </div>
-
-        <div class="mb-4">
-            <h3>Резервное копирование</h3>
-            <p class="text-sm text-sec mt-1 mb-2">Сохраните базу данных в файл, чтобы перенести на другое устройство или не потерять данные.</p>
-            <div class="flex gap-2">
-                <button class="btn-outline w-full" onclick="exportDB()">💾 Экспорт</button>
-                <button class="btn-outline w-full" onclick="document.getElementById('import-file').click()">📂 Импорт</button>
-                <input type="file" id="import-file" class="hidden" accept=".json" onchange="importDB(event)">
+                <div style="flex:1"><label>Префикс</label><input type="text" id="set-prefix" onchange="saveSets()"></div>
+                <div style="flex:1"><label>Следующий номер</label><input type="number" id="set-next-num" onchange="saveSets()"></div>
             </div>
         </div>
-
-        <div class="mb-4">
-            <h3>PrintNode API</h3>
-            <div class="mt-2 mb-2">
-                <label>API Ключ</label>
-                <input type="text" id="set-pn-key" placeholder="API Key">
-            </div>
-            <div class="mb-2">
-                <label>ID Принтера</label>
-                <input type="text" inputmode="numeric" id="set-pn-id" placeholder="Printer ID">
-            </div>
-            <div class="flex gap-2">
-                <button class="btn-outline w-full" onclick="testPrintNode()">Проверить</button>
-                <button class="btn-primary w-full" onclick="saveSettings('printnode')">Сохранить</button>
-            </div>
+        <div class="settings-section">
+            <h3>СКЛАДЫ</h3>
+            <div id="settings-warehouses"></div>
+            <div class="flex gap-2 mt-2"><input type="text" id="new-wh-name" placeholder="Новый склад" style="margin:0"><button class="btn-outline" style="min-width: 48px;" onclick="addWh()">+</button></div>
         </div>
-
-        <button class="btn-outline w-full mt-2" onclick="closeModal('modal-settings')" style="border: none; color: var(--danger);">Закрыть настройки</button>
+        <div class="settings-section">
+            <h3>ИНТЕГРАЦИЯ 1С (HTTP)</h3>
+            <label>URL Сервиса</label><input type="text" id="set-url" onchange="saveSets()" placeholder="https://...">
+            <label>Логин</label><input type="text" id="set-user" onchange="saveSets()">
+            <label>Пароль</label><input type="password" id="set-pass" onchange="saveSets()">
+        </div>
+        <button class="btn-success w-full mt-4" style="height: 60px;" onclick="closeSettings()">ГОТОВО</button>
     </div>
 </div>
 
+<div id="modal-create-doc" class="modal-overlay">
+    <div class="modal-content">
+        <h2 id="create-doc-title">Новый документ</h2>
+        <input type="text" id="input-new-doc-name" class="mt-4" placeholder="Название документа">
+        <div class="flex gap-2 mt-4"><button class="btn-outline w-full" onclick="closeModal('modal-create-doc')">Отмена</button><button class="btn-primary w-full" onclick="executeCreateDoc()">Создать</button></div>
+    </div>
+</div>
+
+<div id="modal-confirm" class="modal-overlay" style="z-index:5000"><div class="modal-content" style="text-align:center"><h2 id="conf-title">Вы уверены?</h2><p id="conf-msg" class="mb-4 text-sec"></p><div class="flex gap-2"><button class="btn-outline w-full" id="conf-cancel">Отмена</button><button class="btn-danger w-full" id="conf-ok">Да</button></div></div></div>
+
+<div id="modal-search" class="modal-overlay"><div class="modal-content"><h2>Поиск</h2><input type="text" id="manual-search-input" placeholder="Введите код..."><button class="btn-primary w-full" onclick="doManualSearch()">Найти</button><button class="btn-outline w-full mt-2" onclick="closeModal('modal-search')">Отмена</button></div></div>
+<div id="modal-login" class="modal-overlay"><div class="modal-content" style="text-align:center"><h2>Вход персонала</h2><input type="password" id="login-pass" placeholder="Пароль" style="font-size:24px; text-align:center;"><button class="btn-primary w-full" onclick="doLogin()">Войти</button><button class="btn-outline w-full mt-2" onclick="closeModal('modal-login')">Назад</button></div></div>
+
 <div id="toast-container"></div>
-<!-- Datalist для ячеек -->
-<datalist id="cells-list"></datalist>
+<datalist id="list-arts"></datalist>
+<datalist id="list-cells"></datalist>
 
 <script>
-    /*=============================================================================
-     * ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ И СОСТОЯНИЕ
-     *===========================================================================*/
-    const defaultSettings = { 
-        prefix: "R26", nextNumber: 1, 
-        warehouses: ["Магазин", "Склад", "Розница"], 
-        printNodeApiKey: "", printNodePrinterId: "",
-        showDensity: false, showBrand: false, showComposition: false
+    /* БЕЗОПАСНАЯ ЗАГРУЗКА */
+    function safeLoad(key, def){ try { const val = localStorage.getItem(key); return val ? JSON.parse(val) : def; } catch(e) { return def; } }
+
+    /* ДАННЫЕ */
+    const defSets = { url:"", user:"", pass:"", mgr:"1234", warehouses:["Магазин","Склад","Розница"], prefix:"R26", nextNum:1, showDensity:true, showBrand:true, showComp:true, pnKey:"", pnPrinter:"" };
+    let sets = safeLoad('tsd_final_sets', defSets);
+    let db = {
+        receive: safeLoad('tsd_final_receive', []),
+        move: safeLoad('tsd_final_move', []),
+        writeoff: safeLoad('tsd_final_writeoff', []),
+        price: safeLoad('tsd_final_price', [])
     };
-    
-    let settings = loadData('appSettings', defaultSettings);
-    let documents = loadData('appDocuments', []);
-    let currentDocId = null;
-    let currentCutsForm = [];
-    let articulUnlocked = false;
-    let editingItemId = null; // Флаг режима редактирования товара
 
-    // Запоминаем последние введенные значения для удобства
-    let lastUsedWarehouse = loadData('lastUsedWarehouse', settings.warehouses[0] || '');
-    let lastUsedWidth = loadData('lastUsedWidth', '');
-    let lastUsedDensity = loadData('lastUsedDensity', '');
-    let lastUsedBrand = loadData('lastUsedBrand', '');
-    let lastUsedComposition = loadData('lastUsedComposition', '');
+    let curTab = 'receive', curDocId = null, editingItemId = null, isMgr = false, scanBuf = "", activeCuts = [];
 
-    /*=============================================================================
-     * УТИЛИТЫ И ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-     *===========================================================================*/
-    function loadData(key, defaultValue) {
-        try {
-            const item = localStorage.getItem(key);
-            return item ? JSON.parse(item) : defaultValue;
-        } catch(e) { showToast('Ошибка чтения', 'error'); return defaultValue; }
-    }
-
-    function saveData(key, data) {
-        try { localStorage.setItem(key, JSON.stringify(data)); }
-        catch(e) { showToast('Не удалось сохранить данные!', 'error'); }
-    }
-
-    function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
-
-    function formatDate(isoString) { return new Date(isoString).toLocaleDateString('ru-RU', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'}); }
-    function formatCsvDate(isoString) { return new Date(isoString).toLocaleDateString('ru-RU', {day: '2-digit', month: '2-digit', year: 'numeric'}); }
-
-    function generateArticul(prefix, number) { return prefix + String(number).padStart(3, '0'); }
-
-    function escapeHTML(str) {
-        if (typeof str !== 'string' && typeof str !== 'number') return str || '';
-        return String(str).replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag]));
-    }
-
-    function sanitizeCSV(val) {
-        const str = String(val || '');
-        if (/^[=+\-@]/.test(str)) return "'" + str;
-        return str;
-    }
-
-    function showToast(message, type = 'success') {
-        const container = document.getElementById('toast-container');
-        const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
-        toast.textContent = message;
-        container.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
-    }
-
-    function customConfirm(message, title = 'Подтверждение') {
-        return new Promise(resolve => {
-            document.getElementById('confirm-title').textContent = title;
-            document.getElementById('confirm-message').textContent = message;
-            
-            const btnOk = document.getElementById('confirm-ok');
-            const btnCancel = document.getElementById('confirm-cancel');
-            
-            const cleanup = () => {
-                closeModal('modal-confirm');
-                btnOk.removeEventListener('click', onOk);
-                btnCancel.removeEventListener('click', onCancel);
-            };
-            
-            const onOk = () => { cleanup(); resolve(true); };
-            const onCancel = () => { cleanup(); resolve(false); };
-            
-            btnOk.addEventListener('click', onOk);
-            btnCancel.addEventListener('click', onCancel);
-            
-            openModal('modal-confirm');
+    window.onload = () => {
+        window.addEventListener('keydown', e => {
+            if (e.target.tagName === 'INPUT') return;
+            if (e.key === 'Enter') { if (scanBuf.length > 2) handleScan(scanBuf); scanBuf = ""; } 
+            else if (e.key.length === 1) { scanBuf += e.key; }
         });
-    }
+        updateDataLists();
+    };
 
-    /*=============================================================================
-     * НАВИГАЦИЯ И ИНИЦИАЛИЗАЦИЯ
-     *===========================================================================*/
-    function showScreen(screenId) {
-        document.getElementById('screen-list').classList.add('hidden');
-        document.getElementById('screen-doc').classList.add('hidden');
-        document.getElementById(`screen-${screenId}`).classList.remove('hidden');
-        
-        if(screenId === 'list') { currentDocId = null; renderDocumentList(); }
-        else if(screenId === 'doc') { renderDocView(); }
-    }
-
-    function updateCellsDatalist() {
-        const datalist = document.getElementById('cells-list');
-        const cells = new Set();
-        documents.forEach(doc => { doc.items.forEach(item => { item.cuts.forEach(cut => { if (cut.cell) cells.add(cut.cell); }); }); });
-        datalist.innerHTML = Array.from(cells).map(c => `<option value="${c}">`).join('');
-    }
-
-    function init() {
-        if (!window.localStorage) { showToast('Ваш браузер не поддерживает сохранение данных!', 'error'); }
-        renderDocumentList();
-        updateCellsDatalist();
-
-        // НОВОЕ: Инициализация Service Worker (требование для полноценной PWA на Android)
-        if ('serviceWorker' in navigator) {
-            // Создаем виртуальный Service Worker, чтобы удовлетворить требования браузеров, 
-            // сохраняя всё в одном HTML-файле.
-            const swCode = "self.addEventListener('fetch', function(event) {});";
-            const blob = new Blob([swCode], { type: 'text/javascript' });
-            const swUrl = URL.createObjectURL(blob);
-            navigator.serviceWorker.register(swUrl).catch(e => {
-                // Если файл открыт локально (file://), регистрация не сработает, 
-                // но установка на iPhone и многих Android будет работать за счёт Манифеста
-                console.log('SW registration fallback for local files');
-            });
+    function handleScan(code) {
+        if (code === "ADMIN") { loginSuccess(); return; }
+        if (!isMgr) search1C(code);
+        else {
+            const inp = document.querySelector('input[data-art-field]');
+            if (inp) { inp.value = code; inp.dispatchEvent(new Event('input')); }
         }
     }
 
-    /*=============================================================================
-     * МОДАЛЬНЫЕ ОКНА
-     *===========================================================================*/
+    async function search1C(id) {
+        showToast("Поиск...");
+        if (!sets.url) { showProduct({ name: "Демо-ткань", articul: id, price: 10, stock: "5м", cell: "A1", width: "150", composition: "Хлопок" }); return; }
+        try {
+            const res = await fetch(`${sets.url}/product?id=${id}`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ":" + (sets.pass || "")) } });
+            if (res.ok) showProduct(await res.json()); else showToast("Не найдено", "danger");
+        } catch (e) { showToast("Ошибка 1С", "danger"); }
+    }
+
+    function showProduct(p) { document.getElementById('c-name').textContent = p.name; document.getElementById('c-price').textContent = (p.price || 0).toFixed(2) + " €"; document.getElementById('c-art').textContent = p.articul; document.getElementById('c-width').textContent = p.width; document.getElementById('c-comp').textContent = p.composition; document.getElementById('c-stock').textContent = p.stock; document.getElementById('c-cell').textContent = p.cell; document.getElementById('customer-view').classList.remove('hidden'); }
+    function closeCustomerView() { document.getElementById('customer-view').classList.add('hidden'); }
+
+    /* МЕНЕДЖЕР */
+    function doLogin() { if(document.getElementById('login-pass').value === sets.mgr){ loginSuccess(); closeModal('modal-login'); } else showToast("Ошибка", "danger"); }
+    function openLogin() { openModal('modal-login'); setTimeout(() => document.getElementById('login-pass').focus(), 300); }
+    function loginSuccess() { isMgr = true; document.getElementById('screen-kiosk').classList.add('hidden'); document.getElementById('manager-view').classList.remove('hidden'); switchTab('receive'); }
+    function logout() { isMgr = false; document.getElementById('manager-view').classList.add('hidden'); document.getElementById('screen-kiosk').classList.remove('hidden'); }
+    
+    function switchTab(id) {
+        curTab = id; curDocId = null; editingItemId = null;
+        document.getElementById('list-title').textContent = {receive:"Приёмка", move:"Перемещение", writeoff:"Списание", price:"Цены"}[id];
+        document.querySelectorAll('#tab-bar button').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab-'+id).classList.add('active');
+        document.getElementById('screen-list').classList.remove('hidden'); document.getElementById('screen-work').classList.add('hidden');
+        renderDocList();
+    }
+
+    function openCreateDocModal() { openModal('modal-create-doc'); document.getElementById('input-new-doc-name').value = "Документ " + new Date().toLocaleDateString(); setTimeout(()=>document.getElementById('input-new-doc-name').focus(), 300); }
+    function executeCreateDoc() {
+        const name = document.getElementById('input-new-doc-name').value.trim(); if(!name) return;
+        const newDoc = { id: Date.now().toString(36), name, status: 'active', createdAt: new Date().toISOString(), items: [] };
+        db[curTab].unshift(newDoc); save(); closeModal('modal-create-doc'); renderDocList(); openDoc(newDoc.id);
+    }
+
+    function renderDocList() {
+        const q = document.getElementById('doc-search')?.value?.toLowerCase() || "";
+        const cont = document.getElementById('docs-list-container'); cont.innerHTML = "";
+        const list = db[curTab] || [];
+        list.filter(d => d.name.toLowerCase().includes(q)).forEach(d => {
+            const card = document.createElement('div'); card.className = `card doc-card ${d.status}`; card.onclick = () => openDoc(d.id);
+            card.innerHTML = `<div class="flex justify-between font-bold"><span style="font-size:18px">${d.name}</span><span>${d.status==='active'?'🟡':'✅'}</span></div><div>Записей: ${d.items.length}</div>`;
+            cont.appendChild(card);
+        });
+    }
+
+    function openDoc(id) {
+        curDocId = id; const d = db[curTab].find(x=>x.id===id);
+        document.getElementById('screen-list').classList.add('hidden'); document.getElementById('screen-work').classList.remove('hidden');
+        document.getElementById('work-title').textContent = d.name;
+        document.getElementById('work-status').textContent = d.status==='active'?'ОТКРЫТ':'ЗАВЕРШЕН';
+        
+        const form = document.getElementById('form-container');
+        const acts = document.getElementById('closed-actions');
+        if(d.status === 'active') { form.classList.remove('hidden'); acts.classList.add('hidden'); }
+        else { form.classList.add('hidden'); acts.classList.remove('hidden'); }
+
+        renderForm(); renderRows();
+    }
+
+    function renderForm() {
+        const cont = document.getElementById('form-container'); const d = db[curTab].find(x=>x.id===curDocId);
+        if(!d || d.status !== 'active') return;
+        
+        let artVal = sets.prefix + String(sets.nextNum).padStart(4,'0');
+
+        if(curTab === 'receive') {
+            cont.innerHTML = `
+                <div class="input-group"><label>APT</label><input type="text" id="f-art" data-art-field value="${artVal}" class="monospace font-bold"></div>
+                <div class="input-group"><label>ШИРИНА</label><input type="text" id="f-width"></div>
+                ${sets.showDensity ? '<div class="input-group"><label>ПЛОТНОСТЬ</label><input type="text" id="f-density"></div>' : ''}
+                ${sets.showBrand ? '<div class="input-group"><label>БРЕНД</label><input type="text" id="f-brand"></div>' : ''}
+                ${sets.showComp ? '<div class="input-group"><label>СОСТАВ</label><input type="text" id="f-comp"></div>' : ''}
+                <div id="receive-cuts"></div>
+                <button class="btn-outline w-full mb-3" style="border-style:dashed; font-size:14px;" onclick="addCut()">+ Добавить отрез</button>
+                <div class="flex gap-2">
+                    <button class="btn-outline" style="flex:1" onclick="printFromForm()">🖨️ Печать</button>
+                    <button class="btn-success" style="flex:2" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>
+                </div>
+                ${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}
+            `;
+            if (!editingItemId) activeCuts = [{id:1, m:'', wh:sets.warehouses[0] || "", c:''}];
+            renderCuts();
+        } else if(curTab === 'move'){
+            cont.innerHTML = `
+                <div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"></div>
+                <div class="flex gap-2">
+                    <div style="flex:1"><label>ОТКУДА (СКЛАД)</label><select id="f-wh-from">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div>
+                    <div style="flex:1"><label>ОТКУДА (ЯЧЕЙКА)</label><input type="text" id="f-cell-from" list="list-cells"></div>
+                </div>
+                <div class="flex gap-2">
+                    <div style="flex:1"><label>КУДА (СКЛАД)</label><select id="f-wh-to">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div>
+                    <div style="flex:1"><label>КУДА (ЯЧЕЙКА)</label><input type="text" id="f-cell-to" list="list-cells"></div>
+                </div>
+                <div class="input-group"><label>МЕТРАЖ</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')"></div>
+                <button class="btn-primary w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>
+                ${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}
+            `;
+        } else if(curTab === 'writeoff'){
+            cont.innerHTML = `
+                <div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"></div>
+                <div class="flex gap-2">
+                    <div style="flex:1"><label>СКЛАД</label><select id="f-wh">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div>
+                    <div style="flex:1"><label>ЯЧЕЙКА</label><input type="text" id="f-cell" list="list-cells"></div>
+                </div>
+                <div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')"></div>
+                <button class="btn-danger w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>
+                ${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}
+            `;
+        } else if(curTab === 'price'){
+            cont.innerHTML = `<label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"><label>Цена (€)</label><input type="text" id="f-p"><button class="btn-primary w-full" style="background:var(--price-color)" id="btn-save-line" onclick="saveLine()">ОК</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+        }
+    }
+
+    function renderCuts() { 
+        const box = document.getElementById('receive-cuts'); if(!box) return; 
+        box.innerHTML = activeCuts.map(c=>`<div class="cut-row"><select onchange="uCut(${c.id},'wh',this.value)">${sets.warehouses.map(w=>`<option ${c.wh===w?'selected':''}>${w}</option>`)}</select><input type="text" placeholder="М" value="${c.m}" oninput="uCut(${c.id},'m',this.value)"><input type="text" placeholder="Яч" value="${c.c}" oninput="uCut(${c.id},'c',this.value)" list="list-cells"><button class="btn-icon" onclick="remCut(${c.id})">✕</button></div>`).join(''); 
+    }
+    function addCut() { activeCuts.push({id:Date.now(), m:'', wh:sets.warehouses[0] || "", c:''}); renderCuts(); }
+    function remCut(id) { if(activeCuts.length > 1) { activeCuts = activeCuts.filter(x=>x.id!==id); renderCuts(); } }
+    function uCut(id, f, v) { const c = activeCuts.find(x=>x.id===id); if(c) c[f]=v.replace(',','.'); }
+
+    function saveLine() {
+        const d = db[curTab].find(x=>x.id===curDocId); const artInp = document.getElementById('f-art'); if(!artInp) return;
+        const art = artInp.value; if(!art) return;
+        let item = { id: editingItemId || Date.now(), art, ts: new Date().toISOString() };
+        
+        if(curTab === 'receive'){ 
+            const v = activeCuts.filter(c => !isNaN(parseFloat(c.m)) && parseFloat(c.m) > 0);
+            if(!v.length) return; 
+            item.cuts = JSON.parse(JSON.stringify(v));
+            item.w = document.getElementById('f-width').value;
+            if(sets.showDensity && document.getElementById('f-density')) item.dens = document.getElementById('f-density').value;
+            if(sets.showBrand && document.getElementById('f-brand')) item.brand = document.getElementById('f-brand').value;
+            if(sets.showComp && document.getElementById('f-comp')) item.comp = document.getElementById('f-comp').value;
+            if (!editingItemId) sets.nextNum++;
+        } else if(curTab === 'move'){
+            item.m = document.getElementById('f-m').value;
+            item.fromWh = document.getElementById('f-wh-from').value;
+            item.fromCell = document.getElementById('f-cell-from').value;
+            item.toWh = document.getElementById('f-wh-to').value;
+            item.toCell = document.getElementById('f-cell-to').value;
+        } else if(curTab === 'writeoff'){
+            item.m = document.getElementById('f-m').value;
+            item.wh = document.getElementById('f-wh').value;
+            item.cell = document.getElementById('f-cell').value;
+        } else if(curTab === 'price'){ item.p = document.getElementById('f-p').value; }
+        
+        if(editingItemId){ const idx = d.items.findIndex(i=>i.id===editingItemId); d.items[idx]=item; editingItemId=null; }
+        else d.items.unshift(item);
+        save(); renderForm(); renderRows(); showToast("Записано");
+    }
+
+    function editItem(id) {
+        const d = db[curTab].find(x=>x.id===curDocId); const it = d.items.find(i=>i.id===id); if(!it) return;
+        editingItemId = id; renderForm();
+        
+        const fA = document.getElementById('f-art'); if(fA) fA.value = it.art;
+        if(curTab==='receive'){
+            const fW = document.getElementById('f-width'); if(fW) fW.value = it.w || '';
+            const fD = document.getElementById('f-density'); if(fD) fD.value = it.dens || '';
+            const fB = document.getElementById('f-brand'); if(fB) fB.value = it.brand || '';
+            const fC = document.getElementById('f-comp'); if(fC) fC.value = it.comp || '';
+            activeCuts = JSON.parse(JSON.stringify(it.cuts)); renderCuts();
+        } else if(curTab === 'move') {
+            document.getElementById('f-m').value = it.m;
+            document.getElementById('f-wh-from').value = it.fromWh;
+            document.getElementById('f-cell-from').value = it.fromCell;
+            document.getElementById('f-wh-to').value = it.toWh;
+            document.getElementById('f-cell-to').value = it.toCell;
+        } else if(curTab === 'writeoff') {
+            document.getElementById('f-m').value = it.m;
+            document.getElementById('f-wh').value = it.wh;
+            document.getElementById('f-cell').value = it.cell;
+        } else if(curTab==='price') {
+            const fP = document.getElementById('f-p'); if(fP) fP.value = it.p || '';
+        }
+        
+        const bSave = document.getElementById('btn-save-line'); if(bSave) bSave.textContent = "ОБНОВИТЬ";
+        renderRows(); window.scrollTo({top:0, behavior:'smooth'});
+    }
+
+    function cancelEdit() { editingItemId = null; renderForm(); renderRows(); }
+
+    function renderRows() {
+        const cont = document.getElementById('rows-container'); const d = db[curTab].find(x=>x.id===curDocId); cont.innerHTML = "";
+        d.items.forEach(it => {
+            const div = document.createElement('div'); div.className = 'history-item' + (editingItemId===it.id?' editing':'');
+            let info = "";
+            if(curTab === 'move') info = `<div class="text-sm text-sec">${it.fromWh} → ${it.toWh} | ${it.m}м</div>`;
+            else if(curTab === 'writeoff') info = `<div class="text-sm text-sec">${it.wh} | ${it.m}м</div>`;
+            else if(curTab === 'price') info = `<div class="text-sm font-bold" style="color:var(--price-color)">${it.p} €</div>`;
+            else info = `<div class="text-sm text-sec">${it.cuts.length} отр.</div>`;
+
+            div.innerHTML = `<div><div class="font-bold">${it.art}</div>${info}</div><div class="flex gap-2">${d.status==='active' ? `<button class="btn-icon" onclick="editItem(${it.id})">✏️</button><button class="btn-icon text-danger" onclick="delRow(${it.id})">🗑️</button>` : ''}</div>`;
+            cont.appendChild(div);
+        });
+        document.getElementById('work-counter').textContent = "Записей: " + d.items.length;
+    }
+
+    /* УТИЛИТЫ */
+    function save() { localStorage.setItem('tsd_final_sets', JSON.stringify(sets)); localStorage.setItem('tsd_final_receive', JSON.stringify(db.receive)); localStorage.setItem('tsd_final_move', JSON.stringify(db.move)); localStorage.setItem('tsd_final_writeoff', JSON.stringify(db.writeoff)); localStorage.setItem('tsd_final_price', JSON.stringify(db.price)); updateDataLists(); }
+    function updateDataLists() { const arts = new Set(), cells = new Set(); Object.values(db).forEach(list => list.forEach(d => d.items.forEach(i => { if(i.art) arts.add(i.art); if(i.cuts) i.cuts.forEach(c => { if(c.c) cells.add(c.c); }); if(i.cell) cells.add(i.cell); }))); document.getElementById('list-arts').innerHTML = Array.from(arts).map(a=>`<option value="${a}">`).join(''); document.getElementById('list-cells').innerHTML = Array.from(cells).map(c=>`<option value="${c}">`).join(''); }
     function openModal(id) { document.getElementById(id).classList.add('open'); }
     function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-    function openNewDocModal() { document.getElementById('input-new-doc-name').value = ''; openModal('modal-new-doc'); }
-    function openSettings() { 
-        document.getElementById('set-show-density').checked = !!settings.showDensity;
-        document.getElementById('set-show-brand').checked = !!settings.showBrand;
-        document.getElementById('set-show-comp').checked = !!settings.showComposition;
-        document.getElementById('set-prefix').value = settings.prefix;
-        document.getElementById('set-next-number').value = settings.nextNumber;
-        document.getElementById('set-pn-key').value = settings.printNodeApiKey;
-        document.getElementById('set-pn-id').value = settings.printNodePrinterId;
-        renderSettingsWarehouses();
-        openModal('modal-settings'); 
+    function showToast(m, t) { const c = document.getElementById('toast-container'); const d = document.createElement('div'); d.className = `toast`; d.style.background = t === 'danger' ? 'var(--danger)' : 'var(--primary)'; d.textContent = m; c.appendChild(d); setTimeout(()=>d.remove(), 2500); }
+    function openSettings() { document.getElementById('set-show-density').checked = sets.showDensity; document.getElementById('set-show-brand').checked = sets.showBrand; document.getElementById('set-show-comp').checked = sets.showComp; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; renderSettingsWh(); openModal('modal-settings'); }
+    function saveSets() { sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; save(); }
+    function renderSettingsWh() { document.getElementById('settings-warehouses').innerHTML = sets.warehouses.map(w=>`<div class="wh-item"><span>${w}</span><button class="btn-icon text-danger" onclick="delWh('${w}')">🗑️</button></div>`).join(''); }
+    function addWh() { const n = document.getElementById('new-wh-name'); if(n.value){sets.warehouses.push(n.value); n.value=''; renderSettingsWh(); saveSets();}}
+    function delWh(w) { sets.warehouses = sets.warehouses.filter(x=>x!==w); renderSettingsWh(); saveSets();}
+    function closeSettings() { saveSets(); closeModal('modal-settings'); }
+    function exitWork() { curDocId = null; switchTab(curTab); }
+
+    async function customConfirm(msg) { 
+        return new Promise(res => { 
+            document.getElementById('conf-msg').textContent = msg; 
+            openModal('modal-confirm'); 
+            document.getElementById('conf-ok').onclick = () => { closeModal('modal-confirm'); res(true); }; 
+            document.getElementById('conf-cancel').onclick = () => { closeModal('modal-confirm'); res(false); }; 
+        }); 
     }
 
-    /*=============================================================================
-     * ЭКРАН 1: СПИСОК ДОКУМЕНТОВ
-     *===========================================================================*/
-    function createNewDoc() {
-        const name = document.getElementById('input-new-doc-name').value.trim();
-        if(!name) { showToast('Введите название документа', 'error'); return; }
-        
-        const newDoc = { id: generateId(), name, status: 'active', createdAt: new Date().toISOString(), closedAt: null, items: [] };
-        documents.unshift(newDoc);
-        saveData('appDocuments', documents);
-        closeModal('modal-new-doc');
-        openDoc(newDoc.id);
-    }
-
-    function openDoc(id) { currentDocId = id; showScreen('doc'); }
-
-    function filterDocs() {
-        const query = document.getElementById('search-docs').value.toLowerCase();
-        const cards = document.querySelectorAll('.doc-card');
-        cards.forEach(card => {
-            const name = card.querySelector('h2').textContent.toLowerCase();
-            if (name.includes(query)) card.classList.remove('hidden');
-            else card.classList.add('hidden');
-        });
-    }
-
-    function renderDocumentList() {
-        const container = document.getElementById('doc-list-container');
-        container.innerHTML = '';
-        
-        if (documents.length === 0) {
-            container.innerHTML = '<div class="text-center mt-4 text-sec">Нет документов. Создайте новое поступление.</div>';
-            return;
-        }
-
-        const sortedDocs = [...documents].sort((a, b) => {
-            if (a.status !== b.status) return a.status === 'active' ? -1 : 1;
-            return new Date(b.createdAt) - new Date(a.createdAt);
-        });
-
-        sortedDocs.forEach(doc => {
-            let totalMeters = 0; let totalRolls = doc.items.length;
-            doc.items.forEach(item => item.cuts.forEach(cut => totalMeters += (parseFloat(cut.meters) || 0)));
-
-            const card = document.createElement('div');
-            card.className = `card doc-card ${doc.status === 'active' ? 'active-doc' : 'closed-doc'}`;
-            card.onclick = (e) => { if (!e.target.classList.contains('btn-export')) openDoc(doc.id); };
-            
-            card.innerHTML = `
-                <div class="flex justify-between items-center mb-2">
-                    <h2 style="margin:0;font-size:18px;">${escapeHTML(doc.name)}</h2>
-                    <span class="badge ${doc.status === 'active' ? 'active' : 'closed'}">
-                        ${doc.status === 'active' ? '🟡 В работе' : '✅ Завершён'}
-                    </span>
-                </div>
-                <div class="text-sm" style="color: var(--text-sec); margin-bottom: 8px;">
-                    Дата: ${formatDate(doc.createdAt)}
-                </div>
-                <div class="font-bold">
-                    Рулонов: ${totalRolls} | Итого: ${totalMeters.toFixed(2)} м
-                </div>
-                ${doc.status === 'closed' ? `
-                <div class="flex gap-2 mt-3">
-                    <button class="btn-outline w-full btn-export" onclick="event.stopPropagation(); exportCSV('${doc.id}')">📥 Скачать</button>
-                    <button class="btn-primary w-full btn-export" onclick="event.stopPropagation(); shareCSV('${doc.id}')">📤 Поделиться</button>
-                </div>` : ''}
-            `;
-            container.appendChild(card);
-        });
-    }
-
-    /*=============================================================================
-     * ЭКРАН 2: РАБОЧИЙ ДОКУМЕНТ И ФОРМА ТОВАРА
-     *===========================================================================*/
-    function renderDocView() {
-        const doc = documents.find(d => d.id === currentDocId);
-        if (!doc) return showScreen('list');
-
-        document.getElementById('doc-title').textContent = doc.name;
-        const badge = document.getElementById('doc-status-badge');
-        badge.className = `badge ${doc.status === 'active' ? 'active' : 'closed'}`;
-        badge.textContent = doc.status === 'active' ? '🟡 В работе' : '✅ Завершён';
-
-        const btnComplete = document.getElementById('btn-complete-doc');
-        const formContainer = document.getElementById('form-container');
-        const closedActions = document.getElementById('doc-closed-actions');
-
-        if (doc.status === 'active') {
-            btnComplete.classList.remove('hidden');
-            formContainer.classList.remove('hidden');
-            closedActions.classList.add('hidden');
-            if(!editingItemId) initNewItemForm();
-        } else {
-            btnComplete.classList.add('hidden');
-            formContainer.classList.add('hidden');
-            closedActions.classList.remove('hidden');
-            editingItemId = null; // сброс если документ закрыт
-            
-            let whTotals = {};
-            doc.items.forEach(item => {
-                item.cuts.forEach(cut => {
-                    whTotals[cut.warehouse] = (whTotals[cut.warehouse] || 0) + parseFloat(cut.meters);
-                });
-            });
-            const totalsText = Object.entries(whTotals).map(([wh, m]) => `${wh}: ${m.toFixed(2)} м`).join(' | ');
-            document.getElementById('closed-doc-totals').textContent = totalsText || 'Нет данных';
-        }
-
-        updateDocStats(doc);
-        renderHistory();
-    }
-
-    function updateDocStats(doc) {
-        let totalMeters = 0;
-        doc.items.forEach(item => item.cuts.forEach(cut => totalMeters += (parseFloat(cut.meters) || 0)));
-        document.getElementById('stat-rolls').textContent = doc.items.length;
-        document.getElementById('stat-meters').textContent = totalMeters.toFixed(2);
-    }
-
-    async function completeDocument() {
-        const doc = documents.find(d => d.id === currentDocId);
-        if (doc && doc.items.length === 0) {
-            showToast('Нельзя завершить пустой документ', 'error'); return;
-        }
-
-        const isConfirmed = await customConfirm('Вы уверены, что хотите завершить приёмку? Документ будет закрыт для добавления новых товаров.');
-        if (!isConfirmed) return;
-        
-        if(doc) {
-            doc.status = 'closed';
-            doc.closedAt = new Date().toISOString();
-            saveData('appDocuments', documents);
-            renderDocView();
-        }
-    }
-
-    async function reopenDocument() {
-        const isConfirmed = await customConfirm('Вернуть документ в работу? Вы сможете снова добавлять в него товары.');
-        if (!isConfirmed) return;
-        const doc = documents.find(d => d.id === currentDocId);
-        if(doc) {
-            doc.status = 'active';
-            doc.closedAt = null;
-            saveData('appDocuments', documents);
-            renderDocView();
-        }
-    }
-
-    function initNewItemForm() {
-        editingItemId = null;
-        document.getElementById('btn-cancel-edit').classList.add('hidden');
-
-        document.getElementById('input-width').value = lastUsedWidth;
-        
-        document.getElementById('field-density').classList.toggle('hidden', !settings.showDensity);
-        document.getElementById('field-brand').classList.toggle('hidden', !settings.showBrand);
-        document.getElementById('field-comp').classList.toggle('hidden', !settings.showComposition);
-        
-        document.getElementById('input-density').value = settings.showDensity ? lastUsedDensity : '';
-        document.getElementById('input-brand').value = settings.showBrand ? lastUsedBrand : '';
-        document.getElementById('input-comp').value = settings.showComposition ? lastUsedComposition : '';
-
-        document.getElementById('input-copies').value = '1';
-        articulUnlocked = false;
-        
-        const articulInput = document.getElementById('input-articul');
-        articulInput.disabled = true;
-        articulInput.value = generateArticul(settings.prefix, settings.nextNumber);
-        
-        articulInput.oninput = validateForm;
-        
-        currentCutsForm = [{ id: generateId(), warehouse: lastUsedWarehouse, cell: '', meters: '' }];
-        renderCutsForm();
-        validateForm();
-        
-        setTimeout(() => document.getElementById('input-width').focus(), 100);
-    }
-
-    async function unlockArticul() {
-        const isConfirmed = await customConfirm('ВНИМАНИЕ: Ручное изменение артикула может нарушить последовательность счетчика. Продолжить?', 'Редактирование артикула');
-        if (isConfirmed) {
-            articulUnlocked = true;
-            const input = document.getElementById('input-articul');
-            input.disabled = false;
-            input.focus();
-            validateForm();
-        }
-    }
-
-    // Редактирование существующего товара в текущем документе
-    function editHistoryItem(itemId) {
-        const doc = documents.find(d => d.id === currentDocId);
-        if (!doc || doc.status !== 'active') return;
-        
-        const item = doc.items.find(i => i.id === itemId);
-        if (!item) return;
-
-        editingItemId = itemId;
-        articulUnlocked = true; // При редактировании артикул разблокирован логически
-        
-        const articulInput = document.getElementById('input-articul');
-        articulInput.value = item.articul;
-        articulInput.disabled = false; // Позволяем править
-        
-        document.getElementById('input-width').value = item.width || '';
-        document.getElementById('input-density').value = item.density || '';
-        document.getElementById('input-brand').value = item.brand || '';
-        document.getElementById('input-comp').value = item.composition || '';
-        
-        // Глубокая копия массива отрезов
-        currentCutsForm = JSON.parse(JSON.stringify(item.cuts));
-        
-        renderCutsForm();
-        validateForm();
-        
-        document.getElementById('btn-cancel-edit').classList.remove('hidden');
-        document.getElementById('form-container').scrollIntoView({ behavior: 'smooth' });
-    }
-
-    function cancelEdit() {
-        initNewItemForm();
-    }
-
-    function renderCutsForm() {
-        const container = document.getElementById('cuts-container');
-        container.innerHTML = '';
-        let formTotal = 0;
-
-        currentCutsForm.forEach((cut) => {
-            const row = document.createElement('div');
-            row.className = 'cut-row';
-            let whOptions = settings.warehouses.map(w => `<option value="${w}" ${cut.warehouse === w ? 'selected' : ''}>${w}</option>`).join('');
-            
-            // ИЗМЕНЕНИЕ 1: Сначала Метры, потом Ячейка
-            row.innerHTML = `
-                <div><select class="cut-wh-select" data-id="${cut.id}" onchange="updateCutData(this)">${whOptions}</select></div>
-                <div><input type="text" inputmode="decimal" class="cut-meters-input" placeholder="Метры" value="${cut.meters}" data-id="${cut.id}" oninput="updateCutData(this)"></div>
-                <div><input type="text" class="cut-cell-input" placeholder="Ячейка" list="cells-list" value="${cut.cell}" data-id="${cut.id}" oninput="updateCutData(this)"></div>
-                <div><button class="btn-icon text-danger" onclick="deleteCutRow('${cut.id}')" style="min-width:32px">🗑️</button></div>
-            `;
-            container.appendChild(row);
-            formTotal += parseFloat(cut.meters) || 0;
-        });
-
-        document.getElementById('form-total-meters').textContent = formTotal.toFixed(2);
-    }
-
-    function updateCutData(el) {
-        const id = el.getAttribute('data-id');
-        const cut = currentCutsForm.find(c => c.id === id);
-        
-        if(cut) {
-            if(el.classList.contains('cut-wh-select')) cut.warehouse = el.value;
-            if(el.classList.contains('cut-cell-input')) cut.cell = el.value;
-            if(el.classList.contains('cut-meters-input')) {
-                el.value = el.value.replace(',', '.');
-                cut.meters = el.value;
-            }
-        }
-        
-        let formTotal = 0;
-        currentCutsForm.forEach(c => { formTotal += parseFloat(c.meters) || 0; });
-        document.getElementById('form-total-meters').textContent = formTotal.toFixed(2);
-        
-        validateForm();
-    }
-
-    function addCutRow() {
-        currentCutsForm.push({ id: generateId(), warehouse: lastUsedWarehouse, cell: '', meters: '' });
-        renderCutsForm();
-        validateForm();
-        // При добавлении фокус уходит в поле "Метры" (так как мы поменяли их местами, это первый input)
-        const inputs = document.getElementById('cuts-container').querySelectorAll('.cut-meters-input');
-        if(inputs.length > 0) inputs[inputs.length - 1].focus();
-    }
-
-    function deleteCutRow(id) {
-        currentCutsForm = currentCutsForm.filter(c => c.id !== id);
-        renderCutsForm();
-        validateForm();
-    }
-
-    function validateForm() {
-        const btnSave = document.getElementById('btn-save-item');
-        const articul = document.getElementById('input-articul').value.trim();
-        
-        let hasValidCut = false;
-        let totalMeters = 0;
-        let validCutsCount = 0;
-
-        currentCutsForm.forEach(cut => {
-            const m = parseFloat(cut.meters);
-            // ИЗМЕНЕНИЕ 2: Считаем только правильно заполненные строки, не блокируем всю форму из-за пустых
-            if (cut.warehouse && cut.meters && !isNaN(m) && m > 0) {
-                hasValidCut = true;
-                totalMeters += m;
-                validCutsCount++;
-            }
-        });
-
-        // Кнопка активна, если есть артикул И хотя бы один правильный отрез
-        const isValid = !!articul && hasValidCut;
-        btnSave.disabled = !isValid;
-        
-        if (isValid) {
-            const actionText = editingItemId ? 'ОБНОВИТЬ' : 'ЗАПИСАТЬ';
-            btnSave.textContent = `${actionText} • ${validCutsCount} отр. • ${totalMeters.toFixed(2)} м`;
-        } else {
-            btnSave.textContent = editingItemId ? 'ОБНОВИТЬ ТОВАР' : 'ЗАПИСАТЬ ТОВАР';
-        }
-    }
-
-    function saveItem() {
-        const doc = documents.find(d => d.id === currentDocId);
-        if (!doc || doc.status !== 'active') return showToast('Документ завершён или не найден', 'error');
-
-        const articulInput = document.getElementById('input-articul').value.trim();
-        const width = document.getElementById('input-width').value.trim();
-        
-        const density = settings.showDensity ? document.getElementById('input-density').value.trim() : '';
-        const brand = settings.showBrand ? document.getElementById('input-brand').value.trim() : '';
-        const comp = settings.showComposition ? document.getElementById('input-comp').value.trim() : '';
-        
-        // Отбрасываем все пустые/незаполненные строки при сохранении
-        const finalCuts = currentCutsForm.filter(c => c.warehouse && parseFloat(c.meters) > 0).map(c => ({
-            id: c.id && c.id.length > 0 ? c.id : generateId(), 
-            warehouse: c.warehouse, 
-            cell: c.cell.trim(), 
-            meters: parseFloat(c.meters)
-        }));
-
-        if(finalCuts.length === 0) return showToast('Нет корректных отрезов', 'error');
-
-        if (editingItemId) {
-            // Обновляем существующий товар
-            const itemIndex = doc.items.findIndex(i => i.id === editingItemId);
-            if (itemIndex > -1) {
-                doc.items[itemIndex] = { 
-                    ...doc.items[itemIndex], 
-                    articul: articulInput, 
-                    width: parseFloat(width) || 0, 
-                    density, brand, composition: comp, 
-                    cuts: finalCuts 
-                };
-            }
-            showToast('Товар обновлён!');
-        } else {
-            // Создаем новый товар
-            const newItem = { 
-                id: generateId(), articul: articulInput, width: parseFloat(width) || 0, 
-                density: density, brand: brand, composition: comp,
-                cuts: finalCuts, createdAt: new Date().toISOString() 
-            };
-            doc.items.unshift(newItem);
-            
-            // Счетчик двигаем ТОЛЬКО если это новый товар и артикул не меняли или он совпадает с ожидаемым
-            const expectedArticul = generateArticul(settings.prefix, settings.nextNumber);
-            if (!articulUnlocked || articulInput === expectedArticul) {
-                settings.nextNumber++;
-                saveData('appSettings', settings);
-            }
-            showToast('Товар записан!');
-        }
-
-        saveData('appDocuments', documents);
-
-        // Запоминаем данные для следующего ввода
-        lastUsedWarehouse = finalCuts[finalCuts.length - 1].warehouse;
-        lastUsedWidth = width;
-        if (settings.showDensity) lastUsedDensity = density;
-        if (settings.showBrand) lastUsedBrand = brand;
-        if (settings.showComposition) lastUsedComposition = comp;
-        
-        saveData('lastUsedWarehouse', lastUsedWarehouse);
-        saveData('lastUsedWidth', lastUsedWidth);
-        saveData('lastUsedDensity', lastUsedDensity);
-        saveData('lastUsedBrand', lastUsedBrand);
-        saveData('lastUsedComposition', lastUsedComposition);
-        
-        updateCellsDatalist();
-
-        const formCard = document.getElementById('form-container');
-        formCard.classList.add('flash-success');
-        setTimeout(() => formCard.classList.remove('flash-success'), 400);
-
-        initNewItemForm();
-        updateDocStats(doc);
-        renderHistory();
-    }
-
-    /*=============================================================================
-     * ИСТОРИЯ (ЖУРНАЛ)
-     *===========================================================================*/
-    function renderHistory() {
-        const container = document.getElementById('history-container');
-        const doc = documents.find(d => d.id === currentDocId);
-        container.innerHTML = '';
-
-        if(!doc || doc.items.length === 0) {
-            container.innerHTML = '<div class="text-sm text-sec">Пока ничего не добавлено...</div>';
-            return;
-        }
-
-        doc.items.forEach(item => {
-            const totalM = item.cuts.reduce((sum, c) => sum + c.meters, 0);
-            
-            let extraInfo = [];
-            if (item.density) extraInfo.push(`Плотн: ${item.density}`);
-            if (item.brand) extraInfo.push(`${item.brand}`);
-            if (item.composition) extraInfo.push(`${item.composition}`);
-            const extraInfoHtml = extraInfo.length > 0 ? `<div class="text-sm text-sec mb-2" style="border-bottom: 1px dashed #ddd; padding-bottom: 4px;">${extraInfo.join(' | ')}</div>` : '';
-
-            const div = document.createElement('div');
-            div.className = 'history-item';
-            div.innerHTML = `
-                <div class="history-header" onclick="toggleHistoryDetails('${item.id}')">
-                    <span class="monospace font-bold">${escapeHTML(item.articul)}</span>
-                    <span>${totalM.toFixed(2)} м &nbsp; <span style="font-size:12px">▼</span></span>
-                </div>
-                <div id="hist-det-${item.id}" class="history-details hidden">
-                    <div style="margin-bottom: 8px; border-bottom: 1px solid #ddd; padding-bottom: 4px; display: flex; justify-content: space-between; align-items: center;">
-                        <span class="text-sm font-bold">Ширина: ${escapeHTML(item.width)}</span>
-                        <div style="display: flex; gap: 8px;">
-                            ${doc.status === 'active' ? `<button class="btn-icon" style="font-size:14px; min-height:0; min-width:0" onclick="event.stopPropagation(); editHistoryItem('${item.id}')">✏️ Редакт.</button>` : ''}
-                            <button class="btn-icon" style="font-size:14px; min-height:0; min-width:0" onclick="event.stopPropagation(); printHistoryLabel('${escapeHTML(item.articul)}', ${totalM})">🖨️ Печать</button>
-                        </div>
-                    </div>
-                    ${extraInfoHtml}
-                    ${item.cuts.map(cut => `
-                        <div class="history-cut-row">
-                            <span class="text-sm font-bold text-primary">${escapeHTML(cut.warehouse)}</span>
-                            <span class="text-sm">${escapeHTML(cut.cell) || '-'}</span>
-                            <span class="text-sm text-right">${cut.meters.toFixed(2)} м</span>
-                            ${doc.status === 'active' ? `<button class="btn-icon text-danger" style="min-height:0; min-width:0; padding:4px;" onclick="deleteHistoryCut('${item.id}', '${cut.id}', ${cut.meters}, '${escapeHTML(cut.warehouse)}')">🗑️</button>` : '<span></span>'}
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-            container.appendChild(div);
-        });
-    }
-
-    function toggleHistoryDetails(itemId) {
-        document.getElementById(`hist-det-${itemId}`).classList.toggle('hidden');
-    }
-
-    function filterHistory() {
-        const query = document.getElementById('search-history').value.toLowerCase();
-        const items = document.querySelectorAll('.history-item');
-        
-        items.forEach(item => {
-            const articul = item.querySelector('.monospace').textContent.toLowerCase();
-            if (articul.includes(query)) {
-                item.classList.remove('hidden');
-            } else {
-                item.classList.add('hidden');
-            }
-        });
-    }
-
-    async function deleteHistoryCut(itemId, cutId, meters, warehouse) {
-        const doc = documents.find(d => d.id === currentDocId);
-        if(!doc || doc.status !== 'active') return;
-
-        const isConfirmed = await customConfirm(`Удалить отрез ${meters} м со склада "${warehouse}"?`, 'Удаление');
-        if(!isConfirmed) return;
-
-        const item = doc.items.find(i => i.id === itemId);
-        if(item) {
-            item.cuts = item.cuts.filter(c => c.id !== cutId);
-            if(item.cuts.length === 0) doc.items = doc.items.filter(i => i.id !== itemId);
-            saveData('appDocuments', documents);
-            updateDocStats(doc);
-            renderHistory();
-        }
-    }
-
-    /*=============================================================================
-     * ЭКСПОРТ CSV И ОТПРАВКА (SHARE)
-     *===========================================================================*/
-    function generateCSVContent(doc) {
-        let headers = ['Дата', 'Артикул', 'Ширина', 'Плотность', 'Бренд', 'Состав', 'Склад', 'Ячейка', 'Метраж'];
-        let csvContent = '\uFEFF' + headers.join(';') + '\n';
-        
-        const sortedItems = [...doc.items].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-        
-        sortedItems.forEach(item => {
-            const dateStr = formatCsvDate(item.createdAt);
-            item.cuts.forEach(cut => {
-                const meterStr = String(cut.meters).replace('.', ',');
-                
-                let row = [
-                    dateStr, 
-                    sanitizeCSV(item.articul), 
-                    sanitizeCSV(item.width),
-                    sanitizeCSV(item.density),
-                    sanitizeCSV(item.brand),
-                    sanitizeCSV(item.composition),
-                    sanitizeCSV(cut.warehouse), 
-                    sanitizeCSV(cut.cell), 
-                    meterStr
-                ];
-                
-                csvContent += row.join(';') + '\n';
-            });
-        });
-        return csvContent;
-    }
-
-    function exportCSV(docId) {
-        const doc = documents.find(d => d.id === docId);
-        if(!doc) return;
-
-        const csvContent = generateCSVContent(doc);
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.setAttribute('href', url);
-        link.setAttribute('download', `${doc.name}_${formatCsvDate(doc.createdAt)}.csv`);
-        
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-    }
-
-    async function shareCSV(docId) {
-        const doc = documents.find(d => d.id === docId);
-        if(!doc) return;
-
-        const csvContent = generateCSVContent(doc);
-        const fileName = `${doc.name}_${formatCsvDate(doc.createdAt)}.csv`;
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        
+    async function completeDoc() { if(!await customConfirm("Завершить документ?")) return; const d = db[curTab].find(x=>x.id===curDocId); d.status = 'closed'; save(); openDoc(curDocId); }
+    function reopenDoc() { const d = db[curTab].find(x=>x.id===curDocId); d.status = 'active'; save(); openDoc(curDocId); }
+    
+    async function syncWith1C() {
+        const d = db[curTab].find(x=>x.id===curDocId);
+        if(!sets.url) { showToast("URL 1С не настроен", "danger"); return; }
+        showToast("Отправка в 1С...");
         try {
-            const file = new File([blob], fileName, { type: 'text/csv' });
-            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({ files: [file], title: doc.name, text: 'Файл приёмки товара' });
-                showToast('Успешно отправлено!');
-                return;
-            }
-        } catch (error) {
-            console.log('Пользователь отменил отправку или API не поддерживается: ', error);
-        }
-        
-        showToast('Прямая отправка недоступна на этом устройстве. Файл будет скачан.', 'error');
-        exportCSV(docId);
+            const res = await fetch(`${sets.url}/post-document`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Basic '+btoa(sets.user+":"+(sets.pass||""))}, body:JSON.stringify({type:curTab.toUpperCase(), data:d}) });
+            if(res.ok) showToast("Успешно проведено!"); else showToast("1С вернула ошибку", "danger");
+        } catch(e) { showToast("Сервер 1С недоступна", "danger"); }
     }
 
-    /*=============================================================================
-     * ПЕЧАТЬ ETIKETOK
-     *===========================================================================*/
-    function generateZPL(articul, meters) {
-        return `^XA\n^FO30,15^BY3^BCN,60,Y,N,N^FD${articul}^FS\n^FO30,95^ADN,36,20^FD${articul}^FS\n^FO30,140^ADN,28,15^FDМетраж: ${meters} м^FS\n^XZ`;
-    }
-
-    async function printToPrintNode(articul, meters, copies) {
-        if (!navigator.onLine) { showToast('Нет интернета для отправки на печать', 'error'); return false; }
-        if (!settings.printNodeApiKey || !settings.printNodePrinterId) { showToast('Не настроен PrintNode (откройте ⚙️)', 'error'); return false; }
-        
-        const safeCopies = Math.min(Math.max(1, parseInt(copies) || 1), 99);
-
-        try {
-            const zpl = generateZPL(articul, meters);
-            const encoded = btoa(unescape(encodeURIComponent(zpl)));
-            const response = await fetch('https://api.printnode.com/printjobs', {
-                method: 'POST',
-                headers: { 'Authorization': 'Basic ' + btoa(settings.printNodeApiKey + ':'), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 'printerId': parseInt(settings.printNodePrinterId), 'title': 'Этикетка ' + articul, 'contentType': 'raw_base64', 'content': encoded, 'source': 'Склад Приёмка', 'qty': safeCopies })
-            });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            return true;
-        } catch (e) {
-            showToast('Ошибка печати: ' + e.message, 'error'); return false;
-        }
-    }
-
-    function printCurrentFormLabel() {
-        const articul = document.getElementById('input-articul').value;
-        const formTotal = document.getElementById('form-total-meters').textContent;
-        let copies = document.getElementById('input-copies').value;
-        
-        const safeCopies = Math.min(Math.max(1, parseInt(copies) || 1), 99);
-        document.getElementById('input-copies').value = safeCopies;
-
-        if(parseFloat(formTotal) <= 0) { showToast('Сначала введите метраж', 'error'); return; }
-        printToPrintNode(articul, formTotal, safeCopies).then(success => { if(success) showToast(`Отправлено на печать (${safeCopies} шт)`); });
-    }
-
-    function printHistoryLabel(articul, meters) {
-        printToPrintNode(articul, meters, 1).then(success => { if(success) showToast(`Отправлено на печать: ${articul}`); });
-    }
-
-    /*=============================================================================
-     * НАСТРОЙКИ
-     *===========================================================================*/
-    function renderSettingsWarehouses() {
-        const container = document.getElementById('settings-warehouses');
-        container.innerHTML = settings.warehouses.map(w => `
-            <div class="flex justify-between items-center mb-2" style="background:#f0f0f0; padding:8px 12px; border-radius:4px;">
-                <span>${w}</span>
-                <button class="btn-icon text-danger" style="min-height:0;min-width:0" onclick="deleteWarehouse('${w}')">🗑️</button>
-            </div>
-        `).join('');
-    }
-
-    function addWarehouse() {
-        const input = document.getElementById('set-new-warehouse');
-        const val = input.value.trim();
-        if(val && !settings.warehouses.includes(val)) {
-            settings.warehouses.push(val);
-            input.value = '';
-            renderSettingsWarehouses();
-        }
-    }
-
-    async function deleteWarehouse(w) {
-        let isUsed = documents.some(doc => doc.items.some(item => item.cuts.some(cut => cut.warehouse === w)));
-        if (isUsed) { showToast('Склад используется в истории', 'error'); return; }
-        settings.warehouses = settings.warehouses.filter(x => x !== w);
-        renderSettingsWarehouses();
-    }
-
-    function exportDB() {
-        const data = { documents, settings };
-        const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `backup_priemka_${formatCsvDate(new Date().toISOString())}.json`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-    }
-
-    function importDB(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const data = JSON.parse(e.target.result);
-                if (data.documents && Array.isArray(data.documents) && data.settings) {
-                    documents = data.documents;
-                    settings = Object.assign(defaultSettings, data.settings);
-                    saveData('appDocuments', documents);
-                    saveData('appSettings', settings);
-                    showToast('База данных успешно загружена!');
-                    setTimeout(() => location.reload(), 1000); 
-                } else {
-                    throw new Error('Некорректный формат');
-                }
-            } catch (err) {
-                showToast('Ошибка чтения файла. Это не резервная копия.', 'error');
-            }
-            event.target.value = '';
-        };
-        reader.readAsText(file);
-    }
-
-    function saveSettings(section) {
-        if (section === 'fields') {
-            settings.showDensity = document.getElementById('set-show-density').checked;
-            settings.showBrand = document.getElementById('set-show-brand').checked;
-            settings.showComposition = document.getElementById('set-show-comp').checked;
-            if(currentDocId) {
-                const doc = documents.find(d => d.id === currentDocId);
-                if(doc && doc.status === 'active') {
-                    document.getElementById('field-density').classList.toggle('hidden', !settings.showDensity);
-                    document.getElementById('field-brand').classList.toggle('hidden', !settings.showBrand);
-                    document.getElementById('field-comp').classList.toggle('hidden', !settings.showComposition);
-                }
-            }
-        } else if (section === 'counter') {
-            const pr = document.getElementById('set-prefix').value.trim();
-            const num = parseInt(document.getElementById('set-next-number').value);
-            if (pr) settings.prefix = pr;
-            if (!isNaN(num) && num > 0) settings.nextNumber = num;
-            if(currentDocId) {
-                const doc = documents.find(d => d.id === currentDocId);
-                if(doc && doc.status === 'active' && !articulUnlocked) {
-                    document.getElementById('input-articul').value = generateArticul(settings.prefix, settings.nextNumber);
-                    validateForm();
-                }
-            }
-        } else if (section === 'printnode') {
-            settings.printNodeApiKey = document.getElementById('set-pn-key').value.trim();
-            settings.printNodePrinterId = document.getElementById('set-pn-id').value.trim();
-        }
-        
-        saveData('appSettings', settings);
-        showToast('Настройки сохранены');
-    }
-
-    async function testPrintNode() {
-        const key = document.getElementById('set-pn-key').value.trim();
-        if(!key) return showToast('Введите API ключ', 'error');
-        try {
-            const response = await fetch('https://api.printnode.com/whoami', { headers: { 'Authorization': 'Basic ' + btoa(key + ':') } });
-            if(response.ok) {
-                const data = await response.json(); showToast(`Успешно! Аккаунт: ${data.firstname} ${data.lastname}`);
-            } else { throw new Error('Неверный ключ API'); }
-        } catch(e) { showToast('Ошибка: ' + e.message, 'error'); }
-    }
-
-    init();
+    async function delRow(rid) { if(!await customConfirm("Удалить строку?")) return; const d = db[curTab].find(x=>x.id===curDocId); d.items = d.items.filter(x=>x.id!==rid); save(); renderRows(); }
+    async function deleteFullDoc() { if(!await customConfirm("УДАЛИТЬ ВЕСЬ ДОКУМЕНТ?")) return; db[curTab] = db[curTab].filter(x=>x.id!==curDocId); save(); exitWork(); }
+    function openManualSearch() { openModal('modal-search'); setTimeout(() => document.getElementById('manual-search-input').focus(), 300); }
+    function doManualSearch() { const v = document.getElementById('manual-search-input').value.trim(); if(v){ closeModal('modal-search'); search1C(v); } }
+    function exportData() { const blob = new Blob([JSON.stringify({db, sets})], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='backup.json'; a.click(); }
+    function importData(event) { const file = event.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(e){ try{ const d = JSON.parse(e.target.result); if(d.db && d.sets){ db = d.db; sets = d.sets; save(); location.reload(); } }catch(err){showToast('Ошибка файла','danger');} }; reader.readAsText(file); }
+    function printFromForm() { const art = document.getElementById('f-art').value; const comp = document.getElementById('f-comp') ? document.getElementById('f-comp').value : ''; const zpl = `^XA^CI28^FO50,50^A0N,40,40^FDПриёмка^FS^FO50,110^A0N,30,30^FDАрт: ${art}^FS^FO50,150^A0N,25,25^FDСостав: ${comp}^FS^FO100,190^BY2^BCN,60,Y,N,N^FD${art}^FS^XZ`; window.location.href = `intent://base64,${btoa(unescape(encodeURIComponent(zpl)))}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`; }
 </script>
 </body>
 </html>
