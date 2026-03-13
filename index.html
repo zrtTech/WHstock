@@ -79,7 +79,7 @@
         button:active { transform: scale(0.98); }
         .btn-main { background: white; color: var(--primary); height: 64px; font-size: 18px; font-weight: 800; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .btn-search-wide { justify-content: center; padding: 0 20px; font-size: 22px; letter-spacing: .01em; white-space: nowrap; }
-        .btn-manager-search { min-height: 62px; font-size: 19px; font-weight: 800; }
+        .btn-manager-search { min-height: 48px; font-size: 14px; font-weight: 800; padding: 8px 12px; border-radius: 10px; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-success { background: var(--success); color: white; }
         .btn-danger { background: var(--danger); color: white; }
@@ -317,9 +317,11 @@
                     <h1 id="list-title">Приёмка</h1>
                     <p id="list-subtitle" class="screen-subtitle">Сканируйте товар и ведите документ по текущей операции</p>
                 </div>
-                <button class="btn-icon settings-btn" aria-label="Открыть настройки" onclick="openSettings()">⚙️</button>
+                <div class="flex gap-2 items-center">
+                    <button class="btn-primary btn-manager-search" aria-label="Поиск и сканирование товара" onclick="openManagerProductSearch()">🔎 Поиск товара</button>
+                    <button class="btn-icon settings-btn" aria-label="Открыть настройки" onclick="openSettings()">⚙️</button>
+                </div>
             </div>
-            <button class="btn-primary btn-manager-search w-full mb-3" onclick="openManagerProductSearch()">🔎 Поиск и сканирование товара для просмотра и правки</button>
             <input type="text" id="doc-search" placeholder="🔍 Поиск: название, дата или артикул..." oninput="renderDocList()" style="margin-bottom: 16px;">
             <button class="btn-primary w-full mb-4" style="height: 56px;" onclick="openCreateDocModal()">+ Создать документ</button>
             <div id="docs-list-container"></div>
