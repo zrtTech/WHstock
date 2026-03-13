@@ -26,6 +26,7 @@
             --text-sec: #757575;
             --border: #E0E0E0;
             --focus-ring: rgba(25, 118, 210, 0.3);
+            --tab-height: 88px;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -43,7 +44,7 @@
         .text-primary { color: var(--primary); }
         .gap-2 { gap: 8px; }
 
-        #app { max-width: 1200px; margin: 0 auto; min-height: 100vh; position: relative; padding-bottom: 80px; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
+        #app { max-width: 1200px; margin: 0 auto; min-height: 100vh; position: relative; padding-bottom: calc(var(--tab-height) + 18px); background: white; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
 
         /* ЭКРАН КИОСКА */
         #screen-kiosk {
@@ -63,7 +64,7 @@
         .btn-success { background: var(--success); color: white; }
         .btn-danger { background: var(--danger); color: white; }
         .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
-        .btn-icon { background: none; color: var(--text-sec); font-size: 20px; padding: 0; min-width: 44px; min-height: 44px; }
+        .btn-icon { background: none; color: var(--text-sec); font-size: 22px; padding: 0; min-width: 52px; min-height: 52px; }
 
         /* КАРТОЧКИ */
         .card { background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); transition: box-shadow 0.2s; }
@@ -79,9 +80,45 @@
         label { display: block; margin-bottom: 4px; font-size: 11px; color: var(--text-sec); font-weight: 700; text-transform: uppercase; }
 
         /* ТАБ БАР */
-        #tab-bar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: white; border-top: 1px solid var(--border); z-index: 100; max-width: 1200px; margin: 0 auto; }
-        #tab-bar button { flex: 1; border-radius: 0; flex-direction: column; background: none; color: #757575; font-size: 11px; padding: 8px 0; gap: 4px; }
-        #tab-bar button.active { color: var(--primary); border-top: 2px solid var(--primary); font-weight: 700; }
+        #tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: stretch;
+            background: white;
+            border-top: 1px solid var(--border);
+            box-shadow: 0 -6px 20px rgba(0,0,0,0.08);
+            z-index: 100;
+            max-width: 1200px;
+            margin: 0 auto;
+            height: var(--tab-height);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        #tab-bar button {
+            flex: 1;
+            border-radius: 0;
+            flex-direction: column;
+            background: none;
+            color: #616161;
+            font-size: 12px;
+            padding: 10px 4px;
+            gap: 6px;
+            min-height: 72px;
+            border-top: 3px solid transparent;
+        }
+        #tab-bar button .tab-ico { font-size: 24px; line-height: 1; }
+        #tab-bar button .tab-label { font-size: 12px; font-weight: 700; line-height: 1; }
+        #tab-bar button.active {
+            color: var(--primary);
+            border-top-color: var(--primary);
+            background: linear-gradient(180deg, rgba(25,118,210,0.12), rgba(25,118,210,0.02));
+        }
+        #tab-bar button.logout-tab { color: var(--danger); }
+        @media (pointer: coarse) {
+            #tab-bar button { min-height: 78px; }
+        }
 
         /* ПЛАНШЕТНАЯ СЕТКА */
         .work-layout { display: flex; flex-direction: column; gap: 16px; }
@@ -121,12 +158,15 @@
         .history-item { border-bottom: 1px solid #eee; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
         .history-item:last-child { border-bottom: none; }
         .history-item.editing { background: #E3F2FD; border-radius: 8px; padding: 12px; border: 1px solid var(--primary); }
+        .history-item .btn-icon { background: #F3F6FA; border: 1px solid #e4e9f0; border-radius: 10px; }
+        .history-item .btn-icon.text-danger { color: var(--danger); }
 
         #toast-container { position: fixed; top: 100px; left: 50%; transform: translateX(-50%); z-index: 3000; width: 90%; max-width: 400px; pointer-events: none; }
         .toast { padding: 14px; border-radius: 8px; color: white; margin-bottom: 8px; text-align: center; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.1); animation: slideIn 0.3s forwards; }
         @keyframes slideIn { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        .header-fixed { position: sticky; top: 0; z-index: 50; background: #F5F7FA; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+        .header-fixed { position: sticky; top: 0; z-index: 50; background: #F5F7FA; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+        .screen-subtitle { color: var(--text-sec); font-size: 14px; margin-top: 4px; }
         .cut-row { display: grid; grid-template-columns: 1.4fr 1.1fr 1fr auto; gap: 6px; align-items: center; margin-bottom: 8px; }
 
         /* ЛОГИ */
@@ -174,7 +214,10 @@
     <div id="manager-view" class="hidden">
         <div id="screen-list" class="p-4">
             <div class="flex justify-between items-center mb-4">
-                <h1 id="list-title">Приёмка</h1>
+                <div>
+                    <h1 id="list-title">Приёмка</h1>
+                    <p id="list-subtitle" class="screen-subtitle">Сканируйте товар и ведите документ по текущей операции</p>
+                </div>
                 <button class="btn-icon" aria-label="Открыть настройки" onclick="openSettings()">⚙️</button>
             </div>
             <input type="text" id="doc-search" placeholder="🔍 Поиск документа..." oninput="renderDocList()" style="margin-bottom: 16px;">
@@ -219,11 +262,11 @@
         </div>
 
         <div id="tab-bar">
-            <button onclick="switchTab('receive')" id="tab-receive"><span>📦</span>Приёмка</button>
-            <button onclick="switchTab('move')" id="tab-move"><span>🔄</span>Перемещение</button>
-            <button onclick="switchTab('writeoff')" id="tab-writeoff"><span>📋</span>Списание</button>
-            <button onclick="switchTab('price')" id="tab-price"><span>🏷️</span>Цены</button>
-            <button onclick="logout()" style="color: var(--danger);"><span>🚪</span>Выход</button>
+            <button onclick="switchTab('receive')" id="tab-receive" aria-label="Вкладка Приёмка"><span class="tab-ico">📦</span><span class="tab-label">Приёмка</span></button>
+            <button onclick="switchTab('move')" id="tab-move" aria-label="Вкладка Перемещение"><span class="tab-ico">🔄</span><span class="tab-label">Перемещение</span></button>
+            <button onclick="switchTab('writeoff')" id="tab-writeoff" aria-label="Вкладка Списание"><span class="tab-ico">📋</span><span class="tab-label">Списание</span></button>
+            <button onclick="switchTab('price')" id="tab-price" aria-label="Вкладка Цены"><span class="tab-ico">🏷️</span><span class="tab-label">Цены</span></button>
+            <button onclick="logout()" class="logout-tab" aria-label="Выйти из режима персонала"><span class="tab-ico">🚪</span><span class="tab-label">Выход</span></button>
         </div>
     </div>
 </div>
@@ -470,7 +513,14 @@
     function switchTab(id) {
         curTab = id; curDocId = null; editingItemId = null; saveAppState();
         const titles = {receive:"Приёмка", move:"Перемещение", writeoff:"Списание", price:"Цены"};
+        const subtitles = {
+            receive: "Сканируйте товар и ведите документ по текущей операции",
+            move: "Быстро фиксируйте перемещения между складами и ячейками",
+            writeoff: "Списывайте остатки с указанием места хранения",
+            price: "Обновляйте цены и поддерживайте актуальность ценников"
+        };
         document.getElementById('list-title').textContent = titles[id];
+        document.getElementById('list-subtitle').textContent = subtitles[id];
         document.querySelectorAll('#tab-bar button').forEach(b => b.classList.remove('active'));
         document.getElementById('tab-'+id).classList.add('active');
         document.getElementById('screen-list').classList.remove('hidden'); document.getElementById('screen-work').classList.add('hidden');
