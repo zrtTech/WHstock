@@ -28,6 +28,7 @@
             --focus-ring: rgba(25, 118, 210, 0.3);
             --tab-height: 88px;
             --app-height: 100dvh;
+            --keyboard-offset: 0px;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -133,7 +134,7 @@
             padding-bottom: env(safe-area-inset-bottom, 0px);
         }
 
-        #manager-view { height: 100%; overflow-y: auto; overscroll-behavior: contain; }
+        #manager-view { height: 100%; overflow-y: auto; overscroll-behavior: contain; padding-bottom: var(--keyboard-offset); }
         #tab-bar button {
             flex: 1;
             border-radius: 0;
@@ -213,7 +214,7 @@
         .screen-subtitle { color: var(--text-sec); font-size: 14px; margin-top: 4px; }
 
         .customer-view-title { font-size: 30px !important; font-weight: 900; }
-        #customer-view { height: var(--app-height); overflow-y: auto; overscroll-behavior: contain; }
+        #customer-view { height: var(--app-height); overflow-y: auto; overscroll-behavior: contain; padding-bottom: calc(24px + var(--keyboard-offset)); }
         .customer-gallery { width: 100%; margin-bottom: 16px; }
         .customer-gallery-item {
             width: 100%;
@@ -497,8 +498,8 @@
     </div>
 </div>
 
-<div id="modal-search" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true"><div class="modal-content"><h2>Поиск</h2><input type="text" id="manual-search-input" placeholder="Введите код..." onkeydown="if(event.key==='Enter') doManualSearch()"><div class="flex gap-2 mt-4"><button class="btn-outline w-full" onclick="closeModal('modal-search')">Отмена</button><button class="btn-primary w-full" onclick="doManualSearch()">Найти</button></div></div></div>
-<div id="modal-login" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true"><div class="modal-content" style="text-align:center"><h2>Вход персонала</h2><input type="password" id="login-pass" placeholder="Пароль" style="font-size:24px; text-align:center;" onkeydown="if(event.key==='Enter') doLogin()"><button class="btn-primary w-full" onclick="doLogin()">Войти</button><button class="btn-outline w-full mt-2" onclick="closeModal('modal-login')">Назад</button></div></div>
+<div id="modal-search" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true"><div class="modal-content"><h2>Поиск</h2><input type="text" id="manual-search-input" placeholder="Введите код..." autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters" inputmode="text" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') doManualSearch()"><div class="flex gap-2 mt-4"><button class="btn-outline w-full" onclick="closeModal('modal-search')">Отмена</button><button class="btn-primary w-full" onclick="doManualSearch()">Найти</button></div></div></div>
+<div id="modal-login" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true"><div class="modal-content" style="text-align:center"><h2>Вход персонала</h2><input type="password" id="login-pass" placeholder="Пароль" autocomplete="new-password" autocorrect="off" spellcheck="false" autocapitalize="none" style="font-size:24px; text-align:center;" onkeydown="if(event.key==='Enter') doLogin()"><button class="btn-primary w-full" onclick="doLogin()">Войти</button><button class="btn-outline w-full mt-2" onclick="closeModal('modal-login')">Назад</button></div></div>
 <div id="modal-product-edit" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="modal-content">
         <h2>Изменение номенклатуры</h2>
@@ -521,7 +522,7 @@
 <div id="modal-inline-edit" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="modal-content">
         <h2 id="ie-title">Изменить поле</h2>
-        <input type="text" id="ie-input" onkeydown="if(event.key==='Enter') applyInlineEdit()">
+        <input type="text" id="ie-input" autocomplete="off" autocorrect="off" spellcheck="false" oninput="handleInlineInput(this)" onkeydown="if(event.key==='Enter') applyInlineEdit()">
         <div class="flex gap-2 mt-3">
             <button class="btn-outline w-full" onclick="closeModal('modal-inline-edit')">Отмена</button>
             <button class="btn-primary w-full" onclick="applyInlineEdit()">ОК</button>
@@ -533,7 +534,7 @@
     <div class="modal-content">
         <h2 id="sr-title">Редактирование склада</h2>
         <div class="input-group"><label>Склад</label><select id="sr-wh"></select></div>
-        <div class="input-group"><label>Ячейка</label><input type="text" id="sr-cell"></div>
+        <div class="input-group"><label>Ячейка</label><input type="text" id="sr-cell" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters" oninput="this.value=this.value.toUpperCase()"></div>
         <div class="input-group"><label>Количество (метров)</label><input type="text" id="sr-meters" inputmode="decimal"></div>
         <div class="flex gap-2 mt-3">
             <button class="btn-outline w-full" onclick="closeModal('modal-stock-row-edit')">Отмена</button>
@@ -670,10 +671,79 @@
         }
     }
 
+    function rafThrottle(fn) {
+        let scheduled = false;
+        return (...args) => {
+            if (scheduled) return;
+            scheduled = true;
+            requestAnimationFrame(() => {
+                scheduled = false;
+                fn(...args);
+            });
+        };
+    }
+
+    function setKeyboardOffset(px) {
+        const val = Math.max(0, Math.round(px || 0));
+        document.documentElement.style.setProperty('--keyboard-offset', `${val}px`);
+    }
+
+    function setupInputAssistancePolicy() {
+        document.querySelectorAll('input, textarea').forEach(el => {
+            if (el.id === 'login-pass') return;
+            if (!el.hasAttribute('autocomplete')) el.setAttribute('autocomplete', 'off');
+            if (!el.hasAttribute('autocorrect')) el.setAttribute('autocorrect', 'off');
+            if (!el.hasAttribute('spellcheck')) el.setAttribute('spellcheck', 'false');
+        });
+    }
+
+    function setupKeyboardAvoidance() {
+        const vv = window.visualViewport;
+        if (!vv) return;
+
+        const applyViewport = rafThrottle(() => {
+            syncAppViewportHeight();
+            const keyboard = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+            setKeyboardOffset(keyboard > 80 ? keyboard : 0);
+        });
+
+        vv.addEventListener('resize', applyViewport);
+        vv.addEventListener('scroll', applyViewport);
+
+        document.addEventListener('focusin', (e) => {
+            const t = e.target;
+            if (!(t instanceof HTMLElement)) return;
+            if (!t.matches('input, textarea, select')) return;
+            setTimeout(() => t.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' }), 80);
+        }, true);
+
+        document.addEventListener('focusout', () => {
+            setTimeout(() => {
+                const ae = document.activeElement;
+                if (ae && ae.matches && ae.matches('input, textarea, select')) return;
+                setKeyboardOffset(0);
+            }, 120);
+        }, true);
+
+        applyViewport();
+    }
+
+    function handleInlineInput(inputEl) {
+        if (!inputEl || !inlineEditField) return;
+        const needsUpper = inlineEditField === 'composition' || inlineEditField === 'articul' || inlineEditField === 'brand';
+        if (!needsUpper) return;
+        const pos = inputEl.selectionStart;
+        inputEl.value = inputEl.value.toUpperCase();
+        if (typeof pos === 'number') inputEl.setSelectionRange(pos, pos);
+    }
+
     window.onload = () => {
         syncAppViewportHeight();
-        window.addEventListener('resize', syncAppViewportHeight);
-        window.addEventListener('orientationchange', syncAppViewportHeight);
+        setupInputAssistancePolicy();
+        setupKeyboardAvoidance();
+        const throttledViewportSync = rafThrottle(syncAppViewportHeight);
+        window.addEventListener('resize', throttledViewportSync);
+        window.addEventListener('orientationchange', throttledViewportSync);
         window.addEventListener('keydown', e => {
             if (e.key === 'Escape' && activeModalId) { closeModal(activeModalId); return; }
             if (e.target.tagName === 'INPUT') return;
@@ -856,14 +926,19 @@
         inlineEditField = el.dataset.editField;
         document.getElementById('ie-title').textContent = `Изменить: ${el.dataset.editLabel || 'Поле'}`;
         const input = document.getElementById('ie-input');
+        const upperMode = inlineEditField === 'composition' || inlineEditField === 'articul' || inlineEditField === 'brand';
+        input.setAttribute('autocapitalize', upperMode ? 'characters' : 'none');
         input.value = (currentProduct[inlineEditField] ?? '').toString();
+        if (upperMode) input.value = input.value.toUpperCase();
         openModal('modal-inline-edit');
         setTimeout(() => { input.focus(); input.select(); }, 50);
     }
 
     function applyInlineEdit() {
         if (!currentProduct || !inlineEditField) return;
-        currentProduct[inlineEditField] = document.getElementById('ie-input').value.trim();
+        let value = document.getElementById('ie-input').value.trim();
+        if (inlineEditField === 'composition' || inlineEditField === 'articul' || inlineEditField === 'brand') value = value.toUpperCase();
+        currentProduct[inlineEditField] = value;
         markProductDirty();
         showProduct(currentProduct);
         closeModal('modal-inline-edit');
@@ -897,7 +972,7 @@
         const metersValue = toNumber(document.getElementById('sr-meters').value);
         const row = {
             warehouse: document.getElementById('sr-wh').value,
-            cell: document.getElementById('sr-cell').value.trim(),
+            cell: document.getElementById('sr-cell').value.trim().toUpperCase(),
             meters: metersValue,
             qty: metersValue
         };
@@ -1113,6 +1188,7 @@
         } else if(curTab === 'price'){
             cont.innerHTML = `<label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"><label>Цена (€)</label><input type="text" id="f-p" inputmode="decimal"><button class="btn-primary w-full" style="background:var(--price-color)" id="btn-save-line" onclick="saveLine()">ОК</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
         }
+        setupInputAssistancePolicy();
     }
 
     function renderCuts() { const box = document.getElementById('receive-cuts'); if(!box) return; box.innerHTML = activeCuts.map(c=>`<div class="cut-row"><select onchange="uCut(${c.id},'wh',this.value)">${sets.warehouses.length > 0 ? sets.warehouses.map(w=>`<option ${c.wh===w?'selected':''}>${w}</option>`) : '<option value="">-</option>'}</select><input type="text" placeholder="М" value="${c.m}" oninput="uCut(${c.id},'m',this.value)" inputmode="decimal"><input type="text" placeholder="Яч" value="${c.c}" oninput="this.value = this.value.toUpperCase(); uCut(${c.id},'c',this.value)" list="list-cells"><button class="btn-icon" onclick="remCut(${c.id})">✕</button></div>`).join(''); }
@@ -1123,7 +1199,7 @@
     function saveLine() {
         const d = db[curTab].find(x=>x.id===curDocId); const artInp = document.getElementById('f-art'); if(!artInp) return; const art = artInp.value.trim(); if(!art) { showToast('Введите артикул', 'danger'); artInp.focus(); return; }
         let item = { id: editingItemId || Date.now().toString(36), art, ts: new Date().toISOString() };
-        if(curTab === 'receive'){ const v = activeCuts.filter(c => !isNaN(parseFloat(c.m)) && parseFloat(c.m) > 0); if(!v.length) { showToast('Добавьте хотя бы один валидный отрез', 'danger'); return; } item.cuts = JSON.parse(JSON.stringify(v)); if(sets.showWidth && document.getElementById('f-width')) item.w = document.getElementById('f-width').value; if(sets.showDensity && document.getElementById('f-density')) item.dens = document.getElementById('f-density').value; if(sets.showBrand && document.getElementById('f-brand')) item.brand = document.getElementById('f-brand').value; if(sets.showComp && document.getElementById('f-comp')) item.comp = document.getElementById('f-comp').value; if (!editingItemId) sets.nextNum++; }
+        if(curTab === 'receive'){ const v = activeCuts.filter(c => !isNaN(parseFloat(c.m)) && parseFloat(c.m) > 0); if(!v.length) { showToast('Добавьте хотя бы один валидный отрез', 'danger'); return; } item.cuts = JSON.parse(JSON.stringify(v)); if(sets.showWidth && document.getElementById('f-width')) item.w = document.getElementById('f-width').value; if(sets.showDensity && document.getElementById('f-density')) item.dens = document.getElementById('f-density').value; if(sets.showBrand && document.getElementById('f-brand')) item.brand = document.getElementById('f-brand').value; if(sets.showComp && document.getElementById('f-comp')) item.comp = document.getElementById('f-comp').value.toUpperCase(); if (!editingItemId) sets.nextNum++; }
         else if(curTab === 'move'){ item.m = document.getElementById('f-m').value; item.fromWh = document.getElementById('f-wh-from').value; item.fromCell = document.getElementById('f-cell-from').value; item.toWh = document.getElementById('f-wh-to').value; item.toCell = document.getElementById('f-cell-to').value; if(!parseFloat(item.m)) { showToast('Введите корректный метраж', 'danger'); return; } }
         else if(curTab === 'writeoff'){ item.m = document.getElementById('f-m').value; item.wh = document.getElementById('f-wh').value; item.cell = document.getElementById('f-cell').value; if(!parseFloat(item.m)) { showToast('Введите корректное количество', 'danger'); return; } }
         else if(curTab === 'price'){ item.p = document.getElementById('f-p').value; if(isNaN(parseFloat(item.p))) { showToast('Введите корректную цену', 'danger'); return; } }
@@ -1198,7 +1274,7 @@
     /* УТИЛИТЫ */
     function save() { localStorage.setItem('tsd_final_sets', JSON.stringify(sets)); localStorage.setItem('tsd_final_receive', JSON.stringify(db.receive)); localStorage.setItem('tsd_final_move', JSON.stringify(db.move)); localStorage.setItem('tsd_final_writeoff', JSON.stringify(db.writeoff)); localStorage.setItem('tsd_final_price', JSON.stringify(db.price)); updateDataLists(); }
     function updateDataLists() { const arts = new Set(), cells = new Set(); Object.values(db).forEach(list => { if(list) list.forEach(d => d.items.forEach(i => { if(i.art) arts.add(i.art); if(i.cuts) i.cuts.forEach(c => { if(c.c) cells.add(c.c); }); if(i.cell) cells.add(i.cell); if(i.fromCell) cells.add(i.fromCell); if(i.toCell) cells.add(i.toCell); } )) }); document.getElementById('list-arts').innerHTML = Array.from(arts).map(a=>`<option value="${a}">`).join(''); document.getElementById('list-cells').innerHTML = Array.from(cells).map(c=>`<option value="${c}">`).join(''); }
-    function openModal(id) { const modal = document.getElementById(id); if(!modal) return; lastFocusedElement = document.activeElement; activeModalId = id; modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); const focusable = modal.querySelector('input, button, select, textarea'); if (focusable) focusable.focus(); }
+    function openModal(id) { const modal = document.getElementById(id); if(!modal) return; lastFocusedElement = document.activeElement; activeModalId = id; modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); setupInputAssistancePolicy(); const focusable = modal.querySelector('input, button, select, textarea'); if (focusable) focusable.focus(); }
     function closeModal(id) { const modal = document.getElementById(id); if(!modal) return; modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); if (activeModalId === id) activeModalId = null; if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') lastFocusedElement.focus(); }
     function showToast(m, t) { const c = document.getElementById('toast-container'); if(c.children.length > 3) c.removeChild(c.firstChild); const d = document.createElement('div'); d.className = `toast`; d.setAttribute('role', 'status'); d.style.background = t === 'danger' ? 'var(--danger)' : 'var(--primary)'; d.textContent = m; c.appendChild(d); setTimeout(()=>d.remove(), 2500); }
     
