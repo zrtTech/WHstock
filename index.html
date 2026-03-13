@@ -1,600 +1,1252 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Складской Терминал</title>
-    
-    <!-- Настройки PWA -->
-    <meta name="theme-color" content="#1976D2">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Склад">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%231976D2'/%3E%3Cpath d='M256 120L120 188v136l136 68 136-68V188L256 120z' fill='%23fff'/%3E%3C/svg%3E">
-    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkNrbGFkc2tvaiBUZXJtaW5hbCAxQyIsCiAgInNob3J0X25hbWUiOiAiU2tsYWQiLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiI0Y1RjdGQSIsCiAgInRoZW1lX2NvbG9yIjogIiMxOTc2RDIiCn0=">
-
-    <style>
-        :root {
-            --primary: #1976D2;
-            --primary-hover: #1565C0;
-            --success: #388E3C;
-            --danger: #D32F2F;
-            --price-color: #00897B;
-            --bg: #F5F7FA;
-            --card: #FFFFFF;
-            --text: #212121;
-            --text-sec: #757575;
-            --border: #E0E0E0;
-            --focus-ring: rgba(25, 118, 210, 0.3);
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-        body { font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); line-height: 1.5; -webkit-font-smoothing: antialiased; }
-        .hidden { display: none !important; }
-        .flex { display: flex; }
-        .items-center { align-items: center; }
-        .justify-between { justify-content: space-between; }
-        .text-center { text-align: center; }
-        .p-4 { padding: 16px; }
-        .w-full { width: 100%; }
-        .font-bold { font-weight: bold; }
-        .monospace { font-family: "SF Mono", "Courier New", monospace; }
-        .text-sm { font-size: 13px; }
-        .text-primary { color: var(--primary); }
-        .gap-2 { gap: 8px; }
-
-        #app { max-width: 1200px; margin: 0 auto; min-height: 100vh; position: relative; padding-bottom: 80px; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
-
-        /* ЭКРАН КИОСКА */
-        #screen-kiosk {
-            height: 100vh; background: linear-gradient(135deg, var(--primary) 0%, #0D47A1 100%);
-            color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 32px;
-            text-align: center;
-        }
-
-        /* КНОПКИ */
-        button {
-            border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; padding: 12px 16px;
-            transition: background 0.2s, transform 0.1s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px;
-        }
-        button:active { transform: scale(0.98); }
-        .btn-main { background: white; color: var(--primary); height: 64px; font-size: 18px; font-weight: 800; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-success { background: var(--success); color: white; }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
-        .btn-icon { background: none; color: var(--text-sec); font-size: 20px; padding: 0; min-width: 44px; min-height: 44px; }
-
-        /* КАРТОЧКИ */
-        .card { background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); transition: box-shadow 0.2s; }
-        .doc-card { cursor: pointer; border-left: 6px solid var(--border); transition: 0.1s; margin-bottom: 12px; }
-        .doc-card:active { background: #f9f9f9; }
-        .doc-card.active { border-left-color: var(--primary); }
-        .doc-card.closed { opacity: 0.7; border-left-color: var(--text-sec); }
-
-        /* ВВОД */
-        .input-group { margin-bottom: 10px; }
-        input, select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; background: white; color: var(--text); transition: border-color 0.2s; }
-        input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px var(--focus-ring); }
-        label { display: block; margin-bottom: 4px; font-size: 11px; color: var(--text-sec); font-weight: 700; text-transform: uppercase; }
-
-        /* ТАБ БАР */
-        #tab-bar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: white; border-top: 1px solid var(--border); z-index: 100; max-width: 1200px; margin: 0 auto; }
-        #tab-bar button { flex: 1; border-radius: 0; flex-direction: column; background: none; color: #757575; font-size: 11px; padding: 8px 0; gap: 4px; }
-        #tab-bar button.active { color: var(--primary); border-top: 2px solid var(--primary); font-weight: 700; }
-
-        /* ПЛАНШЕТНАЯ СЕТКА */
-        .work-layout { display: flex; flex-direction: column; gap: 16px; }
-        @media (min-width: 900px) {
-            .work-layout { display: grid; grid-template-columns: 420px 1fr; align-items: start; }
-            .sticky-form { position: sticky; top: 110px; }
-        }
-
-        /* МОДАЛКИ */
-        .modal-overlay { 
-            position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; 
-            display: flex; justify-content: center; align-items: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.2s; 
-            padding: 20px;
-        }
-        .modal-overlay.open { opacity: 1; pointer-events: all; }
-        .modal-content { 
-            background: white; width: 100%; max-width: 500px; border-radius: 16px;
-            padding: 24px; transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.1, 0.9, 0.2, 1); 
-            max-height: 90vh; overflow-y: auto;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        }
-        .modal-overlay.open .modal-content { transform: scale(1); }
-
-        @media (max-height: 500px) {
-            .modal-overlay { align-items: flex-start; padding-top: 10px; }
-        }
-
-        .settings-section { margin-bottom: 20px; }
-        .settings-section h3 { font-size: 13px; color: var(--text-sec); text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 4px; font-weight: 700; }
-        .light-block { background: #f9f9f9; padding: 12px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #f0f0f0; }
-        .checkbox-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; cursor: pointer; color: var(--text-sec); font-size: 14px; }
-        .checkbox-row input { width: 22px; height: 22px; margin: 0; cursor: pointer; accent-color: var(--primary); }
-        .wh-item { display: flex; justify-content: space-between; align-items: center; background: #f0f0f0; padding: 8px 12px; border-radius: 8px; margin-bottom: 6px; }
-
-        /* ЖУРНАЛ */
-        .history-item { border-bottom: 1px solid #eee; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
-        .history-item:last-child { border-bottom: none; }
-        .history-item.editing { background: #E3F2FD; border-radius: 8px; padding: 12px; border: 1px solid var(--primary); }
-
-        #toast-container { position: fixed; top: 100px; left: 50%; transform: translateX(-50%); z-index: 3000; width: 90%; max-width: 400px; pointer-events: none; }
-        .toast { padding: 14px; border-radius: 8px; color: white; margin-bottom: 8px; text-align: center; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.1); animation: slideIn 0.3s forwards; }
-        @keyframes slideIn { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        .header-fixed { position: sticky; top: 0; z-index: 50; background: #F5F7FA; padding: 12px 16px; border-bottom: 1px solid var(--border); }
-        .cut-row { display: grid; grid-template-columns: 1.4fr 1.1fr 1fr auto; gap: 6px; align-items: center; margin-bottom: 8px; }
-
-        /* ЛОГИ */
-        #log-area { font-family: monospace; font-size: 11px; background: #222; color: #0f0; padding: 10px; border-radius: 8px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; margin-bottom: 10px; }
-    </style>
-</head>
-<body>
-
-<div id="app">
-    <!-- ЭКРАН КИОСКА -->
-    <div id="screen-kiosk">
-        <div style="font-size: 64px; margin-bottom: 10px;">📦</div>
-        <h1 style="font-size: 32px; font-weight: 900; margin-bottom: 8px;">СКЛАД-ЦЕНТР</h1>
-        <p style="font-size: 18px; opacity: 0.8; margin-bottom: 40px;">информационный терминал</p>
-        <div class="w-full" style="max-width: 320px;">
-            <div class="text-center mb-6" style="font-size: 22px; font-weight: 800; animation: pulse 2s infinite;">ПОДНЕСИТЕ ШТРИХКОД</div>
-            <button class="btn-main w-full mb-4" onclick="openManualSearch()">🔍 Найти по артикулу</button>
-            <button class="btn-outline w-full" style="color: white; border-color: rgba(255,255,255,0.4);" onclick="openLogin()">🔒 Меню персонала</button>
-        </div>
-        <input type="text" id="kiosk-scanner-input" style="position: absolute; opacity: 0; pointer-events: none;">
-    </div>
-
-    <!-- КАРТОЧКА КЛИЕНТА -->
-    <div id="customer-view" class="hidden" style="position:fixed; inset:0; background:white; z-index:1500; padding:24px; display:flex; flex-direction:column;">
-        <div class="flex justify-between items-center mb-4">
-            <h1 id="c-name" style="font-size: 24px; flex: 1;">Товар</h1>
-            <button class="btn-icon" onclick="closeCustomerView()">✕</button>
-        </div>
-        <div id="c-img-box" style="width:100%; height:240px; background:#f0f0f0; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:20px;">Фото</div>
-        <div id="c-price" style="font-size: 48px; font-weight: 900; color: var(--price-color); margin-bottom: 15px;">0.00 €</div>
-        <div class="card" style="background:#f8f9fa; border:none; flex-grow:1;">
-            <p><strong>Артикул:</strong> <span id="c-art">-</span></p>
-            <p><strong>Ширина:</strong> <span id="c-width">-</span></p>
-            <p><strong>Состав:</strong> <span id="c-comp">-</span></p>
-            <p><strong>Наличие:</strong> <span id="c-stock" class="font-bold">-</span></p>
-            <p><strong>Ячейка:</strong> <span id="c-cell" class="font-bold text-primary">-</span></p>
-        </div>
-        <div class="flex gap-2 mt-4">
-            <button class="btn-outline w-full" style="height: 64px;" onclick="printLabelRawBT()">🖨️ Печать</button>
-            <button class="btn-primary w-full" style="height: 64px; font-size: 20px;" onclick="closeCustomerView()">ПОНЯТНО</button>
-        </div>
-    </div>
-
-    <!-- ЗОНА ПЕРСОНАЛА -->
-    <div id="manager-view" class="hidden">
-        <div id="screen-list" class="p-4">
-            <div class="flex justify-between items-center mb-4">
-                <h1 id="list-title">Приёмка</h1>
-                <button class="btn-icon" onclick="openSettings()">⚙️</button>
-            </div>
-            <input type="text" id="doc-search" placeholder="🔍 Поиск документа..." oninput="renderDocList()" style="margin-bottom: 16px;">
-            <button class="btn-primary w-full mb-4" style="height: 56px;" onclick="openCreateDocModal()">+ Создать документ</button>
-            <div id="docs-list-container"></div>
-        </div>
-
-        <div id="screen-work" class="hidden">
-            <div class="header-fixed">
-                <div class="flex justify-between items-center mb-2">
-                    <button class="btn-icon" onclick="exitWork()">← Назад</button>
-                    <div class="flex gap-2">
-                        <button class="btn-icon text-danger" onclick="deleteFullDoc()">🗑️</button>
-                        <button class="btn-icon text-success" id="btn-complete-doc" onclick="completeDoc()">✅ Готово</button>
-                    </div>
-                </div>
-                <h2 id="work-title">Документ</h2>
-                <div class="flex justify-between items-center mt-1">
-                    <span id="work-status" class="monospace text-sm font-bold">АКТИВЕН</span>
-                    <span id="work-counter" class="text-sm font-bold text-primary">Записей: 0</span>
-                </div>
-            </div>
-            <div class="p-4 pt-0">
-                <div class="work-layout">
-                    <div class="sticky-form">
-                        <div id="closed-actions" class="hidden card text-center" style="border: 2px solid var(--success);">
-                            <h3 style="color: var(--success); margin-bottom: 10px;">ДОКУМЕНТ ЗАКРЫТ</h3>
-                            <button class="btn-primary w-full mb-3" style="height: 64px; font-size: 18px;" onclick="syncWith1C()">🚀 ОТПРАВИТЬ В 1С</button>
-                            <div class="flex gap-2">
-                                <button class="btn-outline w-full" onclick="reopenDoc()">🔄 Правка</button>
-                                <button class="btn-outline w-full" onclick="shareDoc()">📤 Поделиться</button>
-                            </div>
-                        </div>
-                        <div id="form-container" class="card" style="border: 2px solid #eee; position: relative;"></div>
-                    </div>
-                    <div class="card">
-                        <h3 class="text-sm mb-3">Журнал записей</h3>
-                        <div id="rows-container"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="tab-bar">
-            <button onclick="switchTab('receive')" id="tab-receive"><span>📦</span>Приёмка</button>
-            <button onclick="switchTab('move')" id="tab-move"><span>🔄</span>Перемещение</button>
-            <button onclick="switchTab('writeoff')" id="tab-writeoff"><span>📋</span>Списание</button>
-            <button onclick="switchTab('price')" id="tab-price"><span>🏷️</span>Цены</button>
-            <button onclick="logout()" style="color: var(--danger);"><span>🚪</span>Выход</button>
-        </div>
-    </div>
-</div>
-
-<!-- МОДАЛЬНЫЕ ОКНА -->
-<div id="modal-settings" class="modal-overlay">
-    <div class="modal-content">
-        <div class="flex justify-between items-center mb-6"><h2>Настройки</h2><button class="btn-icon" onclick="closeSettings()">✕</button></div>
-        
-        <div class="settings-section">
-            <h3>ДИАГНОСТИКА</h3>
-            <div class="light-block">
-                <button class="btn-outline w-full mb-2" onclick="openLogsModal()">📋 Посмотреть логи ошибок</button>
-            </div>
-        </div>
-
-        <div class="settings-section">
-            <h3>МЕТОД ПЕЧАТИ</h3>
-            <div class="light-block">
-                <select id="set-print-method" onchange="togglePrintSettingsUI()">
-                    <option value="rawbt">Бесплатный (Android RawBT)</option>
-                    <option value="printnode">Платный (PrintNode API)</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="settings-section">
-            <h3>ДОПОЛНИТЕЛЬНЫЕ ПОЛЯ</h3>
-            <div class="light-block">
-                <label class="checkbox-row">Поле Плотность (г/м²) <input type="checkbox" id="set-show-density" onchange="saveSets()"></label>
-                <label class="checkbox-row">Поле Бренд <input type="checkbox" id="set-show-brand" onchange="saveSets()"></label>
-                <label class="checkbox-row">Поле Состав <input type="checkbox" id="set-show-comp" onchange="saveSets()"></label>
-            </div>
-        </div>
-
-        <div class="settings-section">
-            <h3>СЧЁТЧИК АРТИКУЛОВ</h3>
-            <div class="flex gap-2">
-                <div style="flex:1"><label>Префикс</label><input type="text" id="set-prefix" onchange="saveSets()"></div>
-                <div style="flex:1"><label>Следующий номер</label><input type="number" id="set-next-num" onchange="saveSets()"></div>
-            </div>
-        </div>
-
-        <div class="settings-section">
-            <h3>СКЛАДЫ</h3>
-            <div id="settings-warehouses"></div>
-            <div class="flex gap-2 mt-2"><input type="text" id="new-wh-name" placeholder="Новый склад" style="margin:0"><button class="btn-outline" style="min-width: 48px;" onclick="addWh()">+</button></div>
-            <button class="btn-primary w-full mt-3" onclick="saveSets()">Сохранить склады</button>
-        </div>
-
-        <div class="settings-section" id="printnode-block">
-            <h3>PRINTNODE API</h3>
-            <div class="input-group"><label>API Ключ</label><input type="text" id="set-pn-key"></div>
-            <div class="input-group"><label>ID Принтера</label><input type="text" id="set-pn-printer"></div>
-            <div class="flex gap-2">
-                <button class="btn-outline w-full" onclick="showToast('Связь ОК')">Проверить</button>
-                <button class="btn-primary w-full" onclick="saveSets()">Сохранить</button>
-            </div>
-        </div>
-
-        <div class="settings-section">
-            <h3>ИНТЕГРАЦИЯ 1С (HTTP)</h3>
-            <label>URL Сервиса</label><input type="text" id="set-url" onchange="saveSets()" placeholder="https://...">
-            <label>Логин</label><input type="text" id="set-user" onchange="saveSets()">
-            <label>Пароль</label><input type="password" id="set-pass" onchange="saveSets()">
-            <button class="btn-outline w-full mt-2" onclick="test1CConnection()">📡 Проверить связь с 1С</button>
-        </div>
-
-        <button class="btn-success w-full mt-4" style="height: 60px;" onclick="closeSettings()">ГОТОВО</button>
-    </div>
-</div>
-
-<div id="modal-logs" class="modal-overlay">
-    <div class="modal-content">
-        <h2>Журнал ошибок</h2>
-        <div id="log-area">Нет ошибок</div>
-        <button class="btn-outline w-full mb-2" onclick="shareLogFile()">📤 Поделиться файлом лога</button>
-        <button class="btn-outline w-full mb-2" onclick="clearLogs()">Очистить</button>
-        <button class="btn-primary w-full" onclick="closeModal('modal-logs')">Закрыть</button>
-    </div>
-</div>
-
-<div id="modal-create-doc" class="modal-overlay">
-    <div class="modal-content">
-        <h2 id="create-doc-title">Новый документ</h2>
-        <input type="text" id="input-new-doc-name" class="mt-4" placeholder="Название документа" onkeydown="if(event.key==='Enter') executeCreateDoc()">
-        <div class="flex gap-2 mt-4">
-            <button class="btn-outline w-full" onclick="closeModal('modal-create-doc')">Отмена</button>
-            <button class="btn-primary w-full" onclick="executeCreateDoc()">Создать</button>
-        </div>
-    </div>
-</div>
-
-<div id="modal-confirm" class="modal-overlay" style="z-index:5000">
-    <div class="modal-content" style="text-align:center">
-        <h2 id="conf-title">Вы уверены?</h2>
-        <p id="conf-msg" class="mb-4 text-sec"></p>
-        <div class="flex gap-2">
-            <button class="btn-outline w-full" id="conf-cancel">Отмена</button>
-            <button class="btn-danger w-full" id="conf-ok">Да</button>
-        </div>
-    </div>
-</div>
-
-<div id="modal-search" class="modal-overlay"><div class="modal-content"><h2>Поиск</h2><input type="text" id="manual-search-input" placeholder="Введите код..." onkeydown="if(event.key==='Enter') doManualSearch()"><div class="flex gap-2 mt-4"><button class="btn-outline w-full" onclick="closeModal('modal-search')">Отмена</button><button class="btn-primary w-full" onclick="doManualSearch()">Найти</button></div></div></div>
-<div id="modal-login" class="modal-overlay"><div class="modal-content" style="text-align:center"><h2>Вход персонала</h2><input type="password" id="login-pass" placeholder="Пароль" style="font-size:24px; text-align:center;" onkeydown="if(event.key==='Enter') doLogin()"><button class="btn-primary w-full" onclick="doLogin()">Войти</button><button class="btn-outline w-full mt-2" onclick="closeModal('modal-login')">Назад</button></div></div>
-
-<div id="toast-container"></div>
-<datalist id="list-arts"></datalist>
-<datalist id="list-cells"></datalist>
-
-<script>
-    /* ПЕРЕХВАТ ОШИБОК */
-    window.onerror = function(msg, url, lineNo, columnNo, error) {
-        logError(`Ошибка: ${msg}\nСтрока: ${lineNo}\nФайл: ${url}`);
-        return false;
-    };
-    window.onunhandledrejection = function(event) {
-        logError(`Промис отклонен: ${event.reason}`);
-    };
-
-    function logError(text) {
-        let logs = safeLoad('app_error_logs', []);
-        logs.unshift(`[${new Date().toLocaleTimeString()}] ${text}`);
-        if(logs.length > 50) logs.pop();
-        localStorage.setItem('app_error_logs', JSON.stringify(logs));
-        console.error(text);
-    }
-
-    function openLogsModal() {
-        const logs = safeLoad('app_error_logs', []);
-        document.getElementById('log-area').textContent = logs.length ? logs.join('\n---\n') : "Нет записей об ошибках";
-        openModal('modal-logs');
-    }
-
-    async function shareLogFile() {
-        const logs = safeLoad('app_error_logs', []);
-        if (!logs.length) { showToast("Логи пусты", "danger"); return; }
-        const text = logs.join('\n---\n');
-        const fileName = `logs_${new Date().getTime()}.txt`;
-        const file = new File([text], fileName, { type: 'text/plain' });
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            try { await navigator.share({ files: [file], title: 'Логи приложения', text: 'Файл отладки складского терминала' }); } catch (err) { logError(`Ошибка шеринга файла: ${err.message}`); }
-        } else {
-            if (navigator.share) { await navigator.share({ title: 'Логи терминала', text: text }); }
-            else { const el = document.createElement('textarea'); el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); showToast("Текст логов скопирован"); }
-        }
-    }
-
-    function clearLogs() { localStorage.removeItem('app_error_logs'); document.getElementById('log-area').textContent = "Журнал очищен"; }
-
-    /* БЕЗОПАСНАЯ ЗАГРУЗКА */
-    function safeLoad(key, def){ try { const val = localStorage.getItem(key); return val ? JSON.parse(val) : def; } catch(e) { return def; } }
-
-    /* ДАННЫЕ */
-    const defSets = { url:"", user:"", pass:"", mgr:"1234", warehouses:["Магазин","Склад","Розница"], prefix:"R26", nextNum:1, showDensity:true, showBrand:true, showComp:true, printMethod: "rawbt", pnKey:"", pnPrinter:"" };
-    let sets = safeLoad('tsd_final_sets', defSets);
-    let db = {
-        receive: safeLoad('tsd_final_receive', []),
-        move: safeLoad('tsd_final_move', []),
-        writeoff: safeLoad('tsd_final_writeoff', []),
-        price: safeLoad('tsd_final_price', [])
-    };
-
-    let curTab = safeLoad('app_last_tab', 'receive');
-    let curDocId = safeLoad('app_last_doc_id', null);
-    let isMgr = safeLoad('app_is_mgr', false);
-    
-    let editingItemId = null, scanBuf = "", activeCuts = [];
-
-    window.onload = () => {
-        window.addEventListener('keydown', e => {
-            if (e.target.tagName === 'INPUT') return;
-            if (e.key === 'Enter') { if (scanBuf.length > 2) handleScan(scanBuf); scanBuf = ""; } 
-            else if (e.key.length === 1) { scanBuf += e.key; }
-        });
-        if (isMgr) { document.getElementById('screen-kiosk').classList.add('hidden'); document.getElementById('manager-view').classList.remove('hidden'); switchTab(curTab); if (curDocId) openDoc(curDocId); }
-        updateDataLists();
-    };
-
-    function saveAppState() { localStorage.setItem('app_last_tab', curTab); localStorage.setItem('app_last_doc_id', curDocId); localStorage.setItem('app_is_mgr', isMgr); }
-
-    function handleScan(code) {
-        if (code === "ADMIN") { loginSuccess(); return; }
-        if (!isMgr) search1C(code);
-        else { const inp = document.querySelector('input[data-art-field]'); if (inp) { inp.value = code; inp.dispatchEvent(new Event('input')); } }
-    }
-
-    async function search1C(id) {
-        showToast("Поиск...");
-        if (!sets.url) { showProduct({ name: "Демо-ткань", articul: id, price: 10, stock: "5м", cell: "A1", width: "150", composition: "Хлопок" }); return; }
-        try {
-            const res = await fetch(`${sets.url}/product?id=${id}`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ":" + (sets.pass || "")) } });
-            if (res.ok) showProduct(await res.json()); else showToast("Не найдено", "danger");
-        } catch (e) { showToast("Ошибка 1С", "danger"); logError(`Поиск 1С: ${e.message}`); }
-    }
-
-    function showProduct(p) { document.getElementById('c-name').textContent = p.name; document.getElementById('c-price').textContent = (p.price || 0).toFixed(2) + " €"; document.getElementById('c-art').textContent = p.articul; document.getElementById('c-width').textContent = p.width; document.getElementById('c-comp').textContent = p.composition; document.getElementById('c-stock').textContent = p.stock; document.getElementById('c-cell').textContent = p.cell; document.getElementById('customer-view').classList.remove('hidden'); }
-    function closeCustomerView() { document.getElementById('customer-view').classList.add('hidden'); }
-
-    /* ПЕЧАТЬ */
-    async function printLabel(art, comp, width, name) {
-        const zpl = `^XA^CI28^FO50,50^A0N,40,40^FD${name || 'Товар'}^FS^FO50,110^A0N,30,30^FDАрт: ${art}^FS^FO50,150^A0N,25,25^FDСостав: ${comp || '-'}^FS^FO100,190^BY2^BCN,60,Y,N,N^FD${art}^FS^XZ`;
-        if (sets.printMethod === 'printnode') {
-            if (!sets.pnKey || !sets.pnPrinter) { showToast("PrintNode не настроен", "danger"); return; }
-            const encoded = btoa(new TextEncoder().encode(zpl).reduce((d,b)=>d+String.fromCharCode(b),''));
-            try {
-                const res = await fetch('https://api.printnode.com/printjobs', { method: 'POST', headers: { 'Authorization': 'Basic ' + btoa(sets.pnKey + ':'), 'Content-Type': 'application/json' }, body: JSON.stringify({ printerId: parseInt(sets.pnPrinter), title: "Label", contentType: "raw_base64", content: encoded }) });
-                if(res.ok) showToast("Отправлено на PrintNode"); else showToast("Ошибка PrintNode", "danger");
-            } catch(e) { showToast("Ошибка сети PrintNode", "danger"); logError(`Печать PN: ${e.message}`); }
-        } else {
-            const utf8Zpl = btoa(new TextEncoder().encode(zpl).reduce((d,b)=>d+String.fromCharCode(b),''));
-            window.location.href = `intent://base64,${utf8Zpl}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`;
-        }
-    }
-
-    function printFromForm() { const art = document.getElementById('f-art').value; const comp = document.getElementById('f-comp') ? document.getElementById('f-comp').value : ''; printLabel(art, comp, '', "Приёмка"); }
-    function printLabelRawBT() { const cA = document.getElementById('c-art').textContent; const cC = document.getElementById('c-comp').textContent; const cN = document.getElementById('c-name').textContent; printLabel(cA, cC, '', cN); }
-
-    /* ШЕРИНГ */
-    async function shareDoc() {
-        const d = db[curTab].find(x => x.id === curDocId);
-        if (!d || !d.items.length) return;
-        let text = `ДОКУМЕНТ: ${d.name}\nТИП: ${document.getElementById('list-title').textContent}\nДАТА: ${new Date(d.createdAt).toLocaleDateString()}\n--------------------------\n`;
-        d.items.forEach((it, idx) => { text += `${idx + 1}. Арт: ${it.art}\n`; if (it.cuts) { const total = it.cuts.reduce((s, c) => s + (parseFloat(c.m) || 0), 0); text += `   Метраж: ${total.toFixed(2)} м (${it.cuts.length} отр.)\n`; } else if (it.m) { text += `   Метраж: ${it.m} м\n`; if (it.fromWh) text += `   ${it.fromWh} -> ${it.toWh}\n`; } else if (it.p) { text += `   Цена: ${it.p} €\n`; } });
-        if (navigator.share) { try { await navigator.share({ title: d.name, text: text }); } catch (err) { console.log('Share canceled'); } }
-        else { const el = document.createElement('textarea'); el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); showToast("Текст скопирован в буфер"); }
-    }
-
-    /* МЕНЕДЖЕР */
-    function doLogin() { if(document.getElementById('login-pass').value === sets.mgr){ loginSuccess(); closeModal('modal-login'); } else showToast("Ошибка", "danger"); }
-    function openLogin() { openModal('modal-login'); setTimeout(() => document.getElementById('login-pass').focus(), 300); }
-    function loginSuccess() { isMgr = true; saveAppState(); document.getElementById('screen-kiosk').classList.add('hidden'); document.getElementById('manager-view').classList.remove('hidden'); switchTab('receive'); }
-    function logout() { isMgr = false; curDocId = null; saveAppState(); document.getElementById('manager-view').classList.add('hidden'); document.getElementById('screen-kiosk').classList.remove('hidden'); }
-    
-    function switchTab(id) {
-        curTab = id; curDocId = null; editingItemId = null; saveAppState();
-        const titles = {receive:"Приёмка", move:"Перемещение", writeoff:"Списание", price:"Цены"};
-        document.getElementById('list-title').textContent = titles[id];
-        document.querySelectorAll('#tab-bar button').forEach(b => b.classList.remove('active'));
-        document.getElementById('tab-'+id).classList.add('active');
-        document.getElementById('screen-list').classList.remove('hidden'); document.getElementById('screen-work').classList.add('hidden');
-        renderDocList();
-    }
-
-    function openCreateDocModal() { openModal('modal-create-doc'); document.getElementById('input-new-doc-name').value = "Документ " + new Date().toLocaleDateString(); setTimeout(()=>document.getElementById('input-new-doc-name').focus(), 300); }
-    function executeCreateDoc() { const name = document.getElementById('input-new-doc-name').value.trim(); if(!name) return; const newDoc = { id: Date.now().toString(36), name, status: 'active', createdAt: new Date().toISOString(), items: [] }; db[curTab].unshift(newDoc); save(); closeModal('modal-create-doc'); renderDocList(); openDoc(newDoc.id); }
-
-    function renderDocList() { const q = document.getElementById('doc-search')?.value?.toLowerCase() || ""; const cont = document.getElementById('docs-list-container'); cont.innerHTML = ""; const list = db[curTab] || []; list.filter(d => d.name.toLowerCase().includes(q)).forEach(d => { const card = document.createElement('div'); card.className = `card doc-card ${d.status}`; card.onclick = () => openDoc(d.id); card.innerHTML = `<div class="flex justify-between font-bold"><span>${d.name}</span><span>${d.status==='active'?'🟡':'✅'}</span></div><div>Записей: ${d.items.length}</div>`; cont.appendChild(card); }); }
-
-    function openDoc(id) {
-        curDocId = id; saveAppState();
-        const d = db[curTab].find(x=>x.id===id);
-        if(!d) { switchTab(curTab); return; }
-        document.getElementById('screen-list').classList.add('hidden'); document.getElementById('screen-work').classList.remove('hidden');
-        document.getElementById('work-title').textContent = d.name;
-        document.getElementById('work-status').textContent = d.status==='active'?'ОТКРЫТ':'ЗАВЕРШЕН';
-        const acts = document.getElementById('closed-actions'); const formCont = document.getElementById('form-container');
-        if(d.status === 'active') { formCont.classList.remove('hidden'); acts.classList.add('hidden'); } else { formCont.classList.add('hidden'); acts.classList.remove('hidden'); }
-        renderForm(); renderRows();
-    }
-
-    function renderForm() {
-        const cont = document.getElementById('form-container'); const d = db[curTab].find(x=>x.id===curDocId);
-        if(!d || d.status !== 'active') return;
-        let artVal = sets.prefix + String(sets.nextNum).padStart(4,'0');
-        if(curTab === 'receive') {
-            cont.innerHTML = `<div class="input-group"><label>APT</label><input type="text" id="f-art" data-art-field value="${artVal}" class="monospace font-bold"></div><div class="input-group"><label>ШИРИНА</label><input type="text" id="f-width" inputmode="decimal"></div>${sets.showDensity ? '<div class="input-group"><label>ПЛОТНОСТЬ</label><input type="text" id="f-density" inputmode="numeric"></div>' : ''}${sets.showBrand ? '<div class="input-group"><label>БРЕНД</label><input type="text" id="f-brand"></div>' : ''}${sets.showComp ? '<div class="input-group"><label>СОСТАВ</label><input type="text" id="f-comp" oninput="this.value = this.value.toUpperCase()"></div>' : ''}<div id="receive-cuts"></div><button class="btn-outline w-full mb-3" style="border-style:dashed; font-size:14px;" onclick="addCut()">+ Добавить отрез</button><div class="flex gap-2"><button class="btn-outline" style="flex:1" onclick="printFromForm()">🖨️ Печать</button><button class="btn-success" style="flex:2" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button></div>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
-            if (!editingItemId) activeCuts = [{id:1, m:'', wh:sets.warehouses[0] || "", c:''}];
-            renderCuts();
-        } else if(curTab === 'move'){
-            cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"></div><div class="flex gap-2"><div style="flex:1"><label>ОТКУДА (СКЛАД)</label><select id="f-wh-from">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ОТКУДА (ЯЧ)</label><input type="text" id="f-cell-from" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="flex gap-2"><div style="flex:1"><label>КУДА (СКЛАД)</label><select id="f-wh-to">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>КУДА (ЯЧ)</label><input type="text" id="f-cell-to" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="input-group"><label>МЕТРАЖ</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal"></div><button class="btn-primary w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
-        } else if(curTab === 'writeoff'){
-            cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"></div><div class="flex gap-2"><div style="flex:1"><label>СКЛАД</label><select id="f-wh">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ЯЧЕЙКА</label><input type="text" id="f-cell" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal"></div><button class="btn-danger w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
-        } else if(curTab === 'price'){
-            cont.innerHTML = `<label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"><label>Цена (€)</label><input type="text" id="f-p" inputmode="decimal"><button class="btn-primary w-full" style="background:var(--price-color)" id="btn-save-line" onclick="saveLine()">ОК</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
-        }
-    }
-
-    function renderCuts() { const box = document.getElementById('receive-cuts'); if(!box) return; box.innerHTML = activeCuts.map(c=>`<div class="cut-row"><select onchange="uCut(${c.id},'wh',this.value)">${sets.warehouses.length > 0 ? sets.warehouses.map(w=>`<option ${c.wh===w?'selected':''}>${w}</option>`) : '<option value="">-</option>'}</select><input type="text" placeholder="М" value="${c.m}" oninput="uCut(${c.id},'m',this.value)" inputmode="decimal"><input type="text" placeholder="Яч" value="${c.c}" oninput="this.value = this.value.toUpperCase(); uCut(${c.id},'c',this.value)" list="list-cells"><button class="btn-icon" onclick="remCut(${c.id})">✕</button></div>`).join(''); }
-    function addCut() { const newId = Date.now(); activeCuts.push({id: newId, m:'', wh:sets.warehouses[0] || "", c:''}); renderCuts(); setTimeout(() => { const inputs = document.querySelectorAll('#receive-cuts input[placeholder="М"]'); if(inputs.length) inputs[inputs.length-1].focus(); }, 50); }
-    function remCut(id) { if(activeCuts.length > 1) { activeCuts = activeCuts.filter(x=>x.id!==id); renderCuts(); } }
-    function uCut(id, f, v) { const c = activeCuts.find(x=>x.id===id); if(c) c[f]=v.replace(',','.'); }
-
-    function saveLine() {
-        const d = db[curTab].find(x=>x.id===curDocId); const artInp = document.getElementById('f-art'); if(!artInp) return; const art = artInp.value; if(!art) return;
-        let item = { id: editingItemId || Date.now(), art, ts: new Date().toISOString() };
-        if(curTab === 'receive'){ const v = activeCuts.filter(c => !isNaN(parseFloat(c.m)) && parseFloat(c.m) > 0); if(!v.length) return; item.cuts = JSON.parse(JSON.stringify(v)); item.w = document.getElementById('f-width').value; if(sets.showDensity && document.getElementById('f-density')) item.dens = document.getElementById('f-density').value; if(sets.showBrand && document.getElementById('f-brand')) item.brand = document.getElementById('f-brand').value; if(sets.showComp && document.getElementById('f-comp')) item.comp = document.getElementById('f-comp').value; if (!editingItemId) sets.nextNum++; }
-        else if(curTab === 'move'){ item.m = document.getElementById('f-m').value; item.fromWh = document.getElementById('f-wh-from').value; item.fromCell = document.getElementById('f-cell-from').value; item.toWh = document.getElementById('f-wh-to').value; item.toCell = document.getElementById('f-cell-to').value; }
-        else if(curTab === 'writeoff'){ item.m = document.getElementById('f-m').value; item.wh = document.getElementById('f-wh').value; item.cell = document.getElementById('f-cell').value; }
-        else if(curTab === 'price'){ item.p = document.getElementById('f-p').value; }
-        if(editingItemId){ const idx = d.items.findIndex(i=>i.id===editingItemId); d.items[idx]=item; editingItemId=null; } else d.items.unshift(item);
-        save(); renderForm(); renderRows(); showToast("Записано");
-    }
-
-    function editItem(id) {
-        const d = db[curTab].find(x=>x.id===curDocId); const it = d.items.find(i=>i.id===id); if(!it) return;
-        editingItemId = id; renderForm();
-        const fA = document.getElementById('f-art'); if(fA) fA.value = it.art;
-        if(curTab==='receive'){
-            const fW = document.getElementById('f-width'); if(fW) fW.value = it.w || ''; const fD = document.getElementById('f-density'); if(fD) fD.value = it.dens || ''; const fB = document.getElementById('f-brand'); if(fB) fB.value = it.brand || ''; const fC = document.getElementById('f-comp'); if(fC) fC.value = it.comp || '';
-            activeCuts = JSON.parse(JSON.stringify(it.cuts)); renderCuts();
-        } else if(curTab === 'move') { document.getElementById('f-m').value = it.m; document.getElementById('f-wh-from').value = it.fromWh; document.getElementById('f-cell-from').value = it.fromCell; document.getElementById('f-wh-to').value = it.toWh; document.getElementById('f-cell-to').value = it.toCell; }
-        else if(curTab === 'writeoff') { document.getElementById('f-m').value = it.m; document.getElementById('f-wh').value = it.wh; document.getElementById('f-cell').value = it.cell; }
-        else if(curTab==='price') { const fP = document.getElementById('f-p'); if(fP) fP.value = it.p || ''; }
-        const bSave = document.getElementById('btn-save-line'); if(bSave) bSave.textContent = "ОБНОВИТЬ";
-        renderRows(); window.scrollTo({top: 0, behavior: 'smooth'});
-    }
-
-    function cancelEdit() { editingItemId = null; renderForm(); renderRows(); }
-
-    function renderRows() {
-        const cont = document.getElementById('rows-container'); const d = db[curTab].find(x=>x.id===curDocId); cont.innerHTML = "";
-        d.items.forEach(it => { const div = document.createElement('div'); div.className = 'history-item' + (editingItemId===it.id?' editing':''); let info = ""; if(curTab === 'move') info = `<div class="text-sm text-sec">${it.fromWh} → ${it.toWh} | ${it.m}м</div>`; else if(curTab === 'writeoff') info = `<div class="text-sm text-sec">${it.wh} | ${it.m}м</div>`; else if(curTab === 'price') info = `<div class="text-sm font-bold" style="color:var(--price-color)">${it.p} €</div>`; else info = `<div class="text-sm text-sec">${it.cuts ? it.cuts.length : 0} отр.</div>`; div.innerHTML = `<div><div class="font-bold">${it.art}</div>${info}</div><div class="flex gap-2">${d.status==='active' ? `<button class="btn-icon" onclick="editItem(${it.id})">✏️</button><button class="btn-icon text-danger" onclick="delRow(${it.id})">🗑️</button>` : ''}</div>`; cont.appendChild(div); });
-        document.getElementById('work-counter').textContent = "Записей: " + d.items.length;
-    }
-
-    /* УТИЛИТЫ */
-    function save() { localStorage.setItem('tsd_final_sets', JSON.stringify(sets)); localStorage.setItem('tsd_final_receive', JSON.stringify(db.receive)); localStorage.setItem('tsd_final_move', JSON.stringify(db.move)); localStorage.setItem('tsd_final_writeoff', JSON.stringify(db.writeoff)); localStorage.setItem('tsd_final_price', JSON.stringify(db.price)); updateDataLists(); }
-    function updateDataLists() { const arts = new Set(), cells = new Set(); Object.values(db).forEach(list => { if(list) list.forEach(d => d.items.forEach(i => { if(i.art) arts.add(i.art); if(i.cuts) i.cuts.forEach(c => { if(c.c) cells.add(c.c); }); if(i.cell) cells.add(i.cell); if(i.fromCell) cells.add(i.fromCell); if(i.toCell) cells.add(i.toCell); } )) }); document.getElementById('list-arts').innerHTML = Array.from(arts).map(a=>`<option value="${a}">`).join(''); document.getElementById('list-cells').innerHTML = Array.from(cells).map(c=>`<option value="${c}">`).join(''); }
-    function openModal(id) { document.getElementById(id).classList.add('open'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-    function showToast(m, t) { const c = document.getElementById('toast-container'); if(c.children.length > 3) c.removeChild(c.firstChild); const d = document.createElement('div'); d.className = `toast`; d.style.background = t === 'danger' ? 'var(--danger)' : 'var(--primary)'; d.textContent = m; c.appendChild(d); setTimeout(()=>d.remove(), 2500); }
-    
-    function openSettings() { document.getElementById('set-show-density').checked = sets.showDensity; document.getElementById('set-show-brand').checked = sets.showBrand; document.getElementById('set-show-comp').checked = sets.showComp; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "rawbt"; togglePrintSettingsUI(); renderSettingsWh(); openModal('modal-settings'); }
-    function togglePrintSettingsUI() { const method = document.getElementById('set-print-method').value; const block = document.getElementById('printnode-block'); if (block) block.style.display = (method === 'printnode') ? 'block' : 'none'; }
-    function saveSets() { sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; save(); }
-    function renderSettingsWh() { document.getElementById('settings-warehouses').innerHTML = sets.warehouses.map(w=>`<div class="wh-item"><span>${w}</span><button class="btn-icon text-danger" onclick="delWh('${w}')">🗑️</button></div>`).join(''); }
-    function addWh() { const n = document.getElementById('new-wh-name'); if(n.value){sets.warehouses.push(n.value); n.value=''; renderSettingsWh(); saveSets();}}
-    function delWh(w) { sets.warehouses = sets.warehouses.filter(x=>x!==w); renderSettingsWh(); saveSets();}
-    function closeSettings() { saveSets(); closeModal('modal-settings'); }
-    function exitWork() { curDocId = null; saveAppState(); switchTab(curTab); }
-
-    async function customConfirm(msg) { 
-        return new Promise(res => { 
-            const msgEl = document.getElementById('conf-msg');
-            const okBtn = document.getElementById('conf-ok');
-            const cancelBtn = document.getElementById('conf-cancel');
-            
-            if (!msgEl || !okBtn || !cancelBtn) { console.error("Confirm elements missing"); res(false); return; }
-            
-            msgEl.textContent = msg; 
-            openModal('modal-confirm'); 
-            
-            okBtn.onclick = () => { closeModal('modal-confirm'); res(true); }; 
-            cancelBtn.onclick = () => { closeModal('modal-confirm'); res(false); }; 
-        }); 
-    }
-
-    async function completeDoc() { if(!await customConfirm("Завершить документ?")) return; const d = db[curTab].find(x=>x.id===curDocId); d.status = 'closed'; save(); openDoc(curDocId); }
-    function reopenDoc() { const d = db[curTab].find(x=>x.id===curDocId); d.status = 'active'; save(); openDoc(curDocId); }
-    
-    async function syncWith1C() {
-        const d = db[curTab].find(x=>x.id===curDocId); if(!sets.url) { showToast("URL 1С не настроен", "danger"); return; }
-        showToast("Отправка в 1С...");
-        try { const res = await fetch(`${sets.url}/post-document`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Basic '+btoa(sets.user+":"+(sets.pass||""))}, body:JSON.stringify({type:curTab.toUpperCase(), data:d}) }); if(res.ok) showToast("Успешно проведено!"); else showToast("1С вернула ошибку", "danger"); } catch(e) { showToast("Сервер 1С недоступен", "danger"); logError(`Синхронизация 1С: ${e.message}`); }
-    }
-
-    async function test1CConnection() {
-        const url = document.getElementById('set-url').value; const user = document.getElementById('set-user').value; const pass = document.getElementById('set-pass').value;
-        if (!url) { showToast("Сначала введите URL", "danger"); return; }
-        showToast("Проверка связи...");
-        try { const res = await fetch(`${url}/product?id=ping`, { headers: { 'Authorization': 'Basic ' + btoa(user + ":" + pass) } }); if (res.ok || res.status === 404) { showToast("Связь с 1С установлена!", "success"); } else { showToast(`Ошибка: ${res.status}`, "danger"); } } catch (e) { showToast("Ошибка соединения", "danger"); logError(`Тест 1С: ${e.message}`); }
-    }
-
-    async function delRow(rid) { if(!await customConfirm("Удалить строку?")) return; const d = db[curTab].find(x=>x.id===curDocId); d.items = d.items.filter(x=>x.id!==rid); save(); renderRows(); }
-    async function deleteFullDoc() { if(!await customConfirm("УДАЛИТЬ ВЕСЬ ДОКУМЕНТ?")) return; db[curTab] = db[curTab].filter(x=>x.id!==curDocId); save(); exitWork(); }
-    function openManualSearch() { openModal('modal-search'); setTimeout(() => document.getElementById('manual-search-input').focus(), 300); }
-    function doManualSearch() { const v = document.getElementById('manual-search-input').value.trim(); if(v){ closeModal('modal-search'); search1C(v); } }
-    function exportData() { const blob = new Blob([JSON.stringify({db, sets})], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='backup.json'; a.click(); }
-    function importData(event) { const file = event.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(e){ try{ const d = JSON.parse(e.target.result); if(d.db && d.sets){ db = d.db; sets = d.sets; save(); location.reload(); } }catch(err){showToast('Ошибка файла','danger');} }; reader.readAsText(file); }
-</script>
-</body>
-</html>
+diff --git a/index.html b/index.html
+index b34b5e35ceabc8d4ac0af9d8cd0ba0435bf596ab..7b70f68e0bba3aa6b010838bdf5ef6ae06abf8d5 100644
+--- a/index.html
++++ b/index.html
+@@ -1,600 +1,647 @@
+-<!DOCTYPE html>
+-<html lang="ru">
+-<head>
+-    <meta charset="UTF-8">
+-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+-    <title>Складской Терминал</title>
+-    
+-    <!-- Настройки PWA -->
+-    <meta name="theme-color" content="#1976D2">
+-    <meta name="apple-mobile-web-app-capable" content="yes">
+-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+-    <meta name="apple-mobile-web-app-title" content="Склад">
+-    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%231976D2'/%3E%3Cpath d='M256 120L120 188v136l136 68 136-68V188L256 120z' fill='%23fff'/%3E%3C/svg%3E">
+-    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkNrbGFkc2tvaiBUZXJtaW5hbCAxQyIsCiAgInNob3J0X25hbWUiOiAiU2tsYWQiLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiI0Y1RjdGQSIsCiAgInRoZW1lX2NvbG9yIjogIiMxOTc2RDIiCn0=">
+-
+-    <style>
+-        :root {
+-            --primary: #1976D2;
+-            --primary-hover: #1565C0;
+-            --success: #388E3C;
+-            --danger: #D32F2F;
+-            --price-color: #00897B;
+-            --bg: #F5F7FA;
+-            --card: #FFFFFF;
+-            --text: #212121;
+-            --text-sec: #757575;
+-            --border: #E0E0E0;
+-            --focus-ring: rgba(25, 118, 210, 0.3);
+-        }
+-
+-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+-        body { font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+-        .hidden { display: none !important; }
+-        .flex { display: flex; }
+-        .items-center { align-items: center; }
+-        .justify-between { justify-content: space-between; }
+-        .text-center { text-align: center; }
+-        .p-4 { padding: 16px; }
+-        .w-full { width: 100%; }
+-        .font-bold { font-weight: bold; }
+-        .monospace { font-family: "SF Mono", "Courier New", monospace; }
+-        .text-sm { font-size: 13px; }
+-        .text-primary { color: var(--primary); }
+-        .gap-2 { gap: 8px; }
+-
+-        #app { max-width: 1200px; margin: 0 auto; min-height: 100vh; position: relative; padding-bottom: 80px; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
+-
+-        /* ЭКРАН КИОСКА */
+-        #screen-kiosk {
+-            height: 100vh; background: linear-gradient(135deg, var(--primary) 0%, #0D47A1 100%);
+-            color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 32px;
+-            text-align: center;
+-        }
+-
+-        /* КНОПКИ */
+-        button {
+-            border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; padding: 12px 16px;
+-            transition: background 0.2s, transform 0.1s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px;
+-        }
+-        button:active { transform: scale(0.98); }
+-        .btn-main { background: white; color: var(--primary); height: 64px; font-size: 18px; font-weight: 800; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+-        .btn-primary { background: var(--primary); color: white; }
+-        .btn-success { background: var(--success); color: white; }
+-        .btn-danger { background: var(--danger); color: white; }
+-        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+-        .btn-icon { background: none; color: var(--text-sec); font-size: 20px; padding: 0; min-width: 44px; min-height: 44px; }
+-
+-        /* КАРТОЧКИ */
+-        .card { background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); transition: box-shadow 0.2s; }
+-        .doc-card { cursor: pointer; border-left: 6px solid var(--border); transition: 0.1s; margin-bottom: 12px; }
+-        .doc-card:active { background: #f9f9f9; }
+-        .doc-card.active { border-left-color: var(--primary); }
+-        .doc-card.closed { opacity: 0.7; border-left-color: var(--text-sec); }
+-
+-        /* ВВОД */
+-        .input-group { margin-bottom: 10px; }
+-        input, select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; background: white; color: var(--text); transition: border-color 0.2s; }
+-        input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px var(--focus-ring); }
+-        label { display: block; margin-bottom: 4px; font-size: 11px; color: var(--text-sec); font-weight: 700; text-transform: uppercase; }
+-
+-        /* ТАБ БАР */
+-        #tab-bar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: white; border-top: 1px solid var(--border); z-index: 100; max-width: 1200px; margin: 0 auto; }
+-        #tab-bar button { flex: 1; border-radius: 0; flex-direction: column; background: none; color: #757575; font-size: 11px; padding: 8px 0; gap: 4px; }
+-        #tab-bar button.active { color: var(--primary); border-top: 2px solid var(--primary); font-weight: 700; }
+-
+-        /* ПЛАНШЕТНАЯ СЕТКА */
+-        .work-layout { display: flex; flex-direction: column; gap: 16px; }
+-        @media (min-width: 900px) {
+-            .work-layout { display: grid; grid-template-columns: 420px 1fr; align-items: start; }
+-            .sticky-form { position: sticky; top: 110px; }
+-        }
+-
+-        /* МОДАЛКИ */
+-        .modal-overlay { 
+-            position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; 
+-            display: flex; justify-content: center; align-items: center;
+-            opacity: 0; pointer-events: none; transition: opacity 0.2s; 
+-            padding: 20px;
+-        }
+-        .modal-overlay.open { opacity: 1; pointer-events: all; }
+-        .modal-content { 
+-            background: white; width: 100%; max-width: 500px; border-radius: 16px;
+-            padding: 24px; transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.1, 0.9, 0.2, 1); 
+-            max-height: 90vh; overflow-y: auto;
+-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+-        }
+-        .modal-overlay.open .modal-content { transform: scale(1); }
+-
+-        @media (max-height: 500px) {
+-            .modal-overlay { align-items: flex-start; padding-top: 10px; }
+-        }
+-
+-        .settings-section { margin-bottom: 20px; }
+-        .settings-section h3 { font-size: 13px; color: var(--text-sec); text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 4px; font-weight: 700; }
+-        .light-block { background: #f9f9f9; padding: 12px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #f0f0f0; }
+-        .checkbox-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; cursor: pointer; color: var(--text-sec); font-size: 14px; }
+-        .checkbox-row input { width: 22px; height: 22px; margin: 0; cursor: pointer; accent-color: var(--primary); }
+-        .wh-item { display: flex; justify-content: space-between; align-items: center; background: #f0f0f0; padding: 8px 12px; border-radius: 8px; margin-bottom: 6px; }
+-
+-        /* ЖУРНАЛ */
+-        .history-item { border-bottom: 1px solid #eee; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
+-        .history-item:last-child { border-bottom: none; }
+-        .history-item.editing { background: #E3F2FD; border-radius: 8px; padding: 12px; border: 1px solid var(--primary); }
+-
+-        #toast-container { position: fixed; top: 100px; left: 50%; transform: translateX(-50%); z-index: 3000; width: 90%; max-width: 400px; pointer-events: none; }
+-        .toast { padding: 14px; border-radius: 8px; color: white; margin-bottom: 8px; text-align: center; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.1); animation: slideIn 0.3s forwards; }
+-        @keyframes slideIn { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+-
+-        .header-fixed { position: sticky; top: 0; z-index: 50; background: #F5F7FA; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+-        .cut-row { display: grid; grid-template-columns: 1.4fr 1.1fr 1fr auto; gap: 6px; align-items: center; margin-bottom: 8px; }
+-
+-        /* ЛОГИ */
+-        #log-area { font-family: monospace; font-size: 11px; background: #222; color: #0f0; padding: 10px; border-radius: 8px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; margin-bottom: 10px; }
+-    </style>
+-</head>
+-<body>
+-
+-<div id="app">
+-    <!-- ЭКРАН КИОСКА -->
+-    <div id="screen-kiosk">
+-        <div style="font-size: 64px; margin-bottom: 10px;">📦</div>
+-        <h1 style="font-size: 32px; font-weight: 900; margin-bottom: 8px;">СКЛАД-ЦЕНТР</h1>
+-        <p style="font-size: 18px; opacity: 0.8; margin-bottom: 40px;">информационный терминал</p>
+-        <div class="w-full" style="max-width: 320px;">
+-            <div class="text-center mb-6" style="font-size: 22px; font-weight: 800; animation: pulse 2s infinite;">ПОДНЕСИТЕ ШТРИХКОД</div>
+-            <button class="btn-main w-full mb-4" onclick="openManualSearch()">🔍 Найти по артикулу</button>
+-            <button class="btn-outline w-full" style="color: white; border-color: rgba(255,255,255,0.4);" onclick="openLogin()">🔒 Меню персонала</button>
+-        </div>
+-        <input type="text" id="kiosk-scanner-input" style="position: absolute; opacity: 0; pointer-events: none;">
+-    </div>
+-
+-    <!-- КАРТОЧКА КЛИЕНТА -->
+-    <div id="customer-view" class="hidden" style="position:fixed; inset:0; background:white; z-index:1500; padding:24px; display:flex; flex-direction:column;">
+-        <div class="flex justify-between items-center mb-4">
+-            <h1 id="c-name" style="font-size: 24px; flex: 1;">Товар</h1>
+-            <button class="btn-icon" onclick="closeCustomerView()">✕</button>
+-        </div>
+-        <div id="c-img-box" style="width:100%; height:240px; background:#f0f0f0; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:20px;">Фото</div>
+-        <div id="c-price" style="font-size: 48px; font-weight: 900; color: var(--price-color); margin-bottom: 15px;">0.00 €</div>
+-        <div class="card" style="background:#f8f9fa; border:none; flex-grow:1;">
+-            <p><strong>Артикул:</strong> <span id="c-art">-</span></p>
+-            <p><strong>Ширина:</strong> <span id="c-width">-</span></p>
+-            <p><strong>Состав:</strong> <span id="c-comp">-</span></p>
+-            <p><strong>Наличие:</strong> <span id="c-stock" class="font-bold">-</span></p>
+-            <p><strong>Ячейка:</strong> <span id="c-cell" class="font-bold text-primary">-</span></p>
+-        </div>
+-        <div class="flex gap-2 mt-4">
+-            <button class="btn-outline w-full" style="height: 64px;" onclick="printLabelRawBT()">🖨️ Печать</button>
+-            <button class="btn-primary w-full" style="height: 64px; font-size: 20px;" onclick="closeCustomerView()">ПОНЯТНО</button>
+-        </div>
+-    </div>
+-
+-    <!-- ЗОНА ПЕРСОНАЛА -->
+-    <div id="manager-view" class="hidden">
+-        <div id="screen-list" class="p-4">
+-            <div class="flex justify-between items-center mb-4">
+-                <h1 id="list-title">Приёмка</h1>
+-                <button class="btn-icon" onclick="openSettings()">⚙️</button>
+-            </div>
+-            <input type="text" id="doc-search" placeholder="🔍 Поиск документа..." oninput="renderDocList()" style="margin-bottom: 16px;">
+-            <button class="btn-primary w-full mb-4" style="height: 56px;" onclick="openCreateDocModal()">+ Создать документ</button>
+-            <div id="docs-list-container"></div>
+-        </div>
+-
+-        <div id="screen-work" class="hidden">
+-            <div class="header-fixed">
+-                <div class="flex justify-between items-center mb-2">
+-                    <button class="btn-icon" onclick="exitWork()">← Назад</button>
+-                    <div class="flex gap-2">
+-                        <button class="btn-icon text-danger" onclick="deleteFullDoc()">🗑️</button>
+-                        <button class="btn-icon text-success" id="btn-complete-doc" onclick="completeDoc()">✅ Готово</button>
+-                    </div>
+-                </div>
+-                <h2 id="work-title">Документ</h2>
+-                <div class="flex justify-between items-center mt-1">
+-                    <span id="work-status" class="monospace text-sm font-bold">АКТИВЕН</span>
+-                    <span id="work-counter" class="text-sm font-bold text-primary">Записей: 0</span>
+-                </div>
+-            </div>
+-            <div class="p-4 pt-0">
+-                <div class="work-layout">
+-                    <div class="sticky-form">
+-                        <div id="closed-actions" class="hidden card text-center" style="border: 2px solid var(--success);">
+-                            <h3 style="color: var(--success); margin-bottom: 10px;">ДОКУМЕНТ ЗАКРЫТ</h3>
+-                            <button class="btn-primary w-full mb-3" style="height: 64px; font-size: 18px;" onclick="syncWith1C()">🚀 ОТПРАВИТЬ В 1С</button>
+-                            <div class="flex gap-2">
+-                                <button class="btn-outline w-full" onclick="reopenDoc()">🔄 Правка</button>
+-                                <button class="btn-outline w-full" onclick="shareDoc()">📤 Поделиться</button>
+-                            </div>
+-                        </div>
+-                        <div id="form-container" class="card" style="border: 2px solid #eee; position: relative;"></div>
+-                    </div>
+-                    <div class="card">
+-                        <h3 class="text-sm mb-3">Журнал записей</h3>
+-                        <div id="rows-container"></div>
+-                    </div>
+-                </div>
+-            </div>
+-        </div>
+-
+-        <div id="tab-bar">
+-            <button onclick="switchTab('receive')" id="tab-receive"><span>📦</span>Приёмка</button>
+-            <button onclick="switchTab('move')" id="tab-move"><span>🔄</span>Перемещение</button>
+-            <button onclick="switchTab('writeoff')" id="tab-writeoff"><span>📋</span>Списание</button>
+-            <button onclick="switchTab('price')" id="tab-price"><span>🏷️</span>Цены</button>
+-            <button onclick="logout()" style="color: var(--danger);"><span>🚪</span>Выход</button>
+-        </div>
+-    </div>
+-</div>
+-
+-<!-- МОДАЛЬНЫЕ ОКНА -->
+-<div id="modal-settings" class="modal-overlay">
+-    <div class="modal-content">
+-        <div class="flex justify-between items-center mb-6"><h2>Настройки</h2><button class="btn-icon" onclick="closeSettings()">✕</button></div>
+-        
+-        <div class="settings-section">
+-            <h3>ДИАГНОСТИКА</h3>
+-            <div class="light-block">
+-                <button class="btn-outline w-full mb-2" onclick="openLogsModal()">📋 Посмотреть логи ошибок</button>
+-            </div>
+-        </div>
+-
+-        <div class="settings-section">
+-            <h3>МЕТОД ПЕЧАТИ</h3>
+-            <div class="light-block">
+-                <select id="set-print-method" onchange="togglePrintSettingsUI()">
+-                    <option value="rawbt">Бесплатный (Android RawBT)</option>
+-                    <option value="printnode">Платный (PrintNode API)</option>
+-                </select>
+-            </div>
+-        </div>
+-
+-        <div class="settings-section">
+-            <h3>ДОПОЛНИТЕЛЬНЫЕ ПОЛЯ</h3>
+-            <div class="light-block">
+-                <label class="checkbox-row">Поле Плотность (г/м²) <input type="checkbox" id="set-show-density" onchange="saveSets()"></label>
+-                <label class="checkbox-row">Поле Бренд <input type="checkbox" id="set-show-brand" onchange="saveSets()"></label>
+-                <label class="checkbox-row">Поле Состав <input type="checkbox" id="set-show-comp" onchange="saveSets()"></label>
+-            </div>
+-        </div>
+-
+-        <div class="settings-section">
+-            <h3>СЧЁТЧИК АРТИКУЛОВ</h3>
+-            <div class="flex gap-2">
+-                <div style="flex:1"><label>Префикс</label><input type="text" id="set-prefix" onchange="saveSets()"></div>
+-                <div style="flex:1"><label>Следующий номер</label><input type="number" id="set-next-num" onchange="saveSets()"></div>
+-            </div>
+-        </div>
+-
+-        <div class="settings-section">
+-            <h3>СКЛАДЫ</h3>
+-            <div id="settings-warehouses"></div>
+-            <div class="flex gap-2 mt-2"><input type="text" id="new-wh-name" placeholder="Новый склад" style="margin:0"><button class="btn-outline" style="min-width: 48px;" onclick="addWh()">+</button></div>
+-            <button class="btn-primary w-full mt-3" onclick="saveSets()">Сохранить склады</button>
+-        </div>
+-
+-        <div class="settings-section" id="printnode-block">
+-            <h3>PRINTNODE API</h3>
+-            <div class="input-group"><label>API Ключ</label><input type="text" id="set-pn-key"></div>
+-            <div class="input-group"><label>ID Принтера</label><input type="text" id="set-pn-printer"></div>
+-            <div class="flex gap-2">
+-                <button class="btn-outline w-full" onclick="showToast('Связь ОК')">Проверить</button>
+-                <button class="btn-primary w-full" onclick="saveSets()">Сохранить</button>
+-            </div>
+-        </div>
+-
+-        <div class="settings-section">
+-            <h3>ИНТЕГРАЦИЯ 1С (HTTP)</h3>
+-            <label>URL Сервиса</label><input type="text" id="set-url" onchange="saveSets()" placeholder="https://...">
+-            <label>Логин</label><input type="text" id="set-user" onchange="saveSets()">
+-            <label>Пароль</label><input type="password" id="set-pass" onchange="saveSets()">
+-            <button class="btn-outline w-full mt-2" onclick="test1CConnection()">📡 Проверить связь с 1С</button>
+-        </div>
+-
+-        <button class="btn-success w-full mt-4" style="height: 60px;" onclick="closeSettings()">ГОТОВО</button>
+-    </div>
+-</div>
+-
+-<div id="modal-logs" class="modal-overlay">
+-    <div class="modal-content">
+-        <h2>Журнал ошибок</h2>
+-        <div id="log-area">Нет ошибок</div>
+-        <button class="btn-outline w-full mb-2" onclick="shareLogFile()">📤 Поделиться файлом лога</button>
+-        <button class="btn-outline w-full mb-2" onclick="clearLogs()">Очистить</button>
+-        <button class="btn-primary w-full" onclick="closeModal('modal-logs')">Закрыть</button>
+-    </div>
+-</div>
+-
+-<div id="modal-create-doc" class="modal-overlay">
+-    <div class="modal-content">
+-        <h2 id="create-doc-title">Новый документ</h2>
+-        <input type="text" id="input-new-doc-name" class="mt-4" placeholder="Название документа" onkeydown="if(event.key==='Enter') executeCreateDoc()">
+-        <div class="flex gap-2 mt-4">
+-            <button class="btn-outline w-full" onclick="closeModal('modal-create-doc')">Отмена</button>
+-            <button class="btn-primary w-full" onclick="executeCreateDoc()">Создать</button>
+-        </div>
+-    </div>
+-</div>
+-
+-<div id="modal-confirm" class="modal-overlay" style="z-index:5000">
+-    <div class="modal-content" style="text-align:center">
+-        <h2 id="conf-title">Вы уверены?</h2>
+-        <p id="conf-msg" class="mb-4 text-sec"></p>
+-        <div class="flex gap-2">
+-            <button class="btn-outline w-full" id="conf-cancel">Отмена</button>
+-            <button class="btn-danger w-full" id="conf-ok">Да</button>
+-        </div>
+-    </div>
+-</div>
+-
+-<div id="modal-search" class="modal-overlay"><div class="modal-content"><h2>Поиск</h2><input type="text" id="manual-search-input" placeholder="Введите код..." onkeydown="if(event.key==='Enter') doManualSearch()"><div class="flex gap-2 mt-4"><button class="btn-outline w-full" onclick="closeModal('modal-search')">Отмена</button><button class="btn-primary w-full" onclick="doManualSearch()">Найти</button></div></div></div>
+-<div id="modal-login" class="modal-overlay"><div class="modal-content" style="text-align:center"><h2>Вход персонала</h2><input type="password" id="login-pass" placeholder="Пароль" style="font-size:24px; text-align:center;" onkeydown="if(event.key==='Enter') doLogin()"><button class="btn-primary w-full" onclick="doLogin()">Войти</button><button class="btn-outline w-full mt-2" onclick="closeModal('modal-login')">Назад</button></div></div>
+-
+-<div id="toast-container"></div>
+-<datalist id="list-arts"></datalist>
+-<datalist id="list-cells"></datalist>
+-
+-<script>
+-    /* ПЕРЕХВАТ ОШИБОК */
+-    window.onerror = function(msg, url, lineNo, columnNo, error) {
+-        logError(`Ошибка: ${msg}\nСтрока: ${lineNo}\nФайл: ${url}`);
+-        return false;
+-    };
+-    window.onunhandledrejection = function(event) {
+-        logError(`Промис отклонен: ${event.reason}`);
+-    };
+-
+-    function logError(text) {
+-        let logs = safeLoad('app_error_logs', []);
+-        logs.unshift(`[${new Date().toLocaleTimeString()}] ${text}`);
+-        if(logs.length > 50) logs.pop();
+-        localStorage.setItem('app_error_logs', JSON.stringify(logs));
+-        console.error(text);
+-    }
+-
+-    function openLogsModal() {
+-        const logs = safeLoad('app_error_logs', []);
+-        document.getElementById('log-area').textContent = logs.length ? logs.join('\n---\n') : "Нет записей об ошибках";
+-        openModal('modal-logs');
+-    }
+-
+-    async function shareLogFile() {
+-        const logs = safeLoad('app_error_logs', []);
+-        if (!logs.length) { showToast("Логи пусты", "danger"); return; }
+-        const text = logs.join('\n---\n');
+-        const fileName = `logs_${new Date().getTime()}.txt`;
+-        const file = new File([text], fileName, { type: 'text/plain' });
+-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+-            try { await navigator.share({ files: [file], title: 'Логи приложения', text: 'Файл отладки складского терминала' }); } catch (err) { logError(`Ошибка шеринга файла: ${err.message}`); }
+-        } else {
+-            if (navigator.share) { await navigator.share({ title: 'Логи терминала', text: text }); }
+-            else { const el = document.createElement('textarea'); el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); showToast("Текст логов скопирован"); }
+-        }
+-    }
+-
+-    function clearLogs() { localStorage.removeItem('app_error_logs'); document.getElementById('log-area').textContent = "Журнал очищен"; }
+-
+-    /* БЕЗОПАСНАЯ ЗАГРУЗКА */
+-    function safeLoad(key, def){ try { const val = localStorage.getItem(key); return val ? JSON.parse(val) : def; } catch(e) { return def; } }
+-
+-    /* ДАННЫЕ */
+-    const defSets = { url:"", user:"", pass:"", mgr:"1234", warehouses:["Магазин","Склад","Розница"], prefix:"R26", nextNum:1, showDensity:true, showBrand:true, showComp:true, printMethod: "rawbt", pnKey:"", pnPrinter:"" };
+-    let sets = safeLoad('tsd_final_sets', defSets);
+-    let db = {
+-        receive: safeLoad('tsd_final_receive', []),
+-        move: safeLoad('tsd_final_move', []),
+-        writeoff: safeLoad('tsd_final_writeoff', []),
+-        price: safeLoad('tsd_final_price', [])
+-    };
+-
+-    let curTab = safeLoad('app_last_tab', 'receive');
+-    let curDocId = safeLoad('app_last_doc_id', null);
+-    let isMgr = safeLoad('app_is_mgr', false);
+-    
+-    let editingItemId = null, scanBuf = "", activeCuts = [];
+-
+-    window.onload = () => {
+-        window.addEventListener('keydown', e => {
+-            if (e.target.tagName === 'INPUT') return;
+-            if (e.key === 'Enter') { if (scanBuf.length > 2) handleScan(scanBuf); scanBuf = ""; } 
+-            else if (e.key.length === 1) { scanBuf += e.key; }
+-        });
+-        if (isMgr) { document.getElementById('screen-kiosk').classList.add('hidden'); document.getElementById('manager-view').classList.remove('hidden'); switchTab(curTab); if (curDocId) openDoc(curDocId); }
+-        updateDataLists();
+-    };
+-
+-    function saveAppState() { localStorage.setItem('app_last_tab', curTab); localStorage.setItem('app_last_doc_id', curDocId); localStorage.setItem('app_is_mgr', isMgr); }
+-
+-    function handleScan(code) {
+-        if (code === "ADMIN") { loginSuccess(); return; }
+-        if (!isMgr) search1C(code);
+-        else { const inp = document.querySelector('input[data-art-field]'); if (inp) { inp.value = code; inp.dispatchEvent(new Event('input')); } }
+-    }
+-
+-    async function search1C(id) {
+-        showToast("Поиск...");
+-        if (!sets.url) { showProduct({ name: "Демо-ткань", articul: id, price: 10, stock: "5м", cell: "A1", width: "150", composition: "Хлопок" }); return; }
+-        try {
+-            const res = await fetch(`${sets.url}/product?id=${id}`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ":" + (sets.pass || "")) } });
+-            if (res.ok) showProduct(await res.json()); else showToast("Не найдено", "danger");
+-        } catch (e) { showToast("Ошибка 1С", "danger"); logError(`Поиск 1С: ${e.message}`); }
+-    }
+-
+-    function showProduct(p) { document.getElementById('c-name').textContent = p.name; document.getElementById('c-price').textContent = (p.price || 0).toFixed(2) + " €"; document.getElementById('c-art').textContent = p.articul; document.getElementById('c-width').textContent = p.width; document.getElementById('c-comp').textContent = p.composition; document.getElementById('c-stock').textContent = p.stock; document.getElementById('c-cell').textContent = p.cell; document.getElementById('customer-view').classList.remove('hidden'); }
+-    function closeCustomerView() { document.getElementById('customer-view').classList.add('hidden'); }
+-
+-    /* ПЕЧАТЬ */
+-    async function printLabel(art, comp, width, name) {
+-        const zpl = `^XA^CI28^FO50,50^A0N,40,40^FD${name || 'Товар'}^FS^FO50,110^A0N,30,30^FDАрт: ${art}^FS^FO50,150^A0N,25,25^FDСостав: ${comp || '-'}^FS^FO100,190^BY2^BCN,60,Y,N,N^FD${art}^FS^XZ`;
+-        if (sets.printMethod === 'printnode') {
+-            if (!sets.pnKey || !sets.pnPrinter) { showToast("PrintNode не настроен", "danger"); return; }
+-            const encoded = btoa(new TextEncoder().encode(zpl).reduce((d,b)=>d+String.fromCharCode(b),''));
+-            try {
+-                const res = await fetch('https://api.printnode.com/printjobs', { method: 'POST', headers: { 'Authorization': 'Basic ' + btoa(sets.pnKey + ':'), 'Content-Type': 'application/json' }, body: JSON.stringify({ printerId: parseInt(sets.pnPrinter), title: "Label", contentType: "raw_base64", content: encoded }) });
+-                if(res.ok) showToast("Отправлено на PrintNode"); else showToast("Ошибка PrintNode", "danger");
+-            } catch(e) { showToast("Ошибка сети PrintNode", "danger"); logError(`Печать PN: ${e.message}`); }
+-        } else {
+-            const utf8Zpl = btoa(new TextEncoder().encode(zpl).reduce((d,b)=>d+String.fromCharCode(b),''));
+-            window.location.href = `intent://base64,${utf8Zpl}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`;
+-        }
+-    }
+-
+-    function printFromForm() { const art = document.getElementById('f-art').value; const comp = document.getElementById('f-comp') ? document.getElementById('f-comp').value : ''; printLabel(art, comp, '', "Приёмка"); }
+-    function printLabelRawBT() { const cA = document.getElementById('c-art').textContent; const cC = document.getElementById('c-comp').textContent; const cN = document.getElementById('c-name').textContent; printLabel(cA, cC, '', cN); }
+-
+-    /* ШЕРИНГ */
+-    async function shareDoc() {
+-        const d = db[curTab].find(x => x.id === curDocId);
+-        if (!d || !d.items.length) return;
+-        let text = `ДОКУМЕНТ: ${d.name}\nТИП: ${document.getElementById('list-title').textContent}\nДАТА: ${new Date(d.createdAt).toLocaleDateString()}\n--------------------------\n`;
+-        d.items.forEach((it, idx) => { text += `${idx + 1}. Арт: ${it.art}\n`; if (it.cuts) { const total = it.cuts.reduce((s, c) => s + (parseFloat(c.m) || 0), 0); text += `   Метраж: ${total.toFixed(2)} м (${it.cuts.length} отр.)\n`; } else if (it.m) { text += `   Метраж: ${it.m} м\n`; if (it.fromWh) text += `   ${it.fromWh} -> ${it.toWh}\n`; } else if (it.p) { text += `   Цена: ${it.p} €\n`; } });
+-        if (navigator.share) { try { await navigator.share({ title: d.name, text: text }); } catch (err) { console.log('Share canceled'); } }
+-        else { const el = document.createElement('textarea'); el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); showToast("Текст скопирован в буфер"); }
+-    }
+-
+-    /* МЕНЕДЖЕР */
+-    function doLogin() { if(document.getElementById('login-pass').value === sets.mgr){ loginSuccess(); closeModal('modal-login'); } else showToast("Ошибка", "danger"); }
+-    function openLogin() { openModal('modal-login'); setTimeout(() => document.getElementById('login-pass').focus(), 300); }
+-    function loginSuccess() { isMgr = true; saveAppState(); document.getElementById('screen-kiosk').classList.add('hidden'); document.getElementById('manager-view').classList.remove('hidden'); switchTab('receive'); }
+-    function logout() { isMgr = false; curDocId = null; saveAppState(); document.getElementById('manager-view').classList.add('hidden'); document.getElementById('screen-kiosk').classList.remove('hidden'); }
+-    
+-    function switchTab(id) {
+-        curTab = id; curDocId = null; editingItemId = null; saveAppState();
+-        const titles = {receive:"Приёмка", move:"Перемещение", writeoff:"Списание", price:"Цены"};
+-        document.getElementById('list-title').textContent = titles[id];
+-        document.querySelectorAll('#tab-bar button').forEach(b => b.classList.remove('active'));
+-        document.getElementById('tab-'+id).classList.add('active');
+-        document.getElementById('screen-list').classList.remove('hidden'); document.getElementById('screen-work').classList.add('hidden');
+-        renderDocList();
+-    }
+-
+-    function openCreateDocModal() { openModal('modal-create-doc'); document.getElementById('input-new-doc-name').value = "Документ " + new Date().toLocaleDateString(); setTimeout(()=>document.getElementById('input-new-doc-name').focus(), 300); }
+-    function executeCreateDoc() { const name = document.getElementById('input-new-doc-name').value.trim(); if(!name) return; const newDoc = { id: Date.now().toString(36), name, status: 'active', createdAt: new Date().toISOString(), items: [] }; db[curTab].unshift(newDoc); save(); closeModal('modal-create-doc'); renderDocList(); openDoc(newDoc.id); }
+-
+-    function renderDocList() { const q = document.getElementById('doc-search')?.value?.toLowerCase() || ""; const cont = document.getElementById('docs-list-container'); cont.innerHTML = ""; const list = db[curTab] || []; list.filter(d => d.name.toLowerCase().includes(q)).forEach(d => { const card = document.createElement('div'); card.className = `card doc-card ${d.status}`; card.onclick = () => openDoc(d.id); card.innerHTML = `<div class="flex justify-between font-bold"><span>${d.name}</span><span>${d.status==='active'?'🟡':'✅'}</span></div><div>Записей: ${d.items.length}</div>`; cont.appendChild(card); }); }
+-
+-    function openDoc(id) {
+-        curDocId = id; saveAppState();
+-        const d = db[curTab].find(x=>x.id===id);
+-        if(!d) { switchTab(curTab); return; }
+-        document.getElementById('screen-list').classList.add('hidden'); document.getElementById('screen-work').classList.remove('hidden');
+-        document.getElementById('work-title').textContent = d.name;
+-        document.getElementById('work-status').textContent = d.status==='active'?'ОТКРЫТ':'ЗАВЕРШЕН';
+-        const acts = document.getElementById('closed-actions'); const formCont = document.getElementById('form-container');
+-        if(d.status === 'active') { formCont.classList.remove('hidden'); acts.classList.add('hidden'); } else { formCont.classList.add('hidden'); acts.classList.remove('hidden'); }
+-        renderForm(); renderRows();
+-    }
+-
+-    function renderForm() {
+-        const cont = document.getElementById('form-container'); const d = db[curTab].find(x=>x.id===curDocId);
+-        if(!d || d.status !== 'active') return;
+-        let artVal = sets.prefix + String(sets.nextNum).padStart(4,'0');
+-        if(curTab === 'receive') {
+-            cont.innerHTML = `<div class="input-group"><label>APT</label><input type="text" id="f-art" data-art-field value="${artVal}" class="monospace font-bold"></div><div class="input-group"><label>ШИРИНА</label><input type="text" id="f-width" inputmode="decimal"></div>${sets.showDensity ? '<div class="input-group"><label>ПЛОТНОСТЬ</label><input type="text" id="f-density" inputmode="numeric"></div>' : ''}${sets.showBrand ? '<div class="input-group"><label>БРЕНД</label><input type="text" id="f-brand"></div>' : ''}${sets.showComp ? '<div class="input-group"><label>СОСТАВ</label><input type="text" id="f-comp" oninput="this.value = this.value.toUpperCase()"></div>' : ''}<div id="receive-cuts"></div><button class="btn-outline w-full mb-3" style="border-style:dashed; font-size:14px;" onclick="addCut()">+ Добавить отрез</button><div class="flex gap-2"><button class="btn-outline" style="flex:1" onclick="printFromForm()">🖨️ Печать</button><button class="btn-success" style="flex:2" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button></div>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+-            if (!editingItemId) activeCuts = [{id:1, m:'', wh:sets.warehouses[0] || "", c:''}];
+-            renderCuts();
+-        } else if(curTab === 'move'){
+-            cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"></div><div class="flex gap-2"><div style="flex:1"><label>ОТКУДА (СКЛАД)</label><select id="f-wh-from">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ОТКУДА (ЯЧ)</label><input type="text" id="f-cell-from" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="flex gap-2"><div style="flex:1"><label>КУДА (СКЛАД)</label><select id="f-wh-to">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>КУДА (ЯЧ)</label><input type="text" id="f-cell-to" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="input-group"><label>МЕТРАЖ</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal"></div><button class="btn-primary w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+-        } else if(curTab === 'writeoff'){
+-            cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"></div><div class="flex gap-2"><div style="flex:1"><label>СКЛАД</label><select id="f-wh">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ЯЧЕЙКА</label><input type="text" id="f-cell" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal"></div><button class="btn-danger w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+-        } else if(curTab === 'price'){
+-            cont.innerHTML = `<label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"><label>Цена (€)</label><input type="text" id="f-p" inputmode="decimal"><button class="btn-primary w-full" style="background:var(--price-color)" id="btn-save-line" onclick="saveLine()">ОК</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+-        }
+-    }
+-
+-    function renderCuts() { const box = document.getElementById('receive-cuts'); if(!box) return; box.innerHTML = activeCuts.map(c=>`<div class="cut-row"><select onchange="uCut(${c.id},'wh',this.value)">${sets.warehouses.length > 0 ? sets.warehouses.map(w=>`<option ${c.wh===w?'selected':''}>${w}</option>`) : '<option value="">-</option>'}</select><input type="text" placeholder="М" value="${c.m}" oninput="uCut(${c.id},'m',this.value)" inputmode="decimal"><input type="text" placeholder="Яч" value="${c.c}" oninput="this.value = this.value.toUpperCase(); uCut(${c.id},'c',this.value)" list="list-cells"><button class="btn-icon" onclick="remCut(${c.id})">✕</button></div>`).join(''); }
+-    function addCut() { const newId = Date.now(); activeCuts.push({id: newId, m:'', wh:sets.warehouses[0] || "", c:''}); renderCuts(); setTimeout(() => { const inputs = document.querySelectorAll('#receive-cuts input[placeholder="М"]'); if(inputs.length) inputs[inputs.length-1].focus(); }, 50); }
+-    function remCut(id) { if(activeCuts.length > 1) { activeCuts = activeCuts.filter(x=>x.id!==id); renderCuts(); } }
+-    function uCut(id, f, v) { const c = activeCuts.find(x=>x.id===id); if(c) c[f]=v.replace(',','.'); }
+-
+-    function saveLine() {
+-        const d = db[curTab].find(x=>x.id===curDocId); const artInp = document.getElementById('f-art'); if(!artInp) return; const art = artInp.value; if(!art) return;
+-        let item = { id: editingItemId || Date.now(), art, ts: new Date().toISOString() };
+-        if(curTab === 'receive'){ const v = activeCuts.filter(c => !isNaN(parseFloat(c.m)) && parseFloat(c.m) > 0); if(!v.length) return; item.cuts = JSON.parse(JSON.stringify(v)); item.w = document.getElementById('f-width').value; if(sets.showDensity && document.getElementById('f-density')) item.dens = document.getElementById('f-density').value; if(sets.showBrand && document.getElementById('f-brand')) item.brand = document.getElementById('f-brand').value; if(sets.showComp && document.getElementById('f-comp')) item.comp = document.getElementById('f-comp').value; if (!editingItemId) sets.nextNum++; }
+-        else if(curTab === 'move'){ item.m = document.getElementById('f-m').value; item.fromWh = document.getElementById('f-wh-from').value; item.fromCell = document.getElementById('f-cell-from').value; item.toWh = document.getElementById('f-wh-to').value; item.toCell = document.getElementById('f-cell-to').value; }
+-        else if(curTab === 'writeoff'){ item.m = document.getElementById('f-m').value; item.wh = document.getElementById('f-wh').value; item.cell = document.getElementById('f-cell').value; }
+-        else if(curTab === 'price'){ item.p = document.getElementById('f-p').value; }
+-        if(editingItemId){ const idx = d.items.findIndex(i=>i.id===editingItemId); d.items[idx]=item; editingItemId=null; } else d.items.unshift(item);
+-        save(); renderForm(); renderRows(); showToast("Записано");
+-    }
+-
+-    function editItem(id) {
+-        const d = db[curTab].find(x=>x.id===curDocId); const it = d.items.find(i=>i.id===id); if(!it) return;
+-        editingItemId = id; renderForm();
+-        const fA = document.getElementById('f-art'); if(fA) fA.value = it.art;
+-        if(curTab==='receive'){
+-            const fW = document.getElementById('f-width'); if(fW) fW.value = it.w || ''; const fD = document.getElementById('f-density'); if(fD) fD.value = it.dens || ''; const fB = document.getElementById('f-brand'); if(fB) fB.value = it.brand || ''; const fC = document.getElementById('f-comp'); if(fC) fC.value = it.comp || '';
+-            activeCuts = JSON.parse(JSON.stringify(it.cuts)); renderCuts();
+-        } else if(curTab === 'move') { document.getElementById('f-m').value = it.m; document.getElementById('f-wh-from').value = it.fromWh; document.getElementById('f-cell-from').value = it.fromCell; document.getElementById('f-wh-to').value = it.toWh; document.getElementById('f-cell-to').value = it.toCell; }
+-        else if(curTab === 'writeoff') { document.getElementById('f-m').value = it.m; document.getElementById('f-wh').value = it.wh; document.getElementById('f-cell').value = it.cell; }
+-        else if(curTab==='price') { const fP = document.getElementById('f-p'); if(fP) fP.value = it.p || ''; }
+-        const bSave = document.getElementById('btn-save-line'); if(bSave) bSave.textContent = "ОБНОВИТЬ";
+-        renderRows(); window.scrollTo({top: 0, behavior: 'smooth'});
+-    }
+-
+-    function cancelEdit() { editingItemId = null; renderForm(); renderRows(); }
+-
+-    function renderRows() {
+-        const cont = document.getElementById('rows-container'); const d = db[curTab].find(x=>x.id===curDocId); cont.innerHTML = "";
+-        d.items.forEach(it => { const div = document.createElement('div'); div.className = 'history-item' + (editingItemId===it.id?' editing':''); let info = ""; if(curTab === 'move') info = `<div class="text-sm text-sec">${it.fromWh} → ${it.toWh} | ${it.m}м</div>`; else if(curTab === 'writeoff') info = `<div class="text-sm text-sec">${it.wh} | ${it.m}м</div>`; else if(curTab === 'price') info = `<div class="text-sm font-bold" style="color:var(--price-color)">${it.p} €</div>`; else info = `<div class="text-sm text-sec">${it.cuts ? it.cuts.length : 0} отр.</div>`; div.innerHTML = `<div><div class="font-bold">${it.art}</div>${info}</div><div class="flex gap-2">${d.status==='active' ? `<button class="btn-icon" onclick="editItem(${it.id})">✏️</button><button class="btn-icon text-danger" onclick="delRow(${it.id})">🗑️</button>` : ''}</div>`; cont.appendChild(div); });
+-        document.getElementById('work-counter').textContent = "Записей: " + d.items.length;
+-    }
+-
+-    /* УТИЛИТЫ */
+-    function save() { localStorage.setItem('tsd_final_sets', JSON.stringify(sets)); localStorage.setItem('tsd_final_receive', JSON.stringify(db.receive)); localStorage.setItem('tsd_final_move', JSON.stringify(db.move)); localStorage.setItem('tsd_final_writeoff', JSON.stringify(db.writeoff)); localStorage.setItem('tsd_final_price', JSON.stringify(db.price)); updateDataLists(); }
+-    function updateDataLists() { const arts = new Set(), cells = new Set(); Object.values(db).forEach(list => { if(list) list.forEach(d => d.items.forEach(i => { if(i.art) arts.add(i.art); if(i.cuts) i.cuts.forEach(c => { if(c.c) cells.add(c.c); }); if(i.cell) cells.add(i.cell); if(i.fromCell) cells.add(i.fromCell); if(i.toCell) cells.add(i.toCell); } )) }); document.getElementById('list-arts').innerHTML = Array.from(arts).map(a=>`<option value="${a}">`).join(''); document.getElementById('list-cells').innerHTML = Array.from(cells).map(c=>`<option value="${c}">`).join(''); }
+-    function openModal(id) { document.getElementById(id).classList.add('open'); }
+-    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+-    function showToast(m, t) { const c = document.getElementById('toast-container'); if(c.children.length > 3) c.removeChild(c.firstChild); const d = document.createElement('div'); d.className = `toast`; d.style.background = t === 'danger' ? 'var(--danger)' : 'var(--primary)'; d.textContent = m; c.appendChild(d); setTimeout(()=>d.remove(), 2500); }
+-    
+-    function openSettings() { document.getElementById('set-show-density').checked = sets.showDensity; document.getElementById('set-show-brand').checked = sets.showBrand; document.getElementById('set-show-comp').checked = sets.showComp; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "rawbt"; togglePrintSettingsUI(); renderSettingsWh(); openModal('modal-settings'); }
+-    function togglePrintSettingsUI() { const method = document.getElementById('set-print-method').value; const block = document.getElementById('printnode-block'); if (block) block.style.display = (method === 'printnode') ? 'block' : 'none'; }
+-    function saveSets() { sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; save(); }
+-    function renderSettingsWh() { document.getElementById('settings-warehouses').innerHTML = sets.warehouses.map(w=>`<div class="wh-item"><span>${w}</span><button class="btn-icon text-danger" onclick="delWh('${w}')">🗑️</button></div>`).join(''); }
+-    function addWh() { const n = document.getElementById('new-wh-name'); if(n.value){sets.warehouses.push(n.value); n.value=''; renderSettingsWh(); saveSets();}}
+-    function delWh(w) { sets.warehouses = sets.warehouses.filter(x=>x!==w); renderSettingsWh(); saveSets();}
+-    function closeSettings() { saveSets(); closeModal('modal-settings'); }
+-    function exitWork() { curDocId = null; saveAppState(); switchTab(curTab); }
+-
+-    async function customConfirm(msg) { 
+-        return new Promise(res => { 
+-            const msgEl = document.getElementById('conf-msg');
+-            const okBtn = document.getElementById('conf-ok');
+-            const cancelBtn = document.getElementById('conf-cancel');
+-            
+-            if (!msgEl || !okBtn || !cancelBtn) { console.error("Confirm elements missing"); res(false); return; }
+-            
+-            msgEl.textContent = msg; 
+-            openModal('modal-confirm'); 
+-            
+-            okBtn.onclick = () => { closeModal('modal-confirm'); res(true); }; 
+-            cancelBtn.onclick = () => { closeModal('modal-confirm'); res(false); }; 
+-        }); 
+-    }
+-
+-    async function completeDoc() { if(!await customConfirm("Завершить документ?")) return; const d = db[curTab].find(x=>x.id===curDocId); d.status = 'closed'; save(); openDoc(curDocId); }
+-    function reopenDoc() { const d = db[curTab].find(x=>x.id===curDocId); d.status = 'active'; save(); openDoc(curDocId); }
+-    
+-    async function syncWith1C() {
+-        const d = db[curTab].find(x=>x.id===curDocId); if(!sets.url) { showToast("URL 1С не настроен", "danger"); return; }
+-        showToast("Отправка в 1С...");
+-        try { const res = await fetch(`${sets.url}/post-document`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Basic '+btoa(sets.user+":"+(sets.pass||""))}, body:JSON.stringify({type:curTab.toUpperCase(), data:d}) }); if(res.ok) showToast("Успешно проведено!"); else showToast("1С вернула ошибку", "danger"); } catch(e) { showToast("Сервер 1С недоступен", "danger"); logError(`Синхронизация 1С: ${e.message}`); }
+-    }
+-
+-    async function test1CConnection() {
+-        const url = document.getElementById('set-url').value; const user = document.getElementById('set-user').value; const pass = document.getElementById('set-pass').value;
+-        if (!url) { showToast("Сначала введите URL", "danger"); return; }
+-        showToast("Проверка связи...");
+-        try { const res = await fetch(`${url}/product?id=ping`, { headers: { 'Authorization': 'Basic ' + btoa(user + ":" + pass) } }); if (res.ok || res.status === 404) { showToast("Связь с 1С установлена!", "success"); } else { showToast(`Ошибка: ${res.status}`, "danger"); } } catch (e) { showToast("Ошибка соединения", "danger"); logError(`Тест 1С: ${e.message}`); }
+-    }
+-
+-    async function delRow(rid) { if(!await customConfirm("Удалить строку?")) return; const d = db[curTab].find(x=>x.id===curDocId); d.items = d.items.filter(x=>x.id!==rid); save(); renderRows(); }
+-    async function deleteFullDoc() { if(!await customConfirm("УДАЛИТЬ ВЕСЬ ДОКУМЕНТ?")) return; db[curTab] = db[curTab].filter(x=>x.id!==curDocId); save(); exitWork(); }
+-    function openManualSearch() { openModal('modal-search'); setTimeout(() => document.getElementById('manual-search-input').focus(), 300); }
+-    function doManualSearch() { const v = document.getElementById('manual-search-input').value.trim(); if(v){ closeModal('modal-search'); search1C(v); } }
+-    function exportData() { const blob = new Blob([JSON.stringify({db, sets})], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='backup.json'; a.click(); }
+-    function importData(event) { const file = event.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(e){ try{ const d = JSON.parse(e.target.result); if(d.db && d.sets){ db = d.db; sets = d.sets; save(); location.reload(); } }catch(err){showToast('Ошибка файла','danger');} }; reader.readAsText(file); }
+-</script>
+-</body>
+-</html>
++<!DOCTYPE html>
++<html lang="ru">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
++    <title>Складской Терминал</title>
++    
++    <!-- Настройки PWA -->
++    <meta name="theme-color" content="#1976D2">
++    <meta name="apple-mobile-web-app-capable" content="yes">
++    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
++    <meta name="apple-mobile-web-app-title" content="Склад">
++    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%231976D2'/%3E%3Cpath d='M256 120L120 188v136l136 68 136-68V188L256 120z' fill='%23fff'/%3E%3C/svg%3E">
++    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkNrbGFkc2tvaiBUZXJtaW5hbCAxQyIsCiAgInNob3J0X25hbWUiOiAiU2tsYWQiLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiI0Y1RjdGQSIsCiAgInRoZW1lX2NvbG9yIjogIiMxOTc2RDIiCn0=">
++
++    <style>
++        :root {
++            --primary: #1976D2;
++            --primary-hover: #1565C0;
++            --success: #388E3C;
++            --danger: #D32F2F;
++            --price-color: #00897B;
++            --bg: #F5F7FA;
++            --card: #FFFFFF;
++            --text: #212121;
++            --text-sec: #757575;
++            --border: #E0E0E0;
++            --focus-ring: rgba(25, 118, 210, 0.3);
++        }
++
++        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
++        body { font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); line-height: 1.5; -webkit-font-smoothing: antialiased; }
++        .hidden { display: none !important; }
++        .flex { display: flex; }
++        .items-center { align-items: center; }
++        .justify-between { justify-content: space-between; }
++        .text-center { text-align: center; }
++        .p-4 { padding: 16px; }
++        .w-full { width: 100%; }
++        .font-bold { font-weight: bold; }
++        .monospace { font-family: "SF Mono", "Courier New", monospace; }
++        .text-sm { font-size: 13px; }
++        .text-primary { color: var(--primary); }
++        .gap-2 { gap: 8px; }
++
++        #app { max-width: 1200px; margin: 0 auto; min-height: 100vh; position: relative; padding-bottom: 80px; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
++
++        /* ЭКРАН КИОСКА */
++        #screen-kiosk {
++            height: 100vh; background: linear-gradient(135deg, var(--primary) 0%, #0D47A1 100%);
++            color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 32px;
++            text-align: center;
++        }
++
++        /* КНОПКИ */
++        button {
++            border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; padding: 12px 16px;
++            transition: background 0.2s, transform 0.1s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px;
++        }
++        button:active { transform: scale(0.98); }
++        .btn-main { background: white; color: var(--primary); height: 64px; font-size: 18px; font-weight: 800; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
++        .btn-primary { background: var(--primary); color: white; }
++        .btn-success { background: var(--success); color: white; }
++        .btn-danger { background: var(--danger); color: white; }
++        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
++        .btn-icon { background: none; color: var(--text-sec); font-size: 20px; padding: 0; min-width: 44px; min-height: 44px; }
++
++        /* КАРТОЧКИ */
++        .card { background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); transition: box-shadow 0.2s; }
++        .doc-card { cursor: pointer; border-left: 6px solid var(--border); transition: 0.1s; margin-bottom: 12px; }
++        .doc-card:active { background: #f9f9f9; }
++        .doc-card.active { border-left-color: var(--primary); }
++        .doc-card.closed { opacity: 0.7; border-left-color: var(--text-sec); }
++
++        /* ВВОД */
++        .input-group { margin-bottom: 10px; }
++        input, select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; background: white; color: var(--text); transition: border-color 0.2s; }
++        input:focus, select:focus, button:focus-visible { border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px var(--focus-ring); }
++        label { display: block; margin-bottom: 4px; font-size: 11px; color: var(--text-sec); font-weight: 700; text-transform: uppercase; }
++
++        /* ТАБ БАР */
++        #tab-bar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: white; border-top: 1px solid var(--border); z-index: 100; max-width: 1200px; margin: 0 auto; }
++        #tab-bar button { flex: 1; border-radius: 0; flex-direction: column; background: none; color: #757575; font-size: 11px; padding: 8px 0; gap: 4px; }
++        #tab-bar button.active { color: var(--primary); border-top: 2px solid var(--primary); font-weight: 700; }
++
++        /* ПЛАНШЕТНАЯ СЕТКА */
++        .work-layout { display: flex; flex-direction: column; gap: 16px; }
++        @media (min-width: 900px) {
++            .work-layout { display: grid; grid-template-columns: 420px 1fr; align-items: start; }
++            .sticky-form { position: sticky; top: 110px; }
++        }
++
++        /* МОДАЛКИ */
++        .modal-overlay { 
++            position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; 
++            display: flex; justify-content: center; align-items: center;
++            opacity: 0; pointer-events: none; transition: opacity 0.2s; 
++            padding: 20px;
++        }
++        .modal-overlay.open { opacity: 1; pointer-events: all; }
++        .modal-content { 
++            background: white; width: 100%; max-width: 500px; border-radius: 16px;
++            padding: 24px; transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.1, 0.9, 0.2, 1); 
++            max-height: 90vh; overflow-y: auto;
++            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
++        }
++        .modal-overlay.open .modal-content { transform: scale(1); }
++
++        @media (max-height: 500px) {
++            .modal-overlay { align-items: flex-start; padding-top: 10px; }
++        }
++
++        .settings-section { margin-bottom: 20px; }
++        .settings-section h3 { font-size: 13px; color: var(--text-sec); text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 4px; font-weight: 700; }
++        .light-block { background: #f9f9f9; padding: 12px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #f0f0f0; }
++        .checkbox-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; cursor: pointer; color: var(--text-sec); font-size: 14px; }
++        .checkbox-row input { width: 22px; height: 22px; margin: 0; cursor: pointer; accent-color: var(--primary); }
++        .wh-item { display: flex; justify-content: space-between; align-items: center; background: #f0f0f0; padding: 8px 12px; border-radius: 8px; margin-bottom: 6px; }
++
++        /* ЖУРНАЛ */
++        .history-item { border-bottom: 1px solid #eee; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
++        .history-item:last-child { border-bottom: none; }
++        .history-item.editing { background: #E3F2FD; border-radius: 8px; padding: 12px; border: 1px solid var(--primary); }
++
++        #toast-container { position: fixed; top: 100px; left: 50%; transform: translateX(-50%); z-index: 3000; width: 90%; max-width: 400px; pointer-events: none; }
++        .toast { padding: 14px; border-radius: 8px; color: white; margin-bottom: 8px; text-align: center; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.1); animation: slideIn 0.3s forwards; }
++        @keyframes slideIn { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
++
++        .header-fixed { position: sticky; top: 0; z-index: 50; background: #F5F7FA; padding: 12px 16px; border-bottom: 1px solid var(--border); }
++        .cut-row { display: grid; grid-template-columns: 1.4fr 1.1fr 1fr auto; gap: 6px; align-items: center; margin-bottom: 8px; }
++
++        /* ЛОГИ */
++        #log-area { font-family: monospace; font-size: 11px; background: #222; color: #0f0; padding: 10px; border-radius: 8px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; margin-bottom: 10px; }
++    </style>
++</head>
++<body>
++
++<div id="app">
++    <!-- ЭКРАН КИОСКА -->
++    <div id="screen-kiosk">
++        <div style="font-size: 64px; margin-bottom: 10px;">📦</div>
++        <h1 style="font-size: 32px; font-weight: 900; margin-bottom: 8px;">СКЛАД-ЦЕНТР</h1>
++        <p style="font-size: 18px; opacity: 0.8; margin-bottom: 40px;">информационный терминал</p>
++        <div class="w-full" style="max-width: 320px;">
++            <div class="text-center mb-6" style="font-size: 22px; font-weight: 800; animation: pulse 2s infinite;">ПОДНЕСИТЕ ШТРИХКОД</div>
++            <button class="btn-main w-full mb-4" onclick="openManualSearch()">🔍 Найти по артикулу</button>
++            <button class="btn-outline w-full" style="color: white; border-color: rgba(255,255,255,0.4);" onclick="openLogin()">🔒 Меню персонала</button>
++        </div>
++        <input type="text" id="kiosk-scanner-input" style="position: absolute; opacity: 0; pointer-events: none;">
++    </div>
++
++    <!-- КАРТОЧКА КЛИЕНТА -->
++    <div id="customer-view" class="hidden" style="position:fixed; inset:0; background:white; z-index:1500; padding:24px; display:flex; flex-direction:column;">
++        <div class="flex justify-between items-center mb-4">
++            <h1 id="c-name" style="font-size: 24px; flex: 1;">Товар</h1>
++            <button class="btn-icon" aria-label="Закрыть карточку" onclick="closeCustomerView()">✕</button>
++        </div>
++        <div id="c-img-box" style="width:100%; height:240px; background:#f0f0f0; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:20px;">Фото</div>
++        <div id="c-price" style="font-size: 48px; font-weight: 900; color: var(--price-color); margin-bottom: 15px;">0.00 €</div>
++        <div class="card" style="background:#f8f9fa; border:none; flex-grow:1;">
++            <p><strong>Артикул:</strong> <span id="c-art">-</span></p>
++            <p><strong>Ширина:</strong> <span id="c-width">-</span></p>
++            <p><strong>Состав:</strong> <span id="c-comp">-</span></p>
++            <p><strong>Наличие:</strong> <span id="c-stock" class="font-bold">-</span></p>
++            <p><strong>Ячейка:</strong> <span id="c-cell" class="font-bold text-primary">-</span></p>
++        </div>
++        <div class="flex gap-2 mt-4">
++            <button class="btn-outline w-full" style="height: 64px;" onclick="printLabelRawBT()">🖨️ Печать</button>
++            <button class="btn-primary w-full" style="height: 64px; font-size: 20px;" onclick="closeCustomerView()">ПОНЯТНО</button>
++        </div>
++    </div>
++
++    <!-- ЗОНА ПЕРСОНАЛА -->
++    <div id="manager-view" class="hidden">
++        <div id="screen-list" class="p-4">
++            <div class="flex justify-between items-center mb-4">
++                <h1 id="list-title">Приёмка</h1>
++                <button class="btn-icon" aria-label="Открыть настройки" onclick="openSettings()">⚙️</button>
++            </div>
++            <input type="text" id="doc-search" placeholder="🔍 Поиск документа..." oninput="renderDocList()" style="margin-bottom: 16px;">
++            <button class="btn-primary w-full mb-4" style="height: 56px;" onclick="openCreateDocModal()">+ Создать документ</button>
++            <div id="docs-list-container"></div>
++        </div>
++
++        <div id="screen-work" class="hidden">
++            <div class="header-fixed">
++                <div class="flex justify-between items-center mb-2">
++                    <button class="btn-icon" aria-label="Вернуться назад" onclick="exitWork()">← Назад</button>
++                    <div class="flex gap-2">
++                        <button class="btn-icon text-danger" aria-label="Удалить документ" onclick="deleteFullDoc()">🗑️</button>
++                        <button class="btn-icon text-success" id="btn-complete-doc" onclick="completeDoc()">✅ Готово</button>
++                    </div>
++                </div>
++                <h2 id="work-title">Документ</h2>
++                <div class="flex justify-between items-center mt-1">
++                    <span id="work-status" class="monospace text-sm font-bold">АКТИВЕН</span>
++                    <span id="work-counter" class="text-sm font-bold text-primary">Записей: 0</span>
++                </div>
++            </div>
++            <div class="p-4 pt-0">
++                <div class="work-layout">
++                    <div class="sticky-form">
++                        <div id="closed-actions" class="hidden card text-center" style="border: 2px solid var(--success);">
++                            <h3 style="color: var(--success); margin-bottom: 10px;">ДОКУМЕНТ ЗАКРЫТ</h3>
++                            <button class="btn-primary w-full mb-3" style="height: 64px; font-size: 18px;" onclick="syncWith1C()">🚀 ОТПРАВИТЬ В 1С</button>
++                            <div class="flex gap-2">
++                                <button class="btn-outline w-full" onclick="reopenDoc()">🔄 Правка</button>
++                                <button class="btn-outline w-full" onclick="shareDoc()">📤 Поделиться</button>
++                            </div>
++                        </div>
++                        <div id="form-container" class="card" style="border: 2px solid #eee; position: relative;"></div>
++                    </div>
++                    <div class="card">
++                        <h3 class="text-sm mb-3">Журнал записей</h3>
++                        <div id="rows-container"></div>
++                    </div>
++                </div>
++            </div>
++        </div>
++
++        <div id="tab-bar">
++            <button onclick="switchTab('receive')" id="tab-receive"><span>📦</span>Приёмка</button>
++            <button onclick="switchTab('move')" id="tab-move"><span>🔄</span>Перемещение</button>
++            <button onclick="switchTab('writeoff')" id="tab-writeoff"><span>📋</span>Списание</button>
++            <button onclick="switchTab('price')" id="tab-price"><span>🏷️</span>Цены</button>
++            <button onclick="logout()" style="color: var(--danger);"><span>🚪</span>Выход</button>
++        </div>
++    </div>
++</div>
++
++<!-- МОДАЛЬНЫЕ ОКНА -->
++<div id="modal-settings" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
++    <div class="modal-content">
++        <div class="flex justify-between items-center mb-6"><h2>Настройки</h2><button class="btn-icon" aria-label="Закрыть настройки" onclick="closeSettings()">✕</button></div>
++        
++        <div class="settings-section">
++            <h3>ДИАГНОСТИКА</h3>
++            <div class="light-block">
++                <button class="btn-outline w-full mb-2" onclick="openLogsModal()">📋 Посмотреть логи ошибок</button>
++            </div>
++        </div>
++
++        <div class="settings-section">
++            <h3>МЕТОД ПЕЧАТИ</h3>
++            <div class="light-block">
++                <select id="set-print-method" onchange="togglePrintSettingsUI()">
++                    <option value="rawbt">Бесплатный (Android RawBT)</option>
++                    <option value="printnode">Платный (PrintNode API)</option>
++                </select>
++            </div>
++        </div>
++
++        <div class="settings-section">
++            <h3>ДОПОЛНИТЕЛЬНЫЕ ПОЛЯ</h3>
++            <div class="light-block">
++                <label class="checkbox-row">Поле Плотность (г/м²) <input type="checkbox" id="set-show-density" onchange="saveSets()"></label>
++                <label class="checkbox-row">Поле Бренд <input type="checkbox" id="set-show-brand" onchange="saveSets()"></label>
++                <label class="checkbox-row">Поле Состав <input type="checkbox" id="set-show-comp" onchange="saveSets()"></label>
++            </div>
++        </div>
++
++        <div class="settings-section">
++            <h3>СЧЁТЧИК АРТИКУЛОВ</h3>
++            <div class="flex gap-2">
++                <div style="flex:1"><label>Префикс</label><input type="text" id="set-prefix" onchange="saveSets()"></div>
++                <div style="flex:1"><label>Следующий номер</label><input type="number" id="set-next-num" onchange="saveSets()"></div>
++            </div>
++        </div>
++
++        <div class="settings-section">
++            <h3>СКЛАДЫ</h3>
++            <div id="settings-warehouses"></div>
++            <div class="flex gap-2 mt-2"><input type="text" id="new-wh-name" placeholder="Новый склад" style="margin:0"><button class="btn-outline" style="min-width: 48px;" onclick="addWh()">+</button></div>
++            <button class="btn-primary w-full mt-3" onclick="saveSets()">Сохранить склады</button>
++        </div>
++
++        <div class="settings-section" id="printnode-block">
++            <h3>PRINTNODE API</h3>
++            <div class="input-group"><label>API Ключ</label><input type="text" id="set-pn-key"></div>
++            <div class="input-group"><label>ID Принтера</label><input type="text" id="set-pn-printer"></div>
++            <div class="flex gap-2">
++                <button class="btn-outline w-full" onclick="showToast('Связь ОК')">Проверить</button>
++                <button class="btn-primary w-full" onclick="saveSets()">Сохранить</button>
++            </div>
++        </div>
++
++        <div class="settings-section">
++            <h3>ИНТЕГРАЦИЯ 1С (HTTP)</h3>
++            <label>URL Сервиса</label><input type="text" id="set-url" onchange="saveSets()" placeholder="https://...">
++            <label>Логин</label><input type="text" id="set-user" onchange="saveSets()">
++            <label>Пароль</label><input type="password" id="set-pass" onchange="saveSets()">
++            <button class="btn-outline w-full mt-2" onclick="test1CConnection()">📡 Проверить связь с 1С</button>
++        </div>
++
++        <button class="btn-success w-full mt-4" style="height: 60px;" onclick="closeSettings()">ГОТОВО</button>
++    </div>
++</div>
++
++<div id="modal-logs" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
++    <div class="modal-content">
++        <h2>Журнал ошибок</h2>
++        <div id="log-area">Нет ошибок</div>
++        <button class="btn-outline w-full mb-2" onclick="shareLogFile()">📤 Поделиться файлом лога</button>
++        <button class="btn-outline w-full mb-2" onclick="clearLogs()">Очистить</button>
++        <button class="btn-primary w-full" onclick="closeModal('modal-logs')">Закрыть</button>
++    </div>
++</div>
++
++<div id="modal-create-doc" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
++    <div class="modal-content">
++        <h2 id="create-doc-title">Новый документ</h2>
++        <input type="text" id="input-new-doc-name" class="mt-4" placeholder="Название документа" onkeydown="if(event.key==='Enter') executeCreateDoc()">
++        <div class="flex gap-2 mt-4">
++            <button class="btn-outline w-full" onclick="closeModal('modal-create-doc')">Отмена</button>
++            <button class="btn-primary w-full" onclick="executeCreateDoc()">Создать</button>
++        </div>
++    </div>
++</div>
++
++<div id="modal-confirm" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" style="z-index:5000">
++    <div class="modal-content" style="text-align:center">
++        <h2 id="conf-title">Вы уверены?</h2>
++        <p id="conf-msg" class="mb-4 text-sec"></p>
++        <div class="flex gap-2">
++            <button class="btn-outline w-full" id="conf-cancel">Отмена</button>
++            <button class="btn-danger w-full" id="conf-ok">Да</button>
++        </div>
++    </div>
++</div>
++
++<div id="modal-search" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true"><div class="modal-content"><h2>Поиск</h2><input type="text" id="manual-search-input" placeholder="Введите код..." onkeydown="if(event.key==='Enter') doManualSearch()"><div class="flex gap-2 mt-4"><button class="btn-outline w-full" onclick="closeModal('modal-search')">Отмена</button><button class="btn-primary w-full" onclick="doManualSearch()">Найти</button></div></div></div>
++<div id="modal-login" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true"><div class="modal-content" style="text-align:center"><h2>Вход персонала</h2><input type="password" id="login-pass" placeholder="Пароль" style="font-size:24px; text-align:center;" onkeydown="if(event.key==='Enter') doLogin()"><button class="btn-primary w-full" onclick="doLogin()">Войти</button><button class="btn-outline w-full mt-2" onclick="closeModal('modal-login')">Назад</button></div></div>
++
++<div id="toast-container" aria-live="polite" aria-atomic="true"></div>
++<datalist id="list-arts"></datalist>
++<datalist id="list-cells"></datalist>
++
++<script>
++    /* ПЕРЕХВАТ ОШИБОК */
++    window.onerror = function(msg, url, lineNo, columnNo, error) {
++        logError(`Ошибка: ${msg}\nСтрока: ${lineNo}\nФайл: ${url}`);
++        return false;
++    };
++    window.onunhandledrejection = function(event) {
++        logError(`Промис отклонен: ${event.reason}`);
++    };
++
++    function logError(text) {
++        let logs = safeLoad('app_error_logs', []);
++        logs.unshift(`[${new Date().toLocaleTimeString()}] ${text}`);
++        if(logs.length > 50) logs.pop();
++        localStorage.setItem('app_error_logs', JSON.stringify(logs));
++        console.error(text);
++    }
++
++    function openLogsModal() {
++        const logs = safeLoad('app_error_logs', []);
++        document.getElementById('log-area').textContent = logs.length ? logs.join('\n---\n') : "Нет записей об ошибках";
++        openModal('modal-logs');
++    }
++
++    async function shareLogFile() {
++        const logs = safeLoad('app_error_logs', []);
++        if (!logs.length) { showToast("Логи пусты", "danger"); return; }
++        const text = logs.join('\n---\n');
++        const fileName = `logs_${new Date().getTime()}.txt`;
++        const file = new File([text], fileName, { type: 'text/plain' });
++        if (navigator.canShare && navigator.canShare({ files: [file] })) {
++            try { await navigator.share({ files: [file], title: 'Логи приложения', text: 'Файл отладки складского терминала' }); } catch (err) { logError(`Ошибка шеринга файла: ${err.message}`); }
++        } else {
++            if (navigator.share) { await navigator.share({ title: 'Логи терминала', text: text }); }
++            else { const el = document.createElement('textarea'); el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); showToast("Текст логов скопирован"); }
++        }
++    }
++
++    function clearLogs() { localStorage.removeItem('app_error_logs'); document.getElementById('log-area').textContent = "Журнал очищен"; }
++
++    /* БЕЗОПАСНАЯ ЗАГРУЗКА */
++    function safeLoad(key, def){ try { const val = localStorage.getItem(key); return val ? JSON.parse(val) : def; } catch(e) { return def; } }
++
++    /* ДАННЫЕ */
++    const defSets = { url:"", user:"", pass:"", mgr:"1234", warehouses:["Магазин","Склад","Розница"], prefix:"R26", nextNum:1, showDensity:true, showBrand:true, showComp:true, printMethod: "rawbt", pnKey:"", pnPrinter:"" };
++    let sets = safeLoad('tsd_final_sets', defSets);
++    let db = {
++        receive: safeLoad('tsd_final_receive', []),
++        move: safeLoad('tsd_final_move', []),
++        writeoff: safeLoad('tsd_final_writeoff', []),
++        price: safeLoad('tsd_final_price', [])
++    };
++
++    let curTab = safeLoad('app_last_tab', 'receive');
++    let curDocId = safeLoad('app_last_doc_id', null);
++    let isMgr = safeLoad('app_is_mgr', false);
++    
++    let editingItemId = null, scanBuf = "", activeCuts = [];
++    let activeModalId = null;
++    let lastFocusedElement = null;
++
++    window.onload = () => {
++        window.addEventListener('keydown', e => {
++            if (e.key === 'Escape' && activeModalId) { closeModal(activeModalId); return; }
++            if (e.target.tagName === 'INPUT') return;
++            if (e.key === 'Enter') { if (scanBuf.length > 2) handleScan(scanBuf); scanBuf = ""; } 
++            else if (e.key.length === 1) { scanBuf += e.key; }
++        });
++        document.querySelectorAll('.modal-overlay').forEach(m => {
++            m.addEventListener('click', (e) => {
++                if (e.target === m) closeModal(m.id);
++            });
++        });
++        if (isMgr) { document.getElementById('screen-kiosk').classList.add('hidden'); document.getElementById('manager-view').classList.remove('hidden'); switchTab(curTab); if (curDocId) openDoc(curDocId); }
++        updateDataLists();
++    };
++
++    function saveAppState() { localStorage.setItem('app_last_tab', curTab); localStorage.setItem('app_last_doc_id', curDocId); localStorage.setItem('app_is_mgr', isMgr); }
++
++    function handleScan(code) {
++        if (code === "ADMIN") { loginSuccess(); return; }
++        if (!isMgr) search1C(code);
++        else { const inp = document.querySelector('input[data-art-field]'); if (inp) { inp.value = code; inp.dispatchEvent(new Event('input')); } }
++    }
++
++    async function search1C(id) {
++        showToast("Поиск...");
++        if (!sets.url) { showProduct({ name: "Демо-ткань", articul: id, price: 10, stock: "5м", cell: "A1", width: "150", composition: "Хлопок" }); return; }
++        try {
++            const res = await fetch(`${sets.url}/product?id=${id}`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ":" + (sets.pass || "")) } });
++            if (res.ok) showProduct(await res.json()); else showToast("Не найдено", "danger");
++        } catch (e) { showToast("Ошибка 1С", "danger"); logError(`Поиск 1С: ${e.message}`); }
++    }
++
++    function showProduct(p) { document.getElementById('c-name').textContent = p.name; document.getElementById('c-price').textContent = (p.price || 0).toFixed(2) + " €"; document.getElementById('c-art').textContent = p.articul; document.getElementById('c-width').textContent = p.width; document.getElementById('c-comp').textContent = p.composition; document.getElementById('c-stock').textContent = p.stock; document.getElementById('c-cell').textContent = p.cell; document.getElementById('customer-view').classList.remove('hidden'); }
++    function closeCustomerView() { document.getElementById('customer-view').classList.add('hidden'); }
++
++    /* ПЕЧАТЬ */
++    async function printLabel(art, comp, width, name) {
++        const zpl = `^XA^CI28^FO50,50^A0N,40,40^FD${name || 'Товар'}^FS^FO50,110^A0N,30,30^FDАрт: ${art}^FS^FO50,150^A0N,25,25^FDСостав: ${comp || '-'}^FS^FO100,190^BY2^BCN,60,Y,N,N^FD${art}^FS^XZ`;
++        if (sets.printMethod === 'printnode') {
++            if (!sets.pnKey || !sets.pnPrinter) { showToast("PrintNode не настроен", "danger"); return; }
++            const encoded = btoa(new TextEncoder().encode(zpl).reduce((d,b)=>d+String.fromCharCode(b),''));
++            try {
++                const res = await fetch('https://api.printnode.com/printjobs', { method: 'POST', headers: { 'Authorization': 'Basic ' + btoa(sets.pnKey + ':'), 'Content-Type': 'application/json' }, body: JSON.stringify({ printerId: parseInt(sets.pnPrinter), title: "Label", contentType: "raw_base64", content: encoded }) });
++                if(res.ok) showToast("Отправлено на PrintNode"); else showToast("Ошибка PrintNode", "danger");
++            } catch(e) { showToast("Ошибка сети PrintNode", "danger"); logError(`Печать PN: ${e.message}`); }
++        } else {
++            const utf8Zpl = btoa(new TextEncoder().encode(zpl).reduce((d,b)=>d+String.fromCharCode(b),''));
++            window.location.href = `intent://base64,${utf8Zpl}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`;
++        }
++    }
++
++    function printFromForm() { const art = document.getElementById('f-art').value; const comp = document.getElementById('f-comp') ? document.getElementById('f-comp').value : ''; printLabel(art, comp, '', "Приёмка"); }
++    function printLabelRawBT() { const cA = document.getElementById('c-art').textContent; const cC = document.getElementById('c-comp').textContent; const cN = document.getElementById('c-name').textContent; printLabel(cA, cC, '', cN); }
++
++    /* ШЕРИНГ */
++    async function shareDoc() {
++        const d = db[curTab].find(x => x.id === curDocId);
++        if (!d || !d.items.length) return;
++        let text = `ДОКУМЕНТ: ${d.name}\nТИП: ${document.getElementById('list-title').textContent}\nДАТА: ${new Date(d.createdAt).toLocaleDateString()}\n--------------------------\n`;
++        d.items.forEach((it, idx) => { text += `${idx + 1}. Арт: ${it.art}\n`; if (it.cuts) { const total = it.cuts.reduce((s, c) => s + (parseFloat(c.m) || 0), 0); text += `   Метраж: ${total.toFixed(2)} м (${it.cuts.length} отр.)\n`; } else if (it.m) { text += `   Метраж: ${it.m} м\n`; if (it.fromWh) text += `   ${it.fromWh} -> ${it.toWh}\n`; } else if (it.p) { text += `   Цена: ${it.p} €\n`; } });
++        if (navigator.share) { try { await navigator.share({ title: d.name, text: text }); } catch (err) { console.log('Share canceled'); } }
++        else { const el = document.createElement('textarea'); el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); showToast("Текст скопирован в буфер"); }
++    }
++
++    /* МЕНЕДЖЕР */
++    function doLogin() { if(document.getElementById('login-pass').value === sets.mgr){ loginSuccess(); closeModal('modal-login'); } else showToast("Ошибка", "danger"); }
++    function openLogin() { openModal('modal-login'); setTimeout(() => document.getElementById('login-pass').focus(), 300); }
++    function loginSuccess() { isMgr = true; saveAppState(); document.getElementById('screen-kiosk').classList.add('hidden'); document.getElementById('manager-view').classList.remove('hidden'); switchTab('receive'); }
++    function logout() { isMgr = false; curDocId = null; saveAppState(); document.getElementById('manager-view').classList.add('hidden'); document.getElementById('screen-kiosk').classList.remove('hidden'); }
++    
++    function switchTab(id) {
++        curTab = id; curDocId = null; editingItemId = null; saveAppState();
++        const titles = {receive:"Приёмка", move:"Перемещение", writeoff:"Списание", price:"Цены"};
++        document.getElementById('list-title').textContent = titles[id];
++        document.querySelectorAll('#tab-bar button').forEach(b => b.classList.remove('active'));
++        document.getElementById('tab-'+id).classList.add('active');
++        document.getElementById('screen-list').classList.remove('hidden'); document.getElementById('screen-work').classList.add('hidden');
++        renderDocList();
++    }
++
++    function openCreateDocModal() { openModal('modal-create-doc'); document.getElementById('input-new-doc-name').value = "Документ " + new Date().toLocaleDateString(); setTimeout(()=>document.getElementById('input-new-doc-name').focus(), 300); }
++    function executeCreateDoc() { const name = document.getElementById('input-new-doc-name').value.trim(); if(!name) { showToast('Введите название документа', 'danger'); return; } const newDoc = { id: Date.now().toString(36), name, status: 'active', createdAt: new Date().toISOString(), items: [] }; db[curTab].unshift(newDoc); save(); closeModal('modal-create-doc'); renderDocList(); openDoc(newDoc.id); }
++
++    function renderDocList() { const q = document.getElementById('doc-search')?.value?.toLowerCase() || ""; const cont = document.getElementById('docs-list-container'); cont.innerHTML = ""; const list = db[curTab] || []; list.filter(d => d.name.toLowerCase().includes(q)).forEach(d => { const card = document.createElement('div'); card.className = `card doc-card ${d.status}`; card.onclick = () => openDoc(d.id); const head = document.createElement('div'); head.className = 'flex justify-between font-bold'; const nameEl = document.createElement('span'); nameEl.textContent = d.name; const statusEl = document.createElement('span'); statusEl.textContent = d.status==='active' ? '🟡' : '✅'; head.append(nameEl, statusEl); const rowsEl = document.createElement('div'); rowsEl.textContent = `Записей: ${d.items.length}`; card.append(head, rowsEl); cont.appendChild(card); }); }
++
++    function openDoc(id) {
++        curDocId = id; saveAppState();
++        const d = db[curTab].find(x=>x.id===id);
++        if(!d) { switchTab(curTab); return; }
++        document.getElementById('screen-list').classList.add('hidden'); document.getElementById('screen-work').classList.remove('hidden');
++        document.getElementById('work-title').textContent = d.name;
++        document.getElementById('work-status').textContent = d.status==='active'?'ОТКРЫТ':'ЗАВЕРШЕН';
++        const acts = document.getElementById('closed-actions'); const formCont = document.getElementById('form-container');
++        if(d.status === 'active') { formCont.classList.remove('hidden'); acts.classList.add('hidden'); } else { formCont.classList.add('hidden'); acts.classList.remove('hidden'); }
++        renderForm(); renderRows();
++    }
++
++    function renderForm() {
++        const cont = document.getElementById('form-container'); const d = db[curTab].find(x=>x.id===curDocId);
++        if(!d || d.status !== 'active') return;
++        let artVal = sets.prefix + String(sets.nextNum).padStart(4,'0');
++        if(curTab === 'receive') {
++            cont.innerHTML = `<div class="input-group"><label>APT</label><input type="text" id="f-art" data-art-field value="${artVal}" class="monospace font-bold"></div><div class="input-group"><label>ШИРИНА</label><input type="text" id="f-width" inputmode="decimal"></div>${sets.showDensity ? '<div class="input-group"><label>ПЛОТНОСТЬ</label><input type="text" id="f-density" inputmode="numeric"></div>' : ''}${sets.showBrand ? '<div class="input-group"><label>БРЕНД</label><input type="text" id="f-brand"></div>' : ''}${sets.showComp ? '<div class="input-group"><label>СОСТАВ</label><input type="text" id="f-comp" oninput="this.value = this.value.toUpperCase()"></div>' : ''}<div id="receive-cuts"></div><button class="btn-outline w-full mb-3" style="border-style:dashed; font-size:14px;" onclick="addCut()">+ Добавить отрез</button><div class="flex gap-2"><button class="btn-outline" style="flex:1" onclick="printFromForm()">🖨️ Печать</button><button class="btn-success" style="flex:2" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button></div>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
++            if (!editingItemId) activeCuts = [{id:1, m:'', wh:sets.warehouses[0] || "", c:''}];
++            renderCuts();
++        } else if(curTab === 'move'){
++            cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"></div><div class="flex gap-2"><div style="flex:1"><label>ОТКУДА (СКЛАД)</label><select id="f-wh-from">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ОТКУДА (ЯЧ)</label><input type="text" id="f-cell-from" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="flex gap-2"><div style="flex:1"><label>КУДА (СКЛАД)</label><select id="f-wh-to">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>КУДА (ЯЧ)</label><input type="text" id="f-cell-to" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="input-group"><label>МЕТРАЖ</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal"></div><button class="btn-primary w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
++        } else if(curTab === 'writeoff'){
++            cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"></div><div class="flex gap-2"><div style="flex:1"><label>СКЛАД</label><select id="f-wh">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ЯЧЕЙКА</label><input type="text" id="f-cell" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal"></div><button class="btn-danger w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
++        } else if(curTab === 'price'){
++            cont.innerHTML = `<label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"><label>Цена (€)</label><input type="text" id="f-p" inputmode="decimal"><button class="btn-primary w-full" style="background:var(--price-color)" id="btn-save-line" onclick="saveLine()">ОК</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
++        }
++    }
++
++    function renderCuts() { const box = document.getElementById('receive-cuts'); if(!box) return; box.innerHTML = activeCuts.map(c=>`<div class="cut-row"><select onchange="uCut(${c.id},'wh',this.value)">${sets.warehouses.length > 0 ? sets.warehouses.map(w=>`<option ${c.wh===w?'selected':''}>${w}</option>`) : '<option value="">-</option>'}</select><input type="text" placeholder="М" value="${c.m}" oninput="uCut(${c.id},'m',this.value)" inputmode="decimal"><input type="text" placeholder="Яч" value="${c.c}" oninput="this.value = this.value.toUpperCase(); uCut(${c.id},'c',this.value)" list="list-cells"><button class="btn-icon" onclick="remCut(${c.id})">✕</button></div>`).join(''); }
++    function addCut() { const newId = Date.now(); activeCuts.push({id: newId, m:'', wh:sets.warehouses[0] || "", c:''}); renderCuts(); setTimeout(() => { const inputs = document.querySelectorAll('#receive-cuts input[placeholder="М"]'); if(inputs.length) inputs[inputs.length-1].focus(); }, 50); }
++    function remCut(id) { if(activeCuts.length > 1) { activeCuts = activeCuts.filter(x=>x.id!==id); renderCuts(); } }
++    function uCut(id, f, v) { const c = activeCuts.find(x=>x.id===id); if(c) c[f]=v.replace(',','.'); }
++
++    function saveLine() {
++        const d = db[curTab].find(x=>x.id===curDocId); const artInp = document.getElementById('f-art'); if(!artInp) return; const art = artInp.value.trim(); if(!art) { showToast('Введите артикул', 'danger'); artInp.focus(); return; }
++        let item = { id: editingItemId || Date.now(), art, ts: new Date().toISOString() };
++        if(curTab === 'receive'){ const v = activeCuts.filter(c => !isNaN(parseFloat(c.m)) && parseFloat(c.m) > 0); if(!v.length) { showToast('Добавьте хотя бы один валидный отрез', 'danger'); return; } item.cuts = JSON.parse(JSON.stringify(v)); item.w = document.getElementById('f-width').value; if(sets.showDensity && document.getElementById('f-density')) item.dens = document.getElementById('f-density').value; if(sets.showBrand && document.getElementById('f-brand')) item.brand = document.getElementById('f-brand').value; if(sets.showComp && document.getElementById('f-comp')) item.comp = document.getElementById('f-comp').value; if (!editingItemId) sets.nextNum++; }
++        else if(curTab === 'move'){ item.m = document.getElementById('f-m').value; item.fromWh = document.getElementById('f-wh-from').value; item.fromCell = document.getElementById('f-cell-from').value; item.toWh = document.getElementById('f-wh-to').value; item.toCell = document.getElementById('f-cell-to').value; if(!parseFloat(item.m)) { showToast('Введите корректный метраж', 'danger'); return; } }
++        else if(curTab === 'writeoff'){ item.m = document.getElementById('f-m').value; item.wh = document.getElementById('f-wh').value; item.cell = document.getElementById('f-cell').value; if(!parseFloat(item.m)) { showToast('Введите корректное количество', 'danger'); return; } }
++        else if(curTab === 'price'){ item.p = document.getElementById('f-p').value; if(isNaN(parseFloat(item.p))) { showToast('Введите корректную цену', 'danger'); return; } }
++        if(editingItemId){ const idx = d.items.findIndex(i=>i.id===editingItemId); d.items[idx]=item; editingItemId=null; } else d.items.unshift(item);
++        save(); renderForm(); renderRows(); showToast("Записано");
++    }
++
++    function editItem(id) {
++        const d = db[curTab].find(x=>x.id===curDocId); const it = d.items.find(i=>i.id===id); if(!it) return;
++        editingItemId = id; renderForm();
++        const fA = document.getElementById('f-art'); if(fA) fA.value = it.art;
++        if(curTab==='receive'){
++            const fW = document.getElementById('f-width'); if(fW) fW.value = it.w || ''; const fD = document.getElementById('f-density'); if(fD) fD.value = it.dens || ''; const fB = document.getElementById('f-brand'); if(fB) fB.value = it.brand || ''; const fC = document.getElementById('f-comp'); if(fC) fC.value = it.comp || '';
++            activeCuts = JSON.parse(JSON.stringify(it.cuts)); renderCuts();
++        } else if(curTab === 'move') { document.getElementById('f-m').value = it.m; document.getElementById('f-wh-from').value = it.fromWh; document.getElementById('f-cell-from').value = it.fromCell; document.getElementById('f-wh-to').value = it.toWh; document.getElementById('f-cell-to').value = it.toCell; }
++        else if(curTab === 'writeoff') { document.getElementById('f-m').value = it.m; document.getElementById('f-wh').value = it.wh; document.getElementById('f-cell').value = it.cell; }
++        else if(curTab==='price') { const fP = document.getElementById('f-p'); if(fP) fP.value = it.p || ''; }
++        const bSave = document.getElementById('btn-save-line'); if(bSave) bSave.textContent = "ОБНОВИТЬ";
++        renderRows(); window.scrollTo({top: 0, behavior: 'smooth'});
++    }
++
++    function cancelEdit() { editingItemId = null; renderForm(); renderRows(); }
++
++    function renderRows() {
++        const cont = document.getElementById('rows-container'); const d = db[curTab].find(x=>x.id===curDocId); cont.innerHTML = "";
++        d.items.forEach(it => {
++            const div = document.createElement('div');
++            div.className = 'history-item' + (editingItemId===it.id ? ' editing' : '');
++
++            const left = document.createElement('div');
++            const artEl = document.createElement('div');
++            artEl.className = 'font-bold';
++            artEl.textContent = it.art;
++            const infoEl = document.createElement('div');
++
++            if(curTab === 'move') { infoEl.className = 'text-sm text-sec'; infoEl.textContent = `${it.fromWh} → ${it.toWh} | ${it.m}м`; }
++            else if(curTab === 'writeoff') { infoEl.className = 'text-sm text-sec'; infoEl.textContent = `${it.wh} | ${it.m}м`; }
++            else if(curTab === 'price') { infoEl.className = 'text-sm font-bold'; infoEl.style.color = 'var(--price-color)'; infoEl.textContent = `${it.p} €`; }
++            else { infoEl.className = 'text-sm text-sec'; infoEl.textContent = `${it.cuts ? it.cuts.length : 0} отр.`; }
++
++            left.append(artEl, infoEl);
++
++            const actions = document.createElement('div');
++            actions.className = 'flex gap-2';
++            if (d.status === 'active') {
++                const editBtn = document.createElement('button');
++                editBtn.className = 'btn-icon';
++                editBtn.type = 'button';
++                editBtn.textContent = '✏️';
++                editBtn.setAttribute('aria-label', 'Редактировать строку');
++                editBtn.onclick = () => editItem(it.id);
++
++                const delBtn = document.createElement('button');
++                delBtn.className = 'btn-icon text-danger';
++                delBtn.type = 'button';
++                delBtn.textContent = '🗑️';
++                delBtn.setAttribute('aria-label', 'Удалить строку');
++                delBtn.onclick = () => delRow(it.id);
++
++                actions.append(editBtn, delBtn);
++            }
++
++            div.append(left, actions);
++            cont.appendChild(div);
++        });
++        document.getElementById('work-counter').textContent = "Записей: " + d.items.length;
++    }
++
++    /* УТИЛИТЫ */
++    function save() { localStorage.setItem('tsd_final_sets', JSON.stringify(sets)); localStorage.setItem('tsd_final_receive', JSON.stringify(db.receive)); localStorage.setItem('tsd_final_move', JSON.stringify(db.move)); localStorage.setItem('tsd_final_writeoff', JSON.stringify(db.writeoff)); localStorage.setItem('tsd_final_price', JSON.stringify(db.price)); updateDataLists(); }
++    function updateDataLists() { const arts = new Set(), cells = new Set(); Object.values(db).forEach(list => { if(list) list.forEach(d => d.items.forEach(i => { if(i.art) arts.add(i.art); if(i.cuts) i.cuts.forEach(c => { if(c.c) cells.add(c.c); }); if(i.cell) cells.add(i.cell); if(i.fromCell) cells.add(i.fromCell); if(i.toCell) cells.add(i.toCell); } )) }); document.getElementById('list-arts').innerHTML = Array.from(arts).map(a=>`<option value="${a}">`).join(''); document.getElementById('list-cells').innerHTML = Array.from(cells).map(c=>`<option value="${c}">`).join(''); }
++    function openModal(id) { const modal = document.getElementById(id); if(!modal) return; lastFocusedElement = document.activeElement; activeModalId = id; modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); const focusable = modal.querySelector('input, button, select, textarea'); if (focusable) focusable.focus(); }
++    function closeModal(id) { const modal = document.getElementById(id); if(!modal) return; modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); if (activeModalId === id) activeModalId = null; if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') lastFocusedElement.focus(); }
++    function showToast(m, t) { const c = document.getElementById('toast-container'); if(c.children.length > 3) c.removeChild(c.firstChild); const d = document.createElement('div'); d.className = `toast`; d.setAttribute('role', 'status'); d.style.background = t === 'danger' ? 'var(--danger)' : 'var(--primary)'; d.textContent = m; c.appendChild(d); setTimeout(()=>d.remove(), 2500); }
++    
++    function openSettings() { document.getElementById('set-show-density').checked = sets.showDensity; document.getElementById('set-show-brand').checked = sets.showBrand; document.getElementById('set-show-comp').checked = sets.showComp; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "rawbt"; togglePrintSettingsUI(); renderSettingsWh(); openModal('modal-settings'); }
++    function togglePrintSettingsUI() { const method = document.getElementById('set-print-method').value; const block = document.getElementById('printnode-block'); if (block) block.style.display = (method === 'printnode') ? 'block' : 'none'; }
++    function saveSets() { sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; save(); }
++    function renderSettingsWh() { document.getElementById('settings-warehouses').innerHTML = sets.warehouses.map(w=>`<div class="wh-item"><span>${w}</span><button class="btn-icon text-danger" onclick="delWh('${w}')">🗑️</button></div>`).join(''); }
++    function addWh() { const n = document.getElementById('new-wh-name'); if(n.value){sets.warehouses.push(n.value); n.value=''; renderSettingsWh(); saveSets();}}
++    function delWh(w) { sets.warehouses = sets.warehouses.filter(x=>x!==w); renderSettingsWh(); saveSets();}
++    function closeSettings() { saveSets(); closeModal('modal-settings'); }
++    function exitWork() { curDocId = null; saveAppState(); switchTab(curTab); }
++
++    async function customConfirm(msg) { 
++        return new Promise(res => { 
++            const msgEl = document.getElementById('conf-msg');
++            const okBtn = document.getElementById('conf-ok');
++            const cancelBtn = document.getElementById('conf-cancel');
++            
++            if (!msgEl || !okBtn || !cancelBtn) { console.error("Confirm elements missing"); res(false); return; }
++            
++            msgEl.textContent = msg; 
++            openModal('modal-confirm'); 
++            
++            okBtn.onclick = () => { closeModal('modal-confirm'); res(true); }; 
++            cancelBtn.onclick = () => { closeModal('modal-confirm'); res(false); }; 
++        }); 
++    }
++
++    async function completeDoc() { if(!await customConfirm("Завершить документ?")) return; const d = db[curTab].find(x=>x.id===curDocId); d.status = 'closed'; save(); openDoc(curDocId); }
++    function reopenDoc() { const d = db[curTab].find(x=>x.id===curDocId); d.status = 'active'; save(); openDoc(curDocId); }
++    
++    async function syncWith1C() {
++        const d = db[curTab].find(x=>x.id===curDocId); if(!sets.url) { showToast("URL 1С не настроен", "danger"); return; }
++        showToast("Отправка в 1С...");
++        try { const res = await fetch(`${sets.url}/post-document`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Basic '+btoa(sets.user+":"+(sets.pass||""))}, body:JSON.stringify({type:curTab.toUpperCase(), data:d}) }); if(res.ok) showToast("Успешно проведено!"); else showToast("1С вернула ошибку", "danger"); } catch(e) { showToast("Сервер 1С недоступен", "danger"); logError(`Синхронизация 1С: ${e.message}`); }
++    }
++
++    async function test1CConnection() {
++        const url = document.getElementById('set-url').value; const user = document.getElementById('set-user').value; const pass = document.getElementById('set-pass').value;
++        if (!url) { showToast("Сначала введите URL", "danger"); return; }
++        showToast("Проверка связи...");
++        try { const res = await fetch(`${url}/product?id=ping`, { headers: { 'Authorization': 'Basic ' + btoa(user + ":" + pass) } }); if (res.ok || res.status === 404) { showToast("Связь с 1С установлена!", "success"); } else { showToast(`Ошибка: ${res.status}`, "danger"); } } catch (e) { showToast("Ошибка соединения", "danger"); logError(`Тест 1С: ${e.message}`); }
++    }
++
++    async function delRow(rid) { if(!await customConfirm("Удалить строку?")) return; const d = db[curTab].find(x=>x.id===curDocId); d.items = d.items.filter(x=>x.id!==rid); save(); renderRows(); }
++    async function deleteFullDoc() { if(!await customConfirm("УДАЛИТЬ ВЕСЬ ДОКУМЕНТ?")) return; db[curTab] = db[curTab].filter(x=>x.id!==curDocId); save(); exitWork(); }
++    function openManualSearch() { openModal('modal-search'); setTimeout(() => document.getElementById('manual-search-input').focus(), 300); }
++    function doManualSearch() { const v = document.getElementById('manual-search-input').value.trim(); if(v){ closeModal('modal-search'); search1C(v); } }
++    function exportData() { const blob = new Blob([JSON.stringify({db, sets})], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='backup.json'; a.click(); }
++    function importData(event) { const file = event.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(e){ try{ const d = JSON.parse(e.target.result); if(d.db && d.sets){ db = d.db; sets = d.sets; save(); location.reload(); } }catch(err){showToast('Ошибка файла','danger');} }; reader.readAsText(file); }
++</script>
++</body>
++</html>
