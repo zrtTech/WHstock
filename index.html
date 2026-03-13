@@ -77,6 +77,7 @@
         }
         button:active { transform: scale(0.98); }
         .btn-main { background: white; color: var(--primary); height: 64px; font-size: 18px; font-weight: 800; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .btn-search-wide { justify-content: flex-start; padding: 0 22px; font-size: 20px; letter-spacing: .01em; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-success { background: var(--success); color: white; }
         .btn-danger { background: var(--danger); color: white; }
@@ -203,7 +204,7 @@
             padding-bottom: 4px;
         }
         .customer-gallery-item {
-            min-width: 82%;
+            min-width: 100%;
             height: 240px;
             background: #f0f0f0;
             border-radius: 12px;
@@ -216,6 +217,7 @@
             color: var(--text-sec);
             font-weight: 700;
         }
+        .manager-field-note { color: var(--text-sec); font-size: 13px; margin-top: 6px; }
         .customer-gallery-item img { width: 100%; height: 100%; object-fit: cover; }
         .customer-hero-price { font-size: 56px !important; font-weight: 900; color: var(--price-color); margin-bottom: 15px; }
         .customer-specs {
@@ -272,7 +274,7 @@
         <p style="font-size: 18px; opacity: 0.8; margin-bottom: 40px;">информационный терминал</p>
         <div class="w-full" style="max-width: 320px;">
             <div class="text-center mb-6" style="font-size: 22px; font-weight: 800; animation: pulse 2s infinite;">ПОДНЕСИТЕ ШТРИХКОД</div>
-            <button class="btn-main w-full mb-4" onclick="openManualSearch()">🔍 Найти по артикулу</button>
+            <button class="btn-main btn-search-wide w-full mb-4" onclick="openManualSearch()">🔎 Поиск товара по артикулу</button>
         </div>
         <input type="text" id="kiosk-scanner-input" style="position: absolute; opacity: 0; pointer-events: none;">
     </div>
@@ -290,6 +292,8 @@
                 <div class="customer-spec-row"><strong>Артикул:</strong> <span id="c-art">-</span></div>
                 <div class="customer-spec-row"><strong>Ширина:</strong> <span id="c-width">-</span></div>
                 <div class="customer-spec-row"><strong>Состав:</strong> <span id="c-comp">-</span></div>
+                <div class="customer-spec-row"><strong>Бренд:</strong> <span id="c-brand">-</span></div>
+                <div class="customer-spec-row"><strong>Плотность:</strong> <span id="c-density">-</span></div>
             </div>
             <table id="c-stock-table" class="stock-table"></table>
             <div id="c-stock-summary" class="stock-summary">Общий метраж: -</div>
@@ -316,7 +320,7 @@
                     <button class="btn-icon settings-btn" aria-label="Открыть настройки" onclick="openSettings()">⚙️</button>
                 </div>
             </div>
-            <input type="text" id="doc-search" placeholder="🔍 Поиск документа..." oninput="renderDocList()" style="margin-bottom: 16px;">
+            <input type="text" id="doc-search" placeholder="🔍 Поиск: название, дата или артикул..." oninput="renderDocList()" style="margin-bottom: 16px;">
             <button class="btn-primary w-full mb-4" style="height: 56px;" onclick="openCreateDocModal()">+ Создать документ</button>
             <div id="docs-list-container"></div>
         </div>
@@ -478,8 +482,16 @@
         <h2>Изменение номенклатуры</h2>
         <p class="text-sm" style="color:var(--text-sec);margin-bottom:10px;">Изменения применяются в мобильном приложении и отправляются в 1С.</p>
         <div class="input-group"><label>Артикул</label><input type="text" id="pe-art" readonly></div>
+        <div class="input-group"><label>Цена (₽)</label><input type="text" id="pe-price" inputmode="decimal"></div>
         <div class="input-group"><label>Ширина</label><input type="text" id="pe-width"></div>
         <div class="input-group"><label>Состав</label><input type="text" id="pe-comp"></div>
+        <div class="input-group"><label>Бренд</label><input type="text" id="pe-brand"></div>
+        <div class="input-group"><label>Плотность (г/м²)</label><input type="text" id="pe-density" inputmode="numeric"></div>
+        <div class="input-group"><label>Склад</label><input type="text" id="pe-wh"></div>
+        <div class="input-group"><label>Ячейка</label><input type="text" id="pe-cell"></div>
+        <div class="input-group"><label>Метраж, м</label><input type="text" id="pe-meters" inputmode="decimal"></div>
+        <div class="input-group"><label>Количество</label><input type="text" id="pe-qty" inputmode="decimal"></div>
+        <p class="manager-field-note">Если у товара несколько складов, редактируется основная строка остатков (первая в списке).</p>
         <div class="flex gap-2 mt-3">
             <button class="btn-outline w-full" onclick="closeModal('modal-product-edit')">Отмена</button>
             <button class="btn-success w-full" onclick="saveProductChanges()">💾 Сохранить в 1С</button>
@@ -553,6 +565,9 @@
     let lastFocusedElement = null;
     let isSearchPending = false;
     let currentProduct = null;
+    let lastScanAt = 0;
+    let lastScanCode = "";
+    const SCAN_COOLDOWN_MS = 1200;
 
     function setSearchLock(locked) {
         isSearchPending = locked;
@@ -606,6 +621,11 @@
     function handleScan(code) {
         if (code === "ADMIN") { loginSuccess(); return; }
         if (isSearchPending) { showToast("Идёт поиск...", "danger"); return; }
+        const now = Date.now();
+        if (code === lastScanCode && (now - lastScanAt) < SCAN_COOLDOWN_MS) return;
+        if ((now - lastScanAt) < 250) return;
+        lastScanCode = code;
+        lastScanAt = now;
         const manualSearchOpen = document.getElementById('modal-search')?.classList.contains('open');
         if (!isMgr || manualSearchOpen) search1C(code);
         else { const inp = document.querySelector('input[data-art-field]'); if (inp) { inp.value = code; inp.dispatchEvent(new Event('input')); } }
@@ -622,6 +642,9 @@
                 priceRub: 1290,
                 width: "150",
                 composition: "Хлопок",
+                brand: "DemoBrand",
+                density: "220",
+                qty: 11,
                 images: [
                     "https://images.unsplash.com/photo-1555529771-35a45f79cf5c?auto=format&fit=crop&w=1200&q=60",
                     "https://images.unsplash.com/photo-1619596662488-085e45fddf72?auto=format&fit=crop&w=1200&q=60",
@@ -707,12 +730,15 @@
     function showProduct(p) {
         currentProduct = p;
         const rows = buildStockRows(p);
+        const images = (sets.url && Array.isArray(p.images)) ? (p.images.length ? [p.images[0]] : []) : (p.images || p.photos || p.gallery || []);
         document.getElementById('c-name').textContent = p.name || 'Товар';
         document.getElementById('c-price').textContent = `${toNumber(p.priceRub || p.price || 0).toFixed(2)} ₽`;
         document.getElementById('c-art').textContent = p.articul || '-';
         document.getElementById('c-width').textContent = p.width || '-';
         document.getElementById('c-comp').textContent = p.composition || '-';
-        renderCustomerGallery(p.images || p.photos || p.gallery || []);
+        document.getElementById('c-brand').textContent = p.brand || '-';
+        document.getElementById('c-density').textContent = p.density || p.dens || '-';
+        renderCustomerGallery(images);
         renderStockTable(rows);
         document.getElementById('product-admin-row').classList.toggle('hidden', !isMgr);
         document.getElementById('customer-view').classList.remove('hidden');
@@ -723,21 +749,43 @@
         if (!isMgr) { showToast('Доступно только персоналу', 'danger'); return; }
         if (!currentProduct) { showToast('Сначала найдите товар', 'danger'); return; }
         document.getElementById('pe-art').value = currentProduct.articul || '';
+        document.getElementById('pe-price').value = toNumber(currentProduct.priceRub || currentProduct.price || 0).toFixed(2);
         document.getElementById('pe-width').value = currentProduct.width || '';
         document.getElementById('pe-comp').value = currentProduct.composition || '';
+        document.getElementById('pe-brand').value = currentProduct.brand || '';
+        document.getElementById('pe-density').value = currentProduct.density || currentProduct.dens || '';
+        const row = Array.isArray(currentProduct.stockRows) && currentProduct.stockRows.length ? currentProduct.stockRows[0] : {};
+        document.getElementById('pe-wh').value = row.warehouse || row.wh || '';
+        document.getElementById('pe-cell').value = row.cell || '';
+        document.getElementById('pe-meters').value = row.meters ?? row.m ?? '';
+        document.getElementById('pe-qty').value = currentProduct.qty ?? row.qty ?? '';
         openModal('modal-product-edit');
     }
 
     async function saveProductChanges() {
         if (!currentProduct) return;
         const articul = document.getElementById('pe-art').value.trim();
+        const priceRub = toNumber(document.getElementById('pe-price').value.trim());
         const width = document.getElementById('pe-width').value.trim();
         const composition = document.getElementById('pe-comp').value.trim();
+        const brand = document.getElementById('pe-brand').value.trim();
+        const density = document.getElementById('pe-density').value.trim();
+        const warehouse = document.getElementById('pe-wh').value.trim();
+        const cell = document.getElementById('pe-cell').value.trim();
+        const meters = toNumber(document.getElementById('pe-meters').value.trim());
+        const qty = toNumber(document.getElementById('pe-qty').value.trim());
         if (!articul) { showToast('Артикул не задан', 'danger'); return; }
 
-        const payload = { articul, width, composition };
+        const payload = { articul, priceRub, width, composition, brand, density, warehouse, cell, meters, qty };
+        currentProduct.priceRub = priceRub;
         currentProduct.width = width;
         currentProduct.composition = composition;
+        currentProduct.brand = brand;
+        currentProduct.density = density;
+        currentProduct.qty = qty;
+        if (!Array.isArray(currentProduct.stockRows)) currentProduct.stockRows = [];
+        if (!currentProduct.stockRows.length) currentProduct.stockRows.push({ warehouse: warehouse || '-', cell: cell || '-', meters: meters || 0, qty });
+        else currentProduct.stockRows[0] = { ...currentProduct.stockRows[0], warehouse: warehouse || '-', cell: cell || '-', meters, qty };
         showProduct(currentProduct);
 
         if (!sets.url) { showToast('Изменено локально (демо режим)'); closeModal('modal-product-edit'); return; }
@@ -814,7 +862,34 @@
     function openCreateDocModal() { openModal('modal-create-doc'); document.getElementById('input-new-doc-name').value = "Документ " + new Date().toLocaleDateString(); setTimeout(()=>document.getElementById('input-new-doc-name').focus(), 300); }
     function executeCreateDoc() { const name = document.getElementById('input-new-doc-name').value.trim(); if(!name) { showToast('Введите название документа', 'danger'); return; } const newDoc = { id: Date.now().toString(36), name, status: 'active', createdAt: new Date().toISOString(), items: [] }; db[curTab].unshift(newDoc); save(); closeModal('modal-create-doc'); renderDocList(); openDoc(newDoc.id); }
 
-    function renderDocList() { const q = document.getElementById('doc-search')?.value?.toLowerCase() || ""; const cont = document.getElementById('docs-list-container'); cont.innerHTML = ""; const list = db[curTab] || []; list.filter(d => d.name.toLowerCase().includes(q)).forEach(d => { const card = document.createElement('div'); card.className = `card doc-card ${d.status}`; card.onclick = () => openDoc(d.id); const head = document.createElement('div'); head.className = 'flex justify-between font-bold'; const nameEl = document.createElement('span'); nameEl.textContent = d.name; const statusEl = document.createElement('span'); statusEl.textContent = d.status==='active' ? '🟡' : '✅'; head.append(nameEl, statusEl); const rowsEl = document.createElement('div'); rowsEl.textContent = `Записей: ${d.items.length}`; card.append(head, rowsEl); cont.appendChild(card); }); }
+    function renderDocList() {
+        const q = document.getElementById('doc-search')?.value?.toLowerCase().trim() || "";
+        const cont = document.getElementById('docs-list-container');
+        cont.innerHTML = "";
+        const list = db[curTab] || [];
+        list.filter(d => {
+            if (!q) return true;
+            const nameHit = (d.name || '').toLowerCase().includes(q);
+            const dateHit = new Date(d.createdAt).toLocaleDateString().toLowerCase().includes(q);
+            const artHit = (d.items || []).some(i => (i.art || '').toLowerCase().includes(q));
+            return nameHit || dateHit || artHit;
+        }).forEach(d => {
+            const card = document.createElement('div');
+            card.className = `card doc-card ${d.status}`;
+            card.onclick = () => openDoc(d.id);
+            const head = document.createElement('div');
+            head.className = 'flex justify-between font-bold';
+            const nameEl = document.createElement('span');
+            nameEl.textContent = d.name;
+            const statusEl = document.createElement('span');
+            statusEl.textContent = d.status==='active' ? '🟡' : '✅';
+            head.append(nameEl, statusEl);
+            const rowsEl = document.createElement('div');
+            rowsEl.textContent = `Записей: ${d.items.length}`;
+            card.append(head, rowsEl);
+            cont.appendChild(card);
+        });
+    }
 
     function openDoc(id) {
         curDocId = id; saveAppState();
