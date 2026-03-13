@@ -560,6 +560,7 @@
     }
 
     function toNumber(v) { return Number(String(v).replace(',', '.')) || 0; }
+    function normalizeId(v) { return String(v); }
 
     function buildStockRows(p) {
         if (Array.isArray(p.stockRows) && p.stockRows.length) return p.stockRows;
@@ -725,18 +726,18 @@
 
     function saveLine() {
         const d = db[curTab].find(x=>x.id===curDocId); const artInp = document.getElementById('f-art'); if(!artInp) return; const art = artInp.value.trim(); if(!art) { showToast('Введите артикул', 'danger'); artInp.focus(); return; }
-        let item = { id: editingItemId || Date.now(), art, ts: new Date().toISOString() };
+        let item = { id: editingItemId || Date.now().toString(36), art, ts: new Date().toISOString() };
         if(curTab === 'receive'){ const v = activeCuts.filter(c => !isNaN(parseFloat(c.m)) && parseFloat(c.m) > 0); if(!v.length) { showToast('Добавьте хотя бы один валидный отрез', 'danger'); return; } item.cuts = JSON.parse(JSON.stringify(v)); if(sets.showWidth && document.getElementById('f-width')) item.w = document.getElementById('f-width').value; if(sets.showDensity && document.getElementById('f-density')) item.dens = document.getElementById('f-density').value; if(sets.showBrand && document.getElementById('f-brand')) item.brand = document.getElementById('f-brand').value; if(sets.showComp && document.getElementById('f-comp')) item.comp = document.getElementById('f-comp').value; if (!editingItemId) sets.nextNum++; }
         else if(curTab === 'move'){ item.m = document.getElementById('f-m').value; item.fromWh = document.getElementById('f-wh-from').value; item.fromCell = document.getElementById('f-cell-from').value; item.toWh = document.getElementById('f-wh-to').value; item.toCell = document.getElementById('f-cell-to').value; if(!parseFloat(item.m)) { showToast('Введите корректный метраж', 'danger'); return; } }
         else if(curTab === 'writeoff'){ item.m = document.getElementById('f-m').value; item.wh = document.getElementById('f-wh').value; item.cell = document.getElementById('f-cell').value; if(!parseFloat(item.m)) { showToast('Введите корректное количество', 'danger'); return; } }
         else if(curTab === 'price'){ item.p = document.getElementById('f-p').value; if(isNaN(parseFloat(item.p))) { showToast('Введите корректную цену', 'danger'); return; } }
-        if(editingItemId){ const idx = d.items.findIndex(i=>i.id===editingItemId); d.items[idx]=item; editingItemId=null; } else d.items.unshift(item);
+        if(editingItemId){ const idx = d.items.findIndex(i => normalizeId(i.id)===normalizeId(editingItemId)); if(idx >= 0) d.items[idx]=item; editingItemId=null; } else d.items.unshift(item);
         save(); renderForm(); renderRows(); showToast("Записано");
     }
 
     function editItem(id) {
         const d = db[curTab].find(x=>x.id===curDocId); const it = d.items.find(i=>i.id===id); if(!it) return;
-        editingItemId = id; renderForm();
+        editingItemId = normalizeId(id); renderForm();
         const fA = document.getElementById('f-art'); if(fA) fA.value = it.art;
         if(curTab==='receive'){
             const fW = document.getElementById('f-width'); if(fW) fW.value = it.w || '';
@@ -757,7 +758,7 @@
         const cont = document.getElementById('rows-container'); const d = db[curTab].find(x=>x.id===curDocId); cont.innerHTML = "";
         d.items.forEach(it => {
             const div = document.createElement('div');
-            div.className = 'history-item' + (editingItemId===it.id ? ' editing' : '');
+            div.className = 'history-item' + (normalizeId(editingItemId)===normalizeId(it.id) ? ' editing' : '');
 
             const left = document.createElement('div');
             const artEl = document.createElement('div');
@@ -846,7 +847,7 @@
         try { const res = await fetch(`${url}/product?id=ping`, { headers: { 'Authorization': 'Basic ' + btoa(user + ":" + pass) } }); if (res.ok || res.status === 404) { showToast("Связь с 1С установлена!", "success"); } else { showToast(`Ошибка: ${res.status}`, "danger"); } } catch (e) { showToast("Ошибка соединения", "danger"); logError(`Тест 1С: ${e.message}`); }
     }
 
-    async function delRow(rid) { if(!await customConfirm("Удалить строку?")) return; const d = db[curTab].find(x=>x.id===curDocId); d.items = d.items.filter(x=>x.id!==rid); save(); renderRows(); }
+    async function delRow(rid) { if(!await customConfirm("Удалить строку?")) return; const d = db[curTab].find(x=>x.id===curDocId); d.items = d.items.filter(x=>normalizeId(x.id)!==normalizeId(rid)); save(); renderRows(); }
     async function deleteFullDoc() { if(!await customConfirm("УДАЛИТЬ ВЕСЬ ДОКУМЕНТ?")) return; db[curTab] = db[curTab].filter(x=>x.id!==curDocId); save(); exitWork(); }
     function openManualSearch() { openModal('modal-search'); setTimeout(() => document.getElementById('manual-search-input').focus(), 300); }
     function doManualSearch() { const v = document.getElementById('manual-search-input').value.trim(); if(v){ closeModal('modal-search'); search1C(v); } }
