@@ -196,18 +196,11 @@
         .screen-subtitle { color: var(--text-sec); font-size: 14px; margin-top: 4px; }
 
         .customer-view-title { font-size: 30px !important; font-weight: 900; }
-        .customer-gallery {
-            width: 100%;
-            display: flex;
-            gap: 12px;
-            overflow-x: auto;
-            scroll-snap-type: x mandatory;
-            margin-bottom: 16px;
-            padding-bottom: 4px;
-        }
+        .customer-gallery { width: 100%; margin-bottom: 16px; }
         .customer-gallery-item {
-            min-width: 100%;
-            height: 240px;
+            width: 100%;
+            min-height: 220px;
+            max-height: 420px;
             background: #f0f0f0;
             border-radius: 12px;
             border: 1px solid #e5e5e5;
@@ -215,12 +208,11 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            scroll-snap-align: start;
             color: var(--text-sec);
             font-weight: 700;
         }
         .manager-field-note { color: var(--text-sec); font-size: 13px; margin-top: 6px; }
-        .customer-gallery-item img { width: 100%; height: 100%; object-fit: cover; }
+        .customer-gallery-item img { width: 100%; height: auto; max-height: 420px; object-fit: contain; background: #f7f7f7; }
         .customer-hero-price { font-size: 56px !important; font-weight: 900; color: var(--price-color); margin-bottom: 15px; }
         .customer-specs {
             background:#f8f9fa;
@@ -243,6 +235,9 @@
         }
         .customer-spec-row strong { font-size: 28px; white-space: nowrap; }
         .customer-spec-row span { font-weight: 700; white-space: nowrap; }
+        .editable-value { cursor: default; border-bottom: 1px dashed #c5d6eb; color: #0d47a1; }
+        .editable-value.editable-enabled { cursor: pointer; }
+        .editable-value.editable-enabled:hover { background: rgba(13,71,161,0.07); }
         .stock-table { width: 100%; margin-top: 10px; border-collapse: collapse; font-size: 18px; }
         .stock-table th, .stock-table td { border-bottom: 1px solid #e3e3e3; padding: 7px 4px; text-align: left; }
         .stock-table th { font-size: 13px; text-transform: uppercase; color: var(--text-sec); letter-spacing: .02em; }
@@ -291,16 +286,20 @@
         <div id="c-price" class="customer-hero-price">0.00 ₽</div>
         <div class="card customer-specs">
             <div class="customer-spec-grid">
-                <div class="customer-spec-row"><strong>Артикул:</strong> <span id="c-art">-</span></div>
-                <div class="customer-spec-row"><strong>Ширина:</strong> <span id="c-width">-</span></div>
-                <div class="customer-spec-row"><strong>Состав:</strong> <span id="c-comp">-</span></div>
-                <div class="customer-spec-row"><strong>Бренд:</strong> <span id="c-brand">-</span></div>
-                <div class="customer-spec-row"><strong>Плотность:</strong> <span id="c-density">-</span></div>
+                <div class="customer-spec-row"><strong>Артикул:</strong> <span id="c-art" class="editable-value" data-edit-field="articul" data-edit-label="Артикул">-</span></div>
+                <div class="customer-spec-row"><strong>Ширина:</strong> <span id="c-width" class="editable-value" data-edit-field="width" data-edit-label="Ширина">-</span></div>
+                <div class="customer-spec-row"><strong>Состав:</strong> <span id="c-comp" class="editable-value" data-edit-field="composition" data-edit-label="Состав">-</span></div>
+                <div class="customer-spec-row"><strong>Бренд:</strong> <span id="c-brand" class="editable-value" data-edit-field="brand" data-edit-label="Бренд">-</span></div>
+                <div class="customer-spec-row"><strong>Плотность:</strong> <span id="c-density" class="editable-value" data-edit-field="density" data-edit-label="Плотность">-</span></div>
             </div>
             <table id="c-stock-table" class="stock-table"></table>
             <div id="c-stock-summary" class="stock-summary">Общий метраж: -</div>
             <div id="product-admin-row" class="product-admin-row hidden">
-                <button class="btn-primary w-full" style="min-height:58px;font-size:18px;" onclick="openProductEditModal()">✏️ Изменить свойства товара</button>
+                <div class="flex gap-2">
+                    <button class="btn-outline w-full" style="min-height:58px;font-size:18px;" onclick="openProductEditModal()">✏️ Массовая правка полей</button>
+                    <button class="btn-outline w-full" style="min-height:58px;font-size:18px;" onclick="openStockRowEditModal(-1)">➕ Добавить склад</button>
+                </div>
+                <button id="btn-sync-product" class="btn-primary w-full mt-2" style="min-height:58px;font-size:18px;" onclick="pushProductChangesTo1C()">🚀 Отправить изменения товара в 1С</button>
             </div>
         </div>
         <div class="flex gap-2 mt-4">
@@ -489,14 +488,37 @@
         <div class="input-group"><label>Состав</label><input type="text" id="pe-comp"></div>
         <div class="input-group"><label>Бренд</label><input type="text" id="pe-brand"></div>
         <div class="input-group"><label>Плотность (г/м²)</label><input type="text" id="pe-density" inputmode="numeric"></div>
-        <div class="input-group"><label>Склад</label><input type="text" id="pe-wh"></div>
-        <div class="input-group"><label>Ячейка</label><input type="text" id="pe-cell"></div>
-        <div class="input-group"><label>Метраж, м</label><input type="text" id="pe-meters" inputmode="decimal"></div>
         <div class="input-group"><label>Количество</label><input type="text" id="pe-qty" inputmode="decimal"></div>
-        <p class="manager-field-note">Если у товара несколько складов, редактируется основная строка остатков (первая в списке).</p>
+        <p class="manager-field-note">Склад/ячейку/метраж меняйте нажатием на строку нужного склада в таблице остатков.</p>
         <div class="flex gap-2 mt-3">
             <button class="btn-outline w-full" onclick="closeModal('modal-product-edit')">Отмена</button>
             <button class="btn-success w-full" onclick="saveProductChanges()">💾 Сохранить в 1С</button>
+        </div>
+    </div>
+</div>
+
+<div id="modal-inline-edit" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal-content">
+        <h2 id="ie-title">Изменить поле</h2>
+        <input type="text" id="ie-input" onkeydown="if(event.key==='Enter') applyInlineEdit()">
+        <div class="flex gap-2 mt-3">
+            <button class="btn-outline w-full" onclick="closeModal('modal-inline-edit')">Отмена</button>
+            <button class="btn-primary w-full" onclick="applyInlineEdit()">ОК</button>
+        </div>
+    </div>
+</div>
+
+<div id="modal-stock-row-edit" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal-content">
+        <h2 id="sr-title">Редактирование склада</h2>
+        <div class="input-group"><label>Склад</label><select id="sr-wh"></select></div>
+        <div class="input-group"><label>Ячейка</label><input type="text" id="sr-cell"></div>
+        <div class="input-group"><label>Метраж, м</label><input type="text" id="sr-meters" inputmode="decimal"></div>
+        <div class="input-group"><label>Количество</label><input type="text" id="sr-qty" inputmode="decimal"></div>
+        <div class="flex gap-2 mt-3">
+            <button class="btn-outline w-full" onclick="closeModal('modal-stock-row-edit')">Отмена</button>
+            <button class="btn-danger w-full" onclick="removeStockRow()">Удалить</button>
+            <button class="btn-success w-full" onclick="applyStockRowEdit()">Сохранить</button>
         </div>
     </div>
 </div>
@@ -567,6 +589,9 @@
     let lastFocusedElement = null;
     let isSearchPending = false;
     let currentProduct = null;
+    let isProductDirty = false;
+    let inlineEditField = null;
+    let activeStockRowIndex = null;
     let lastScanAt = 0;
     let lastScanCode = "";
     const SCAN_COOLDOWN_MS = 1200;
@@ -638,6 +663,7 @@
         setSearchLock(true);
         showToast("Поиск...");
         if (!sets.url) {
+            isProductDirty = false;
             showProduct({
                 name: "Демо-ткань",
                 articul: id,
@@ -663,13 +689,29 @@
         }
         try {
             const res = await fetch(`${sets.url}/product?id=${id}`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ":" + (sets.pass || "")) } });
-            if (res.ok) showProduct(await res.json()); else showToast("Не найдено", "danger");
+            if (res.ok) { isProductDirty = false; showProduct(await res.json()); } else showToast("Не найдено", "danger");
         } catch (e) { showToast("Ошибка 1С", "danger"); logError(`Поиск 1С: ${e.message}`); }
         finally { setSearchLock(false); }
     }
 
     function toNumber(v) { return Number(String(v).replace(',', '.')) || 0; }
     function normalizeId(v) { return String(v); }
+
+    function updateProductSyncButton() {
+        const btn = document.getElementById('btn-sync-product');
+        if (!btn) return;
+        if (isProductDirty) {
+            btn.textContent = '🚀 Отправить изменения товара в 1С';
+            btn.classList.remove('btn-outline');
+            btn.classList.add('btn-primary');
+        } else {
+            btn.textContent = '✅ Изменения сохранены';
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-outline');
+        }
+    }
+
+    function markProductDirty() { isProductDirty = true; updateProductSyncButton(); }
 
     function buildStockRows(p) {
         if (Array.isArray(p.stockRows) && p.stockRows.length) return p.stockRows;
@@ -719,20 +761,29 @@
             return;
         }
 
-        table.innerHTML = `
-            <thead>
-                <tr><th>Склад</th><th>Метраж, м</th><th>Ячейка</th></tr>
-            </thead>
-            <tbody>
-                ${rows.map(row => `<tr><td>${row.warehouse || row.wh || '-'}</td><td>${toNumber(row.meters ?? row.m).toFixed(2)}</td><td>${row.cell || row.shelf || '-'}</td></tr>`).join('')}
-            </tbody>`;
+        const thead = document.createElement('thead');
+        thead.innerHTML = '<tr><th>Склад</th><th>Метраж, м</th><th>Ячейка</th></tr>';
+        const tbody = document.createElement('tbody');
+        rows.forEach((row, idx) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${row.warehouse || row.wh || '-'}</td><td>${toNumber(row.meters ?? row.m).toFixed(2)}</td><td>${row.cell || row.shelf || '-'}</td>`;
+            if (isMgr) {
+                tr.style.cursor = 'pointer';
+                tr.title = 'Нажмите для изменения данных этого склада';
+                tr.onclick = () => openStockRowEditModal(idx);
+            }
+            tbody.appendChild(tr);
+        });
+        table.innerHTML = '';
+        table.append(thead, tbody);
         summary.textContent = `Общий метраж: ${total.toFixed(2)} м`;
     }
 
     function showProduct(p) {
         currentProduct = p;
         const rows = buildStockRows(p);
-        const images = (sets.url && Array.isArray(p.images)) ? (p.images.length ? [p.images[0]] : []) : (p.images || p.photos || p.gallery || []);
+        const allImages = p.images || p.photos || p.gallery || [];
+        const images = Array.isArray(allImages) && allImages.length ? [allImages[0]] : [];
         document.getElementById('c-name').textContent = p.name || 'Товар';
         document.getElementById('c-price').textContent = `${toNumber(p.priceRub || p.price || 0).toFixed(2)} ₽`;
         document.getElementById('c-art').textContent = p.articul || '-';
@@ -743,9 +794,74 @@
         renderCustomerGallery(images);
         renderStockTable(rows);
         document.getElementById('product-admin-row').classList.toggle('hidden', !isMgr);
+        document.querySelectorAll('.editable-value').forEach(el => {
+            el.classList.toggle('editable-enabled', isMgr);
+            el.title = isMgr ? 'Нажмите, чтобы изменить значение' : '';
+            el.onclick = () => openInlineEditModal(el);
+        });
+        updateProductSyncButton();
         document.getElementById('customer-view').classList.remove('hidden');
     }
     function closeCustomerView() { document.getElementById('customer-view').classList.add('hidden'); }
+
+    function openInlineEditModal(el) {
+        if (!isMgr || !currentProduct) return;
+        inlineEditField = el.dataset.editField;
+        document.getElementById('ie-title').textContent = `Изменить: ${el.dataset.editLabel || 'Поле'}`;
+        document.getElementById('ie-input').value = (currentProduct[inlineEditField] ?? '').toString();
+        openModal('modal-inline-edit');
+        setTimeout(() => document.getElementById('ie-input').focus(), 50);
+    }
+
+    function applyInlineEdit() {
+        if (!currentProduct || !inlineEditField) return;
+        currentProduct[inlineEditField] = document.getElementById('ie-input').value.trim();
+        markProductDirty();
+        showProduct(currentProduct);
+        closeModal('modal-inline-edit');
+        showToast('Изменение сохранено в память');
+    }
+
+    function openStockRowEditModal(index) {
+        if (!isMgr || !currentProduct) return;
+        activeStockRowIndex = index;
+        const list = currentProduct.stockRows || [];
+        const row = index >= 0 ? (list[index] || {}) : {};
+        const whSel = document.getElementById('sr-wh');
+        whSel.innerHTML = sets.warehouses.map(w => `<option ${((row.warehouse||row.wh||'')===w)?'selected':''}>${w}</option>`).join('');
+        if (!sets.warehouses.length) whSel.innerHTML = '<option value="">-</option>';
+        document.getElementById('sr-title').textContent = index >= 0 ? 'Редактирование склада' : 'Добавить склад';
+        const delBtn = document.querySelector('#modal-stock-row-edit .btn-danger');
+        if (delBtn) delBtn.style.display = index >= 0 ? 'inline-flex' : 'none';
+        document.getElementById('sr-cell').value = row.cell || '';
+        document.getElementById('sr-meters').value = row.meters ?? row.m ?? '';
+        document.getElementById('sr-qty').value = row.qty ?? '';
+        openModal('modal-stock-row-edit');
+    }
+
+    function applyStockRowEdit() {
+        if (!currentProduct) return;
+        if (!Array.isArray(currentProduct.stockRows)) currentProduct.stockRows = [];
+        const row = {
+            warehouse: document.getElementById('sr-wh').value,
+            cell: document.getElementById('sr-cell').value.trim(),
+            meters: toNumber(document.getElementById('sr-meters').value),
+            qty: toNumber(document.getElementById('sr-qty').value)
+        };
+        if (activeStockRowIndex >= 0) currentProduct.stockRows[activeStockRowIndex] = row;
+        else currentProduct.stockRows.push(row);
+        markProductDirty();
+        showProduct(currentProduct);
+        closeModal('modal-stock-row-edit');
+    }
+
+    function removeStockRow() {
+        if (!currentProduct || activeStockRowIndex < 0 || !Array.isArray(currentProduct.stockRows)) return;
+        currentProduct.stockRows.splice(activeStockRowIndex, 1);
+        markProductDirty();
+        showProduct(currentProduct);
+        closeModal('modal-stock-row-edit');
+    }
 
     function openProductEditModal() {
         if (!isMgr) { showToast('Доступно только персоналу', 'danger'); return; }
@@ -757,9 +873,6 @@
         document.getElementById('pe-brand').value = currentProduct.brand || '';
         document.getElementById('pe-density').value = currentProduct.density || currentProduct.dens || '';
         const row = Array.isArray(currentProduct.stockRows) && currentProduct.stockRows.length ? currentProduct.stockRows[0] : {};
-        document.getElementById('pe-wh').value = row.warehouse || row.wh || '';
-        document.getElementById('pe-cell').value = row.cell || '';
-        document.getElementById('pe-meters').value = row.meters ?? row.m ?? '';
         document.getElementById('pe-qty').value = currentProduct.qty ?? row.qty ?? '';
         openModal('modal-product-edit');
     }
@@ -772,26 +885,40 @@
         const composition = document.getElementById('pe-comp').value.trim();
         const brand = document.getElementById('pe-brand').value.trim();
         const density = document.getElementById('pe-density').value.trim();
-        const warehouse = document.getElementById('pe-wh').value.trim();
-        const cell = document.getElementById('pe-cell').value.trim();
-        const meters = toNumber(document.getElementById('pe-meters').value.trim());
-        const qty = toNumber(document.getElementById('pe-qty').value.trim());
         if (!articul) { showToast('Артикул не задан', 'danger'); return; }
 
-        const payload = { articul, priceRub, width, composition, brand, density, warehouse, cell, meters, qty };
         currentProduct.priceRub = priceRub;
         currentProduct.width = width;
         currentProduct.composition = composition;
         currentProduct.brand = brand;
         currentProduct.density = density;
-        currentProduct.qty = qty;
-        if (!Array.isArray(currentProduct.stockRows)) currentProduct.stockRows = [];
-        if (!currentProduct.stockRows.length) currentProduct.stockRows.push({ warehouse: warehouse || '-', cell: cell || '-', meters: meters || 0, qty });
-        else currentProduct.stockRows[0] = { ...currentProduct.stockRows[0], warehouse: warehouse || '-', cell: cell || '-', meters, qty };
+        currentProduct.qty = toNumber(document.getElementById('pe-qty')?.value || currentProduct.qty || 0);
+        markProductDirty();
         showProduct(currentProduct);
+        closeModal('modal-product-edit');
+        showToast('Изменения сохранены в память');
+    }
 
-        if (!sets.url) { showToast('Изменено локально (демо режим)'); closeModal('modal-product-edit'); return; }
+    async function pushProductChangesTo1C() {
+        if (!currentProduct) return;
+        if (!isProductDirty) { showToast('Нет несохранённых изменений'); return; }
+        const payload = {
+            articul: currentProduct.articul,
+            priceRub: toNumber(currentProduct.priceRub || currentProduct.price || 0),
+            width: currentProduct.width || '',
+            composition: currentProduct.composition || '',
+            brand: currentProduct.brand || '',
+            density: currentProduct.density || currentProduct.dens || '',
+            qty: toNumber(currentProduct.qty || 0),
+            stockRows: (currentProduct.stockRows || []).map(r => ({
+                warehouse: r.warehouse || r.wh || '',
+                cell: r.cell || '',
+                meters: toNumber(r.meters ?? r.m),
+                qty: toNumber(r.qty || 0)
+            }))
+        };
 
+        if (!sets.url) { showToast('Демо режим: изменения оставлены локально'); return; }
         try {
             const res = await fetch(`${sets.url}/update-product`, {
                 method: 'POST',
@@ -801,8 +928,11 @@
                 },
                 body: JSON.stringify(payload)
             });
-            if (res.ok) { showToast('Свойства товара обновлены в 1С'); closeModal('modal-product-edit'); }
-            else { showToast(`Ошибка 1С: ${res.status}`, 'danger'); }
+            if (res.ok) {
+                isProductDirty = false;
+                updateProductSyncButton();
+                showToast('Товар обновлён в 1С');
+            } else showToast(`Ошибка 1С: ${res.status}`, 'danger');
         } catch (e) {
             showToast('Не удалось отправить изменения в 1С', 'danger');
             logError(`Обновление номенклатуры: ${e.message}`);
