@@ -226,8 +226,8 @@
             #customer-view > * { width: min(980px, 100%); }
             .customer-spec-grid { grid-template-columns: 200px minmax(260px, 1fr); }
             .stock-table th:first-child, .stock-table td:first-child { width: 42%; }
-            .stock-table th:nth-child(2), .stock-table td:nth-child(2) { width: 33%; }
-            .stock-table th:nth-child(3), .stock-table td:nth-child(3) { width: 25%; }
+            .stock-table th:nth-child(2), .stock-table td:nth-child(2) { width: 25%; }
+            .stock-table th:nth-child(3), .stock-table td:nth-child(3) { width: 33%; }
         }
 
         .doc-action-btn { min-height: 60px; font-size: 17px; font-weight: 800; border: 2px solid #d7e6f7; background: #f4f9ff; }
@@ -608,10 +608,10 @@
 
         table.innerHTML = `
             <thead>
-                <tr><th>Склад</th><th>Ячейка</th><th>Метраж, м</th></tr>
+                <tr><th>Склад</th><th>Метраж, м</th><th>Ячейка</th></tr>
             </thead>
             <tbody>
-                ${rows.map(row => `<tr><td>${row.warehouse || row.wh || '-'}</td><td>${row.cell || row.shelf || '-'}</td><td>${toNumber(row.meters ?? row.m).toFixed(2)}</td></tr>`).join('')}
+                ${rows.map(row => `<tr><td>${row.warehouse || row.wh || '-'}</td><td>${toNumber(row.meters ?? row.m).toFixed(2)}</td><td>${row.cell || row.shelf || '-'}</td></tr>`).join('')}
             </tbody>`;
         summary.textContent = `Общий метраж: ${total.toFixed(2)} м`;
     }
