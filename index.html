@@ -75,7 +75,7 @@
         /* ВВОД */
         .input-group { margin-bottom: 10px; }
         input, select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; background: white; color: var(--text); transition: border-color 0.2s; }
-        input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px var(--focus-ring); }
+        input:focus, select:focus, button:focus-visible { border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px var(--focus-ring); }
         label { display: block; margin-bottom: 4px; font-size: 11px; color: var(--text-sec); font-weight: 700; text-transform: uppercase; }
 
         /* ТАБ БАР */
@@ -153,7 +153,7 @@
     <div id="customer-view" class="hidden" style="position:fixed; inset:0; background:white; z-index:1500; padding:24px; display:flex; flex-direction:column;">
         <div class="flex justify-between items-center mb-4">
             <h1 id="c-name" style="font-size: 24px; flex: 1;">Товар</h1>
-            <button class="btn-icon" onclick="closeCustomerView()">✕</button>
+            <button class="btn-icon" aria-label="Закрыть карточку" onclick="closeCustomerView()">✕</button>
         </div>
         <div id="c-img-box" style="width:100%; height:240px; background:#f0f0f0; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:20px;">Фото</div>
         <div id="c-price" style="font-size: 48px; font-weight: 900; color: var(--price-color); margin-bottom: 15px;">0.00 €</div>
@@ -175,7 +175,7 @@
         <div id="screen-list" class="p-4">
             <div class="flex justify-between items-center mb-4">
                 <h1 id="list-title">Приёмка</h1>
-                <button class="btn-icon" onclick="openSettings()">⚙️</button>
+                <button class="btn-icon" aria-label="Открыть настройки" onclick="openSettings()">⚙️</button>
             </div>
             <input type="text" id="doc-search" placeholder="🔍 Поиск документа..." oninput="renderDocList()" style="margin-bottom: 16px;">
             <button class="btn-primary w-full mb-4" style="height: 56px;" onclick="openCreateDocModal()">+ Создать документ</button>
@@ -185,9 +185,9 @@
         <div id="screen-work" class="hidden">
             <div class="header-fixed">
                 <div class="flex justify-between items-center mb-2">
-                    <button class="btn-icon" onclick="exitWork()">← Назад</button>
+                    <button class="btn-icon" aria-label="Вернуться назад" onclick="exitWork()">← Назад</button>
                     <div class="flex gap-2">
-                        <button class="btn-icon text-danger" onclick="deleteFullDoc()">🗑️</button>
+                        <button class="btn-icon text-danger" aria-label="Удалить документ" onclick="deleteFullDoc()">🗑️</button>
                         <button class="btn-icon text-success" id="btn-complete-doc" onclick="completeDoc()">✅ Готово</button>
                     </div>
                 </div>
@@ -229,9 +229,9 @@
 </div>
 
 <!-- МОДАЛЬНЫЕ ОКНА -->
-<div id="modal-settings" class="modal-overlay">
+<div id="modal-settings" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="modal-content">
-        <div class="flex justify-between items-center mb-6"><h2>Настройки</h2><button class="btn-icon" onclick="closeSettings()">✕</button></div>
+        <div class="flex justify-between items-center mb-6"><h2>Настройки</h2><button class="btn-icon" aria-label="Закрыть настройки" onclick="closeSettings()">✕</button></div>
         
         <div class="settings-section">
             <h3>ДИАГНОСТИКА</h3>
@@ -296,7 +296,7 @@
     </div>
 </div>
 
-<div id="modal-logs" class="modal-overlay">
+<div id="modal-logs" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="modal-content">
         <h2>Журнал ошибок</h2>
         <div id="log-area">Нет ошибок</div>
@@ -306,7 +306,7 @@
     </div>
 </div>
 
-<div id="modal-create-doc" class="modal-overlay">
+<div id="modal-create-doc" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="modal-content">
         <h2 id="create-doc-title">Новый документ</h2>
         <input type="text" id="input-new-doc-name" class="mt-4" placeholder="Название документа" onkeydown="if(event.key==='Enter') executeCreateDoc()">
@@ -317,7 +317,7 @@
     </div>
 </div>
 
-<div id="modal-confirm" class="modal-overlay" style="z-index:5000">
+<div id="modal-confirm" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" style="z-index:5000">
     <div class="modal-content" style="text-align:center">
         <h2 id="conf-title">Вы уверены?</h2>
         <p id="conf-msg" class="mb-4 text-sec"></p>
@@ -328,10 +328,10 @@
     </div>
 </div>
 
-<div id="modal-search" class="modal-overlay"><div class="modal-content"><h2>Поиск</h2><input type="text" id="manual-search-input" placeholder="Введите код..." onkeydown="if(event.key==='Enter') doManualSearch()"><div class="flex gap-2 mt-4"><button class="btn-outline w-full" onclick="closeModal('modal-search')">Отмена</button><button class="btn-primary w-full" onclick="doManualSearch()">Найти</button></div></div></div>
-<div id="modal-login" class="modal-overlay"><div class="modal-content" style="text-align:center"><h2>Вход персонала</h2><input type="password" id="login-pass" placeholder="Пароль" style="font-size:24px; text-align:center;" onkeydown="if(event.key==='Enter') doLogin()"><button class="btn-primary w-full" onclick="doLogin()">Войти</button><button class="btn-outline w-full mt-2" onclick="closeModal('modal-login')">Назад</button></div></div>
+<div id="modal-search" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true"><div class="modal-content"><h2>Поиск</h2><input type="text" id="manual-search-input" placeholder="Введите код..." onkeydown="if(event.key==='Enter') doManualSearch()"><div class="flex gap-2 mt-4"><button class="btn-outline w-full" onclick="closeModal('modal-search')">Отмена</button><button class="btn-primary w-full" onclick="doManualSearch()">Найти</button></div></div></div>
+<div id="modal-login" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true"><div class="modal-content" style="text-align:center"><h2>Вход персонала</h2><input type="password" id="login-pass" placeholder="Пароль" style="font-size:24px; text-align:center;" onkeydown="if(event.key==='Enter') doLogin()"><button class="btn-primary w-full" onclick="doLogin()">Войти</button><button class="btn-outline w-full mt-2" onclick="closeModal('modal-login')">Назад</button></div></div>
 
-<div id="toast-container"></div>
+<div id="toast-container" aria-live="polite" aria-atomic="true"></div>
 <datalist id="list-arts"></datalist>
 <datalist id="list-cells"></datalist>
 
@@ -393,12 +393,20 @@
     let isMgr = safeLoad('app_is_mgr', false);
     
     let editingItemId = null, scanBuf = "", activeCuts = [];
+    let activeModalId = null;
+    let lastFocusedElement = null;
 
     window.onload = () => {
         window.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && activeModalId) { closeModal(activeModalId); return; }
             if (e.target.tagName === 'INPUT') return;
             if (e.key === 'Enter') { if (scanBuf.length > 2) handleScan(scanBuf); scanBuf = ""; } 
             else if (e.key.length === 1) { scanBuf += e.key; }
+        });
+        document.querySelectorAll('.modal-overlay').forEach(m => {
+            m.addEventListener('click', (e) => {
+                if (e.target === m) closeModal(m.id);
+            });
         });
         if (isMgr) { document.getElementById('screen-kiosk').classList.add('hidden'); document.getElementById('manager-view').classList.remove('hidden'); switchTab(curTab); if (curDocId) openDoc(curDocId); }
         updateDataLists();
@@ -470,9 +478,9 @@
     }
 
     function openCreateDocModal() { openModal('modal-create-doc'); document.getElementById('input-new-doc-name').value = "Документ " + new Date().toLocaleDateString(); setTimeout(()=>document.getElementById('input-new-doc-name').focus(), 300); }
-    function executeCreateDoc() { const name = document.getElementById('input-new-doc-name').value.trim(); if(!name) return; const newDoc = { id: Date.now().toString(36), name, status: 'active', createdAt: new Date().toISOString(), items: [] }; db[curTab].unshift(newDoc); save(); closeModal('modal-create-doc'); renderDocList(); openDoc(newDoc.id); }
+    function executeCreateDoc() { const name = document.getElementById('input-new-doc-name').value.trim(); if(!name) { showToast('Введите название документа', 'danger'); return; } const newDoc = { id: Date.now().toString(36), name, status: 'active', createdAt: new Date().toISOString(), items: [] }; db[curTab].unshift(newDoc); save(); closeModal('modal-create-doc'); renderDocList(); openDoc(newDoc.id); }
 
-    function renderDocList() { const q = document.getElementById('doc-search')?.value?.toLowerCase() || ""; const cont = document.getElementById('docs-list-container'); cont.innerHTML = ""; const list = db[curTab] || []; list.filter(d => d.name.toLowerCase().includes(q)).forEach(d => { const card = document.createElement('div'); card.className = `card doc-card ${d.status}`; card.onclick = () => openDoc(d.id); card.innerHTML = `<div class="flex justify-between font-bold"><span>${d.name}</span><span>${d.status==='active'?'🟡':'✅'}</span></div><div>Записей: ${d.items.length}</div>`; cont.appendChild(card); }); }
+    function renderDocList() { const q = document.getElementById('doc-search')?.value?.toLowerCase() || ""; const cont = document.getElementById('docs-list-container'); cont.innerHTML = ""; const list = db[curTab] || []; list.filter(d => d.name.toLowerCase().includes(q)).forEach(d => { const card = document.createElement('div'); card.className = `card doc-card ${d.status}`; card.onclick = () => openDoc(d.id); const head = document.createElement('div'); head.className = 'flex justify-between font-bold'; const nameEl = document.createElement('span'); nameEl.textContent = d.name; const statusEl = document.createElement('span'); statusEl.textContent = d.status==='active' ? '🟡' : '✅'; head.append(nameEl, statusEl); const rowsEl = document.createElement('div'); rowsEl.textContent = `Записей: ${d.items.length}`; card.append(head, rowsEl); cont.appendChild(card); }); }
 
     function openDoc(id) {
         curDocId = id; saveAppState();
@@ -509,12 +517,12 @@
     function uCut(id, f, v) { const c = activeCuts.find(x=>x.id===id); if(c) c[f]=v.replace(',','.'); }
 
     function saveLine() {
-        const d = db[curTab].find(x=>x.id===curDocId); const artInp = document.getElementById('f-art'); if(!artInp) return; const art = artInp.value; if(!art) return;
+        const d = db[curTab].find(x=>x.id===curDocId); const artInp = document.getElementById('f-art'); if(!artInp) return; const art = artInp.value.trim(); if(!art) { showToast('Введите артикул', 'danger'); artInp.focus(); return; }
         let item = { id: editingItemId || Date.now(), art, ts: new Date().toISOString() };
-        if(curTab === 'receive'){ const v = activeCuts.filter(c => !isNaN(parseFloat(c.m)) && parseFloat(c.m) > 0); if(!v.length) return; item.cuts = JSON.parse(JSON.stringify(v)); item.w = document.getElementById('f-width').value; if(sets.showDensity && document.getElementById('f-density')) item.dens = document.getElementById('f-density').value; if(sets.showBrand && document.getElementById('f-brand')) item.brand = document.getElementById('f-brand').value; if(sets.showComp && document.getElementById('f-comp')) item.comp = document.getElementById('f-comp').value; if (!editingItemId) sets.nextNum++; }
-        else if(curTab === 'move'){ item.m = document.getElementById('f-m').value; item.fromWh = document.getElementById('f-wh-from').value; item.fromCell = document.getElementById('f-cell-from').value; item.toWh = document.getElementById('f-wh-to').value; item.toCell = document.getElementById('f-cell-to').value; }
-        else if(curTab === 'writeoff'){ item.m = document.getElementById('f-m').value; item.wh = document.getElementById('f-wh').value; item.cell = document.getElementById('f-cell').value; }
-        else if(curTab === 'price'){ item.p = document.getElementById('f-p').value; }
+        if(curTab === 'receive'){ const v = activeCuts.filter(c => !isNaN(parseFloat(c.m)) && parseFloat(c.m) > 0); if(!v.length) { showToast('Добавьте хотя бы один валидный отрез', 'danger'); return; } item.cuts = JSON.parse(JSON.stringify(v)); item.w = document.getElementById('f-width').value; if(sets.showDensity && document.getElementById('f-density')) item.dens = document.getElementById('f-density').value; if(sets.showBrand && document.getElementById('f-brand')) item.brand = document.getElementById('f-brand').value; if(sets.showComp && document.getElementById('f-comp')) item.comp = document.getElementById('f-comp').value; if (!editingItemId) sets.nextNum++; }
+        else if(curTab === 'move'){ item.m = document.getElementById('f-m').value; item.fromWh = document.getElementById('f-wh-from').value; item.fromCell = document.getElementById('f-cell-from').value; item.toWh = document.getElementById('f-wh-to').value; item.toCell = document.getElementById('f-cell-to').value; if(!parseFloat(item.m)) { showToast('Введите корректный метраж', 'danger'); return; } }
+        else if(curTab === 'writeoff'){ item.m = document.getElementById('f-m').value; item.wh = document.getElementById('f-wh').value; item.cell = document.getElementById('f-cell').value; if(!parseFloat(item.m)) { showToast('Введите корректное количество', 'danger'); return; } }
+        else if(curTab === 'price'){ item.p = document.getElementById('f-p').value; if(isNaN(parseFloat(item.p))) { showToast('Введите корректную цену', 'danger'); return; } }
         if(editingItemId){ const idx = d.items.findIndex(i=>i.id===editingItemId); d.items[idx]=item; editingItemId=null; } else d.items.unshift(item);
         save(); renderForm(); renderRows(); showToast("Записано");
     }
@@ -537,16 +545,55 @@
 
     function renderRows() {
         const cont = document.getElementById('rows-container'); const d = db[curTab].find(x=>x.id===curDocId); cont.innerHTML = "";
-        d.items.forEach(it => { const div = document.createElement('div'); div.className = 'history-item' + (editingItemId===it.id?' editing':''); let info = ""; if(curTab === 'move') info = `<div class="text-sm text-sec">${it.fromWh} → ${it.toWh} | ${it.m}м</div>`; else if(curTab === 'writeoff') info = `<div class="text-sm text-sec">${it.wh} | ${it.m}м</div>`; else if(curTab === 'price') info = `<div class="text-sm font-bold" style="color:var(--price-color)">${it.p} €</div>`; else info = `<div class="text-sm text-sec">${it.cuts ? it.cuts.length : 0} отр.</div>`; div.innerHTML = `<div><div class="font-bold">${it.art}</div>${info}</div><div class="flex gap-2">${d.status==='active' ? `<button class="btn-icon" onclick="editItem(${it.id})">✏️</button><button class="btn-icon text-danger" onclick="delRow(${it.id})">🗑️</button>` : ''}</div>`; cont.appendChild(div); });
+        d.items.forEach(it => {
+            const div = document.createElement('div');
+            div.className = 'history-item' + (editingItemId===it.id ? ' editing' : '');
+
+            const left = document.createElement('div');
+            const artEl = document.createElement('div');
+            artEl.className = 'font-bold';
+            artEl.textContent = it.art;
+            const infoEl = document.createElement('div');
+
+            if(curTab === 'move') { infoEl.className = 'text-sm text-sec'; infoEl.textContent = `${it.fromWh} → ${it.toWh} | ${it.m}м`; }
+            else if(curTab === 'writeoff') { infoEl.className = 'text-sm text-sec'; infoEl.textContent = `${it.wh} | ${it.m}м`; }
+            else if(curTab === 'price') { infoEl.className = 'text-sm font-bold'; infoEl.style.color = 'var(--price-color)'; infoEl.textContent = `${it.p} €`; }
+            else { infoEl.className = 'text-sm text-sec'; infoEl.textContent = `${it.cuts ? it.cuts.length : 0} отр.`; }
+
+            left.append(artEl, infoEl);
+
+            const actions = document.createElement('div');
+            actions.className = 'flex gap-2';
+            if (d.status === 'active') {
+                const editBtn = document.createElement('button');
+                editBtn.className = 'btn-icon';
+                editBtn.type = 'button';
+                editBtn.textContent = '✏️';
+                editBtn.setAttribute('aria-label', 'Редактировать строку');
+                editBtn.onclick = () => editItem(it.id);
+
+                const delBtn = document.createElement('button');
+                delBtn.className = 'btn-icon text-danger';
+                delBtn.type = 'button';
+                delBtn.textContent = '🗑️';
+                delBtn.setAttribute('aria-label', 'Удалить строку');
+                delBtn.onclick = () => delRow(it.id);
+
+                actions.append(editBtn, delBtn);
+            }
+
+            div.append(left, actions);
+            cont.appendChild(div);
+        });
         document.getElementById('work-counter').textContent = "Записей: " + d.items.length;
     }
 
     /* УТИЛИТЫ */
     function save() { localStorage.setItem('tsd_final_sets', JSON.stringify(sets)); localStorage.setItem('tsd_final_receive', JSON.stringify(db.receive)); localStorage.setItem('tsd_final_move', JSON.stringify(db.move)); localStorage.setItem('tsd_final_writeoff', JSON.stringify(db.writeoff)); localStorage.setItem('tsd_final_price', JSON.stringify(db.price)); updateDataLists(); }
     function updateDataLists() { const arts = new Set(), cells = new Set(); Object.values(db).forEach(list => { if(list) list.forEach(d => d.items.forEach(i => { if(i.art) arts.add(i.art); if(i.cuts) i.cuts.forEach(c => { if(c.c) cells.add(c.c); }); if(i.cell) cells.add(i.cell); if(i.fromCell) cells.add(i.fromCell); if(i.toCell) cells.add(i.toCell); } )) }); document.getElementById('list-arts').innerHTML = Array.from(arts).map(a=>`<option value="${a}">`).join(''); document.getElementById('list-cells').innerHTML = Array.from(cells).map(c=>`<option value="${c}">`).join(''); }
-    function openModal(id) { document.getElementById(id).classList.add('open'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-    function showToast(m, t) { const c = document.getElementById('toast-container'); if(c.children.length > 3) c.removeChild(c.firstChild); const d = document.createElement('div'); d.className = `toast`; d.style.background = t === 'danger' ? 'var(--danger)' : 'var(--primary)'; d.textContent = m; c.appendChild(d); setTimeout(()=>d.remove(), 2500); }
+    function openModal(id) { const modal = document.getElementById(id); if(!modal) return; lastFocusedElement = document.activeElement; activeModalId = id; modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); const focusable = modal.querySelector('input, button, select, textarea'); if (focusable) focusable.focus(); }
+    function closeModal(id) { const modal = document.getElementById(id); if(!modal) return; modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); if (activeModalId === id) activeModalId = null; if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') lastFocusedElement.focus(); }
+    function showToast(m, t) { const c = document.getElementById('toast-container'); if(c.children.length > 3) c.removeChild(c.firstChild); const d = document.createElement('div'); d.className = `toast`; d.setAttribute('role', 'status'); d.style.background = t === 'danger' ? 'var(--danger)' : 'var(--primary)'; d.textContent = m; c.appendChild(d); setTimeout(()=>d.remove(), 2500); }
     
     function openSettings() { document.getElementById('set-show-density').checked = sets.showDensity; document.getElementById('set-show-brand').checked = sets.showBrand; document.getElementById('set-show-comp').checked = sets.showComp; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "rawbt"; togglePrintSettingsUI(); renderSettingsWh(); openModal('modal-settings'); }
     function togglePrintSettingsUI() { const method = document.getElementById('set-print-method').value; const block = document.getElementById('printnode-block'); if (block) block.style.display = (method === 'printnode') ? 'block' : 'none'; }
