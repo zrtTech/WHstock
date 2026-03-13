@@ -1083,6 +1083,16 @@
         document.getElementById('screen-list').classList.add('hidden'); document.getElementById('screen-work').classList.remove('hidden');
         document.getElementById('work-title').textContent = d.name;
         document.getElementById('work-status').textContent = d.status==='active'?'ОТКРЫТ':'ЗАВЕРШЕН';
+        const completeBtn = document.getElementById('btn-complete-doc');
+        if (completeBtn) {
+            if (d.status === 'active') {
+                completeBtn.textContent = '✅ Готово';
+                completeBtn.title = 'Завершить документ';
+            } else {
+                completeBtn.textContent = '📄 К списку';
+                completeBtn.title = 'Документ уже закрыт — вернуться к списку документов';
+            }
+        }
         const acts = document.getElementById('closed-actions'); const formCont = document.getElementById('form-container');
         if(d.status === 'active') { formCont.classList.remove('hidden'); acts.classList.add('hidden'); } else { formCont.classList.add('hidden'); acts.classList.remove('hidden'); }
         renderForm(); renderRows();
@@ -1217,7 +1227,22 @@
         }); 
     }
 
-    async function completeDoc() { if(!await customConfirm("Завершить документ?")) return; const d = db[curTab].find(x=>x.id===curDocId); d.status = 'closed'; d.closedAt = new Date().toISOString(); save(); openDoc(curDocId); }
+    async function completeDoc() {
+        const d = db[curTab].find(x => x.id === curDocId);
+        if (!d) return;
+
+        if (d.status === 'closed') {
+            showToast('Документ уже закрыт. Возврат к списку.');
+            switchTab(curTab);
+            return;
+        }
+
+        if (!await customConfirm("Завершить документ?")) return;
+        d.status = 'closed';
+        d.closedAt = new Date().toISOString();
+        save();
+        openDoc(curDocId);
+    }
     function reopenDoc() { const d = db[curTab].find(x=>x.id===curDocId); d.status = 'active'; delete d.closedAt; save(); openDoc(curDocId); }
     
     async function syncWith1C() {
