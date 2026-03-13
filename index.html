@@ -142,6 +142,12 @@
             max-height: 90vh; overflow-y: auto;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         }
+        #modal-settings .modal-content { max-width: 920px; }
+        .settings-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+        @media (min-width: 980px) { .settings-grid { grid-template-columns: 1fr 1fr; } }
+        .settings-section.span-2 { grid-column: 1 / -1; }
+        .settings-spoiler { border: 1px dashed #d8d8d8; border-radius: 10px; padding: 10px; background: #fcfcfc; }
+        .settings-spoiler summary { cursor: pointer; font-weight: 700; color: var(--text-sec); margin-bottom: 8px; }
         .modal-overlay.open .modal-content { transform: scale(1); }
 
         @media (max-height: 500px) {
@@ -342,7 +348,7 @@
 <div id="modal-settings" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="modal-content">
         <div class="flex justify-between items-center mb-6"><h2>Настройки</h2><button class="btn-icon" aria-label="Закрыть настройки" onclick="closeSettings()">✕</button></div>
-        
+        <div class="settings-grid">
         <div class="settings-section">
             <h3>ДИАГНОСТИКА</h3>
             <div class="light-block">
@@ -395,12 +401,15 @@
             </div>
         </div>
 
-        <div class="settings-section">
-            <h3>ИНТЕГРАЦИЯ 1С (HTTP)</h3>
-            <label>URL Сервиса</label><input type="text" id="set-url" onchange="saveSets()" placeholder="https://...">
-            <label>Логин</label><input type="text" id="set-user" onchange="saveSets()">
-            <label>Пароль</label><input type="password" id="set-pass" onchange="saveSets()">
-            <button class="btn-outline w-full mt-2" onclick="test1CConnection()">📡 Проверить связь с 1С</button>
+        <div class="settings-section span-2">
+            <details class="settings-spoiler">
+                <summary>Интеграция 1С (расширенные настройки)</summary>
+                <label>URL Сервиса</label><input type="text" id="set-url" onchange="saveSets()" placeholder="https://...">
+                <label>Логин</label><input type="text" id="set-user" onchange="saveSets()">
+                <label>Пароль</label><input type="password" id="set-pass" onchange="saveSets()">
+                <button class="btn-outline w-full mt-2" onclick="test1CConnection()">📡 Проверить связь с 1С</button>
+            </details>
+        </div>
         </div>
 
         <button class="btn-success w-full mt-4" style="height: 60px;" onclick="closeSettings()">ГОТОВО</button>
@@ -506,6 +515,37 @@
     let editingItemId = null, scanBuf = "", activeCuts = [];
     let activeModalId = null;
     let lastFocusedElement = null;
+    let isSearchPending = false;
+
+    function setSearchLock(locked) {
+        isSearchPending = locked;
+        const scannerInp = document.getElementById('kiosk-scanner-input');
+        const manualInp = document.getElementById('manual-search-input');
+        if (scannerInp) scannerInp.disabled = locked;
+        if (manualInp) manualInp.disabled = locked;
+    }
+
+    function purgeOldClosedDocs(days = 15) {
+        const maxAgeMs = days * 24 * 60 * 60 * 1000;
+        const now = Date.now();
+        let removed = 0;
+        ['receive', 'move', 'writeoff', 'price'].forEach(tab => {
+            if (!Array.isArray(db[tab])) return;
+            const before = db[tab].length;
+            db[tab] = db[tab].filter(doc => {
+                if (doc.status !== 'closed') return true;
+                const refDate = doc.closedAt || doc.createdAt;
+                if (!refDate) return true;
+                const age = now - new Date(refDate).getTime();
+                return age <= maxAgeMs;
+            });
+            removed += before - db[tab].length;
+        });
+        if (removed > 0) {
+            save();
+            console.info(`Очистка архива закрытых документов: удалено ${removed}`);
+        }
+    }
 
     window.onload = () => {
         window.addEventListener('keydown', e => {
@@ -520,6 +560,7 @@
             });
         });
         if (isMgr) { document.getElementById('screen-kiosk').classList.add('hidden'); document.getElementById('manager-view').classList.remove('hidden'); switchTab(curTab); if (curDocId) openDoc(curDocId); }
+        purgeOldClosedDocs(15);
         updateDataLists();
     };
 
@@ -527,11 +568,14 @@
 
     function handleScan(code) {
         if (code === "ADMIN") { loginSuccess(); return; }
+        if (isSearchPending) { showToast("Идёт поиск...", "danger"); return; }
         if (!isMgr) search1C(code);
         else { const inp = document.querySelector('input[data-art-field]'); if (inp) { inp.value = code; inp.dispatchEvent(new Event('input')); } }
     }
 
     async function search1C(id) {
+        if (isSearchPending) return;
+        setSearchLock(true);
         showToast("Поиск...");
         if (!sets.url) {
             showProduct({
@@ -551,12 +595,14 @@
                     { warehouse: "Розница", cell: "C3", meters: 1.5 }
                 ]
             });
+            setSearchLock(false);
             return;
         }
         try {
             const res = await fetch(`${sets.url}/product?id=${id}`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ":" + (sets.pass || "")) } });
             if (res.ok) showProduct(await res.json()); else showToast("Не найдено", "danger");
         } catch (e) { showToast("Ошибка 1С", "danger"); logError(`Поиск 1С: ${e.message}`); }
+        finally { setSearchLock(false); }
     }
 
     function toNumber(v) { return Number(String(v).replace(',', '.')) || 0; }
@@ -831,8 +877,8 @@
         }); 
     }
 
-    async function completeDoc() { if(!await customConfirm("Завершить документ?")) return; const d = db[curTab].find(x=>x.id===curDocId); d.status = 'closed'; save(); openDoc(curDocId); }
-    function reopenDoc() { const d = db[curTab].find(x=>x.id===curDocId); d.status = 'active'; save(); openDoc(curDocId); }
+    async function completeDoc() { if(!await customConfirm("Завершить документ?")) return; const d = db[curTab].find(x=>x.id===curDocId); d.status = 'closed'; d.closedAt = new Date().toISOString(); save(); openDoc(curDocId); }
+    function reopenDoc() { const d = db[curTab].find(x=>x.id===curDocId); d.status = 'active'; delete d.closedAt; save(); openDoc(curDocId); }
     
     async function syncWith1C() {
         const d = db[curTab].find(x=>x.id===curDocId); if(!sets.url) { showToast("URL 1С не настроен", "danger"); return; }
@@ -850,7 +896,7 @@
     async function delRow(rid) { if(!await customConfirm("Удалить строку?")) return; const d = db[curTab].find(x=>x.id===curDocId); d.items = d.items.filter(x=>normalizeId(x.id)!==normalizeId(rid)); save(); renderRows(); }
     async function deleteFullDoc() { if(!await customConfirm("УДАЛИТЬ ВЕСЬ ДОКУМЕНТ?")) return; db[curTab] = db[curTab].filter(x=>x.id!==curDocId); save(); exitWork(); }
     function openManualSearch() { openModal('modal-search'); setTimeout(() => document.getElementById('manual-search-input').focus(), 300); }
-    function doManualSearch() { const v = document.getElementById('manual-search-input').value.trim(); if(v){ closeModal('modal-search'); search1C(v); } }
+    function doManualSearch() { if (isSearchPending) return; const v = document.getElementById('manual-search-input').value.trim(); if(v){ closeModal('modal-search'); search1C(v); } }
     function exportData() { const blob = new Blob([JSON.stringify({db, sets})], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='backup.json'; a.click(); }
     function importData(event) { const file = event.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(e){ try{ const d = JSON.parse(e.target.result); if(d.db && d.sets){ db = d.db; sets = d.sets; save(); location.reload(); } }catch(err){showToast('Ошибка файла','danger');} }; reader.readAsText(file); }
 </script>
