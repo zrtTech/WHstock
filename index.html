@@ -26,6 +26,7 @@
             --text-sec: #757575;
             --border: #E0E0E0;
             --focus-ring: rgba(25, 118, 210, 0.3);
+            --tab-height: 88px;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -43,14 +44,31 @@
         .text-primary { color: var(--primary); }
         .gap-2 { gap: 8px; }
 
-        #app { max-width: 1200px; margin: 0 auto; min-height: 100vh; position: relative; padding-bottom: 80px; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
+        #app { max-width: 1200px; margin: 0 auto; min-height: 100vh; position: relative; padding-bottom: calc(var(--tab-height) + 18px); background: white; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
 
         /* ЭКРАН КИОСКА */
         #screen-kiosk {
             height: 100vh; background: linear-gradient(135deg, var(--primary) 0%, #0D47A1 100%);
             color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 32px;
             text-align: center;
+            position: relative;
         }
+
+        .kiosk-staff-entry {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            width: auto;
+            min-height: 42px;
+            padding: 8px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.9);
+            border: 1px solid rgba(255,255,255,0.35);
+            background: rgba(0,0,0,0.18);
+        }
+        .product-admin-row { margin-top: 12px; }
 
         /* КНОПКИ */
         button {
@@ -63,7 +81,8 @@
         .btn-success { background: var(--success); color: white; }
         .btn-danger { background: var(--danger); color: white; }
         .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
-        .btn-icon { background: none; color: var(--text-sec); font-size: 20px; padding: 0; min-width: 44px; min-height: 44px; }
+        .btn-icon { background: none; color: var(--text-sec); font-size: 22px; padding: 0; min-width: 52px; min-height: 52px; }
+        .settings-btn { background: #E3F2FD; color: var(--primary); border: 1px solid #BBDEFB; box-shadow: 0 2px 8px rgba(25,118,210,0.2); }
 
         /* КАРТОЧКИ */
         .card { background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); transition: box-shadow 0.2s; }
@@ -75,13 +94,49 @@
         /* ВВОД */
         .input-group { margin-bottom: 10px; }
         input, select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; background: white; color: var(--text); transition: border-color 0.2s; }
-        input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px var(--focus-ring); }
+        input:focus, select:focus, button:focus-visible { border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px var(--focus-ring); }
         label { display: block; margin-bottom: 4px; font-size: 11px; color: var(--text-sec); font-weight: 700; text-transform: uppercase; }
 
         /* ТАБ БАР */
-        #tab-bar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: white; border-top: 1px solid var(--border); z-index: 100; max-width: 1200px; margin: 0 auto; }
-        #tab-bar button { flex: 1; border-radius: 0; flex-direction: column; background: none; color: #757575; font-size: 11px; padding: 8px 0; gap: 4px; }
-        #tab-bar button.active { color: var(--primary); border-top: 2px solid var(--primary); font-weight: 700; }
+        #tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: stretch;
+            background: white;
+            border-top: 1px solid var(--border);
+            box-shadow: 0 -6px 20px rgba(0,0,0,0.08);
+            z-index: 100;
+            max-width: 1200px;
+            margin: 0 auto;
+            height: var(--tab-height);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        #tab-bar button {
+            flex: 1;
+            border-radius: 0;
+            flex-direction: column;
+            background: none;
+            color: #616161;
+            font-size: 12px;
+            padding: 10px 4px;
+            gap: 6px;
+            min-height: 72px;
+            border-top: 3px solid transparent;
+        }
+        #tab-bar button .tab-ico { font-size: 24px; line-height: 1; }
+        #tab-bar button .tab-label { font-size: 12px; font-weight: 700; line-height: 1; }
+        #tab-bar button.active {
+            color: var(--primary);
+            border-top-color: var(--primary);
+            background: linear-gradient(180deg, rgba(25,118,210,0.12), rgba(25,118,210,0.02));
+        }
+        #tab-bar button.logout-tab { color: var(--danger); }
+        @media (pointer: coarse) {
+            #tab-bar button { min-height: 78px; }
+        }
 
         /* ПЛАНШЕТНАЯ СЕТКА */
         .work-layout { display: flex; flex-direction: column; gap: 16px; }
@@ -104,6 +159,12 @@
             max-height: 90vh; overflow-y: auto;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         }
+        #modal-settings .modal-content { max-width: 920px; }
+        .settings-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+        @media (min-width: 980px) { .settings-grid { grid-template-columns: 1fr 1fr; } }
+        .settings-section.span-2 { grid-column: 1 / -1; }
+        .settings-spoiler { border: 1px dashed #d8d8d8; border-radius: 10px; padding: 10px; background: #fcfcfc; }
+        .settings-spoiler summary { cursor: pointer; font-weight: 700; color: var(--text-sec); margin-bottom: 8px; }
         .modal-overlay.open .modal-content { transform: scale(1); }
 
         @media (max-height: 500px) {
@@ -121,12 +182,79 @@
         .history-item { border-bottom: 1px solid #eee; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
         .history-item:last-child { border-bottom: none; }
         .history-item.editing { background: #E3F2FD; border-radius: 8px; padding: 12px; border: 1px solid var(--primary); }
+        .history-item .btn-icon { background: #F3F6FA; border: 1px solid #e4e9f0; border-radius: 10px; }
+        .history-item .btn-icon.text-danger { color: var(--danger); }
 
         #toast-container { position: fixed; top: 100px; left: 50%; transform: translateX(-50%); z-index: 3000; width: 90%; max-width: 400px; pointer-events: none; }
         .toast { padding: 14px; border-radius: 8px; color: white; margin-bottom: 8px; text-align: center; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.1); animation: slideIn 0.3s forwards; }
         @keyframes slideIn { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        .header-fixed { position: sticky; top: 0; z-index: 50; background: #F5F7FA; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+        .header-fixed { position: sticky; top: 0; z-index: 50; background: #F5F7FA; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+        .screen-subtitle { color: var(--text-sec); font-size: 14px; margin-top: 4px; }
+
+        .customer-view-title { font-size: 30px !important; font-weight: 900; }
+        .customer-gallery {
+            width: 100%;
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            margin-bottom: 16px;
+            padding-bottom: 4px;
+        }
+        .customer-gallery-item {
+            min-width: 82%;
+            height: 240px;
+            background: #f0f0f0;
+            border-radius: 12px;
+            border: 1px solid #e5e5e5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            scroll-snap-align: start;
+            color: var(--text-sec);
+            font-weight: 700;
+        }
+        .customer-gallery-item img { width: 100%; height: 100%; object-fit: cover; }
+        .customer-hero-price { font-size: 56px !important; font-weight: 900; color: var(--price-color); margin-bottom: 15px; }
+        .customer-specs {
+            background:#f8f9fa;
+            border:none;
+            flex-grow:1;
+            padding: 20px;
+            max-width: 940px;
+        }
+        .customer-spec-grid {
+            display: grid;
+            grid-template-columns: max-content max-content;
+            gap: 8px 14px;
+            align-items: baseline;
+            justify-content: start;
+            margin-bottom: 10px;
+        }
+        .customer-spec-row {
+            display: contents;
+            font-size: 23px;
+        }
+        .customer-spec-row strong { font-size: 28px; white-space: nowrap; }
+        .customer-spec-row span { font-weight: 700; white-space: nowrap; }
+        .stock-table { width: 100%; margin-top: 10px; border-collapse: collapse; font-size: 18px; }
+        .stock-table th, .stock-table td { border-bottom: 1px solid #e3e3e3; padding: 7px 4px; text-align: left; }
+        .stock-table th { font-size: 13px; text-transform: uppercase; color: var(--text-sec); letter-spacing: .02em; }
+        .stock-summary { margin-top: 8px; font-size: 18px; font-weight: 800; color: var(--primary); }
+
+        @media (min-width: 1100px) {
+            #customer-view { align-items: center; }
+            #customer-view > * { width: min(980px, 100%); }
+            .customer-spec-grid { grid-template-columns: 200px minmax(260px, 1fr); }
+            .stock-table th:first-child, .stock-table td:first-child { width: 42%; }
+            .stock-table th:nth-child(2), .stock-table td:nth-child(2) { width: 25%; }
+            .stock-table th:nth-child(3), .stock-table td:nth-child(3) { width: 33%; }
+        }
+
+        .doc-action-btn { min-height: 60px; font-size: 17px; font-weight: 800; border: 2px solid #d7e6f7; background: #f4f9ff; }
+        .doc-action-btn:hover { background: #e8f3ff; }
         .cut-row { display: grid; grid-template-columns: 1.4fr 1.1fr 1fr auto; gap: 6px; align-items: center; margin-bottom: 8px; }
 
         /* ЛОГИ */
@@ -138,13 +266,13 @@
 <div id="app">
     <!-- ЭКРАН КИОСКА -->
     <div id="screen-kiosk">
+        <button class="kiosk-staff-entry" onclick="openLogin()" aria-label="Вход персонала">🔒 Персонал</button>
         <div style="font-size: 64px; margin-bottom: 10px;">📦</div>
         <h1 style="font-size: 32px; font-weight: 900; margin-bottom: 8px;">СКЛАД-ЦЕНТР</h1>
         <p style="font-size: 18px; opacity: 0.8; margin-bottom: 40px;">информационный терминал</p>
         <div class="w-full" style="max-width: 320px;">
             <div class="text-center mb-6" style="font-size: 22px; font-weight: 800; animation: pulse 2s infinite;">ПОДНЕСИТЕ ШТРИХКОД</div>
             <button class="btn-main w-full mb-4" onclick="openManualSearch()">🔍 Найти по артикулу</button>
-            <button class="btn-outline w-full" style="color: white; border-color: rgba(255,255,255,0.4);" onclick="openLogin()">🔒 Меню персонала</button>
         </div>
         <input type="text" id="kiosk-scanner-input" style="position: absolute; opacity: 0; pointer-events: none;">
     </div>
@@ -152,17 +280,22 @@
     <!-- КАРТОЧКА КЛИЕНТА -->
     <div id="customer-view" class="hidden" style="position:fixed; inset:0; background:white; z-index:1500; padding:24px; display:flex; flex-direction:column;">
         <div class="flex justify-between items-center mb-4">
-            <h1 id="c-name" style="font-size: 24px; flex: 1;">Товар</h1>
-            <button class="btn-icon" onclick="closeCustomerView()">✕</button>
+            <h1 id="c-name" class="customer-view-title" style="flex: 1;">Товар</h1>
+            <button class="btn-icon" aria-label="Закрыть карточку" onclick="closeCustomerView()">✕</button>
         </div>
-        <div id="c-img-box" style="width:100%; height:240px; background:#f0f0f0; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:20px;">Фото</div>
-        <div id="c-price" style="font-size: 48px; font-weight: 900; color: var(--price-color); margin-bottom: 15px;">0.00 €</div>
-        <div class="card" style="background:#f8f9fa; border:none; flex-grow:1;">
-            <p><strong>Артикул:</strong> <span id="c-art">-</span></p>
-            <p><strong>Ширина:</strong> <span id="c-width">-</span></p>
-            <p><strong>Состав:</strong> <span id="c-comp">-</span></p>
-            <p><strong>Наличие:</strong> <span id="c-stock" class="font-bold">-</span></p>
-            <p><strong>Ячейка:</strong> <span id="c-cell" class="font-bold text-primary">-</span></p>
+        <div id="c-img-box" class="customer-gallery" aria-label="Галерея фотографий товара"></div>
+        <div id="c-price" class="customer-hero-price">0.00 ₽</div>
+        <div class="card customer-specs">
+            <div class="customer-spec-grid">
+                <div class="customer-spec-row"><strong>Артикул:</strong> <span id="c-art">-</span></div>
+                <div class="customer-spec-row"><strong>Ширина:</strong> <span id="c-width">-</span></div>
+                <div class="customer-spec-row"><strong>Состав:</strong> <span id="c-comp">-</span></div>
+            </div>
+            <table id="c-stock-table" class="stock-table"></table>
+            <div id="c-stock-summary" class="stock-summary">Общий метраж: -</div>
+            <div id="product-admin-row" class="product-admin-row hidden">
+                <button class="btn-primary w-full" style="min-height:58px;font-size:18px;" onclick="openProductEditModal()">✏️ Изменить свойства товара</button>
+            </div>
         </div>
         <div class="flex gap-2 mt-4">
             <button class="btn-outline w-full" style="height: 64px;" onclick="printLabelRawBT()">🖨️ Печать</button>
@@ -174,8 +307,11 @@
     <div id="manager-view" class="hidden">
         <div id="screen-list" class="p-4">
             <div class="flex justify-between items-center mb-4">
-                <h1 id="list-title">Приёмка</h1>
-                <button class="btn-icon" onclick="openSettings()">⚙️</button>
+                <div>
+                    <h1 id="list-title">Приёмка</h1>
+                    <p id="list-subtitle" class="screen-subtitle">Сканируйте товар и ведите документ по текущей операции</p>
+                </div>
+                <button class="btn-icon settings-btn" aria-label="Открыть настройки" onclick="openSettings()">⚙️</button>
             </div>
             <input type="text" id="doc-search" placeholder="🔍 Поиск документа..." oninput="renderDocList()" style="margin-bottom: 16px;">
             <button class="btn-primary w-full mb-4" style="height: 56px;" onclick="openCreateDocModal()">+ Создать документ</button>
@@ -185,9 +321,9 @@
         <div id="screen-work" class="hidden">
             <div class="header-fixed">
                 <div class="flex justify-between items-center mb-2">
-                    <button class="btn-icon" onclick="exitWork()">← Назад</button>
+                    <button class="btn-icon" aria-label="Вернуться назад" onclick="exitWork()">← Назад</button>
                     <div class="flex gap-2">
-                        <button class="btn-icon text-danger" onclick="deleteFullDoc()">🗑️</button>
+                        <button class="btn-icon text-danger" aria-label="Удалить документ" onclick="deleteFullDoc()">🗑️</button>
                         <button class="btn-icon text-success" id="btn-complete-doc" onclick="completeDoc()">✅ Готово</button>
                     </div>
                 </div>
@@ -204,8 +340,8 @@
                             <h3 style="color: var(--success); margin-bottom: 10px;">ДОКУМЕНТ ЗАКРЫТ</h3>
                             <button class="btn-primary w-full mb-3" style="height: 64px; font-size: 18px;" onclick="syncWith1C()">🚀 ОТПРАВИТЬ В 1С</button>
                             <div class="flex gap-2">
-                                <button class="btn-outline w-full" onclick="reopenDoc()">🔄 Правка</button>
-                                <button class="btn-outline w-full" onclick="shareDoc()">📤 Поделиться</button>
+                                <button class="btn-outline w-full doc-action-btn" onclick="reopenDoc()">🔄 Правка документа</button>
+                                <button class="btn-outline w-full doc-action-btn" onclick="shareDoc()">📤 Поделиться документом</button>
                             </div>
                         </div>
                         <div id="form-container" class="card" style="border: 2px solid #eee; position: relative;"></div>
@@ -219,20 +355,20 @@
         </div>
 
         <div id="tab-bar">
-            <button onclick="switchTab('receive')" id="tab-receive"><span>📦</span>Приёмка</button>
-            <button onclick="switchTab('move')" id="tab-move"><span>🔄</span>Перемещение</button>
-            <button onclick="switchTab('writeoff')" id="tab-writeoff"><span>📋</span>Списание</button>
-            <button onclick="switchTab('price')" id="tab-price"><span>🏷️</span>Цены</button>
-            <button onclick="logout()" style="color: var(--danger);"><span>🚪</span>Выход</button>
+            <button onclick="switchTab('receive')" id="tab-receive" aria-label="Вкладка Приёмка"><span class="tab-ico">📦</span><span class="tab-label">Приёмка</span></button>
+            <button onclick="switchTab('move')" id="tab-move" aria-label="Вкладка Перемещение"><span class="tab-ico">🔄</span><span class="tab-label">Перемещение</span></button>
+            <button onclick="switchTab('writeoff')" id="tab-writeoff" aria-label="Вкладка Списание"><span class="tab-ico">📋</span><span class="tab-label">Списание</span></button>
+            <button onclick="switchTab('price')" id="tab-price" aria-label="Вкладка Цены"><span class="tab-ico">🏷️</span><span class="tab-label">Цены</span></button>
+            <button onclick="logout()" class="logout-tab" aria-label="Выйти из режима персонала"><span class="tab-ico">🚪</span><span class="tab-label">Выход</span></button>
         </div>
     </div>
 </div>
 
 <!-- МОДАЛЬНЫЕ ОКНА -->
-<div id="modal-settings" class="modal-overlay">
+<div id="modal-settings" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="modal-content">
-        <div class="flex justify-between items-center mb-6"><h2>Настройки</h2><button class="btn-icon" onclick="closeSettings()">✕</button></div>
-        
+        <div class="flex justify-between items-center mb-6"><h2>Настройки</h2><button class="btn-icon" aria-label="Закрыть настройки" onclick="closeSettings()">✕</button></div>
+        <div class="settings-grid">
         <div class="settings-section">
             <h3>ДИАГНОСТИКА</h3>
             <div class="light-block">
@@ -251,11 +387,12 @@
         </div>
 
         <div class="settings-section">
-            <h3>ДОПОЛНИТЕЛЬНЫЕ ПОЛЯ</h3>
+            <h3>ПОЛЯ В ФОРМЕ ПРИЁМКИ</h3>
             <div class="light-block">
-                <label class="checkbox-row">Поле Плотность (г/м²) <input type="checkbox" id="set-show-density" onchange="saveSets()"></label>
-                <label class="checkbox-row">Поле Бренд <input type="checkbox" id="set-show-brand" onchange="saveSets()"></label>
-                <label class="checkbox-row">Поле Состав <input type="checkbox" id="set-show-comp" onchange="saveSets()"></label>
+                <label class="checkbox-row">Показывать поле «Ширина» <input type="checkbox" id="set-show-width" onchange="saveSets()"></label>
+                <label class="checkbox-row">Показывать поле «Плотность (г/м²)» <input type="checkbox" id="set-show-density" onchange="saveSets()"></label>
+                <label class="checkbox-row">Показывать поле «Бренд» <input type="checkbox" id="set-show-brand" onchange="saveSets()"></label>
+                <label class="checkbox-row">Показывать поле «Состав» <input type="checkbox" id="set-show-comp" onchange="saveSets()"></label>
             </div>
         </div>
 
@@ -284,19 +421,22 @@
             </div>
         </div>
 
-        <div class="settings-section">
-            <h3>ИНТЕГРАЦИЯ 1С (HTTP)</h3>
-            <label>URL Сервиса</label><input type="text" id="set-url" onchange="saveSets()" placeholder="https://...">
-            <label>Логин</label><input type="text" id="set-user" onchange="saveSets()">
-            <label>Пароль</label><input type="password" id="set-pass" onchange="saveSets()">
-            <button class="btn-outline w-full mt-2" onclick="test1CConnection()">📡 Проверить связь с 1С</button>
+        <div class="settings-section span-2">
+            <details class="settings-spoiler">
+                <summary>Интеграция 1С (расширенные настройки)</summary>
+                <label>URL Сервиса</label><input type="text" id="set-url" onchange="saveSets()" placeholder="https://...">
+                <label>Логин</label><input type="text" id="set-user" onchange="saveSets()">
+                <label>Пароль</label><input type="password" id="set-pass" onchange="saveSets()">
+                <button class="btn-outline w-full mt-2" onclick="test1CConnection()">📡 Проверить связь с 1С</button>
+            </details>
+        </div>
         </div>
 
         <button class="btn-success w-full mt-4" style="height: 60px;" onclick="closeSettings()">ГОТОВО</button>
     </div>
 </div>
 
-<div id="modal-logs" class="modal-overlay">
+<div id="modal-logs" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="modal-content">
         <h2>Журнал ошибок</h2>
         <div id="log-area">Нет ошибок</div>
@@ -306,7 +446,7 @@
     </div>
 </div>
 
-<div id="modal-create-doc" class="modal-overlay">
+<div id="modal-create-doc" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="modal-content">
         <h2 id="create-doc-title">Новый документ</h2>
         <input type="text" id="input-new-doc-name" class="mt-4" placeholder="Название документа" onkeydown="if(event.key==='Enter') executeCreateDoc()">
@@ -317,7 +457,7 @@
     </div>
 </div>
 
-<div id="modal-confirm" class="modal-overlay" style="z-index:5000">
+<div id="modal-confirm" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" style="z-index:5000">
     <div class="modal-content" style="text-align:center">
         <h2 id="conf-title">Вы уверены?</h2>
         <p id="conf-msg" class="mb-4 text-sec"></p>
@@ -328,10 +468,23 @@
     </div>
 </div>
 
-<div id="modal-search" class="modal-overlay"><div class="modal-content"><h2>Поиск</h2><input type="text" id="manual-search-input" placeholder="Введите код..." onkeydown="if(event.key==='Enter') doManualSearch()"><div class="flex gap-2 mt-4"><button class="btn-outline w-full" onclick="closeModal('modal-search')">Отмена</button><button class="btn-primary w-full" onclick="doManualSearch()">Найти</button></div></div></div>
-<div id="modal-login" class="modal-overlay"><div class="modal-content" style="text-align:center"><h2>Вход персонала</h2><input type="password" id="login-pass" placeholder="Пароль" style="font-size:24px; text-align:center;" onkeydown="if(event.key==='Enter') doLogin()"><button class="btn-primary w-full" onclick="doLogin()">Войти</button><button class="btn-outline w-full mt-2" onclick="closeModal('modal-login')">Назад</button></div></div>
+<div id="modal-search" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true"><div class="modal-content"><h2>Поиск</h2><input type="text" id="manual-search-input" placeholder="Введите код..." onkeydown="if(event.key==='Enter') doManualSearch()"><div class="flex gap-2 mt-4"><button class="btn-outline w-full" onclick="closeModal('modal-search')">Отмена</button><button class="btn-primary w-full" onclick="doManualSearch()">Найти</button></div></div></div>
+<div id="modal-login" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true"><div class="modal-content" style="text-align:center"><h2>Вход персонала</h2><input type="password" id="login-pass" placeholder="Пароль" style="font-size:24px; text-align:center;" onkeydown="if(event.key==='Enter') doLogin()"><button class="btn-primary w-full" onclick="doLogin()">Войти</button><button class="btn-outline w-full mt-2" onclick="closeModal('modal-login')">Назад</button></div></div>
+<div id="modal-product-edit" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal-content">
+        <h2>Изменение номенклатуры</h2>
+        <p class="text-sm" style="color:var(--text-sec);margin-bottom:10px;">Изменения применяются в мобильном приложении и отправляются в 1С.</p>
+        <div class="input-group"><label>Артикул</label><input type="text" id="pe-art" readonly></div>
+        <div class="input-group"><label>Ширина</label><input type="text" id="pe-width"></div>
+        <div class="input-group"><label>Состав</label><input type="text" id="pe-comp"></div>
+        <div class="flex gap-2 mt-3">
+            <button class="btn-outline w-full" onclick="closeModal('modal-product-edit')">Отмена</button>
+            <button class="btn-success w-full" onclick="saveProductChanges()">💾 Сохранить в 1С</button>
+        </div>
+    </div>
+</div>
 
-<div id="toast-container"></div>
+<div id="toast-container" aria-live="polite" aria-atomic="true"></div>
 <datalist id="list-arts"></datalist>
 <datalist id="list-cells"></datalist>
 
@@ -379,8 +532,8 @@
     function safeLoad(key, def){ try { const val = localStorage.getItem(key); return val ? JSON.parse(val) : def; } catch(e) { return def; } }
 
     /* ДАННЫЕ */
-    const defSets = { url:"", user:"", pass:"", mgr:"1234", warehouses:["Магазин","Склад","Розница"], prefix:"R26", nextNum:1, showDensity:true, showBrand:true, showComp:true, printMethod: "rawbt", pnKey:"", pnPrinter:"" };
-    let sets = safeLoad('tsd_final_sets', defSets);
+    const defSets = { url:"", user:"", pass:"", mgr:"1234", warehouses:["Магазин","Склад","Розница"], prefix:"R26", nextNum:1, showWidth:true, showDensity:true, showBrand:true, showComp:true, printMethod: "rawbt", pnKey:"", pnPrinter:"" };
+    let sets = { ...defSets, ...safeLoad('tsd_final_sets', defSets) };
     let db = {
         receive: safeLoad('tsd_final_receive', []),
         move: safeLoad('tsd_final_move', []),
@@ -393,14 +546,55 @@
     let isMgr = safeLoad('app_is_mgr', false);
     
     let editingItemId = null, scanBuf = "", activeCuts = [];
+    let activeModalId = null;
+    let lastFocusedElement = null;
+    let isSearchPending = false;
+    let currentProduct = null;
+
+    function setSearchLock(locked) {
+        isSearchPending = locked;
+        const scannerInp = document.getElementById('kiosk-scanner-input');
+        const manualInp = document.getElementById('manual-search-input');
+        if (scannerInp) scannerInp.disabled = locked;
+        if (manualInp) manualInp.disabled = locked;
+    }
+
+    function purgeOldClosedDocs(days = 15) {
+        const maxAgeMs = days * 24 * 60 * 60 * 1000;
+        const now = Date.now();
+        let removed = 0;
+        ['receive', 'move', 'writeoff', 'price'].forEach(tab => {
+            if (!Array.isArray(db[tab])) return;
+            const before = db[tab].length;
+            db[tab] = db[tab].filter(doc => {
+                if (doc.status !== 'closed') return true;
+                const refDate = doc.closedAt || doc.createdAt;
+                if (!refDate) return true;
+                const age = now - new Date(refDate).getTime();
+                return age <= maxAgeMs;
+            });
+            removed += before - db[tab].length;
+        });
+        if (removed > 0) {
+            save();
+            console.info(`Очистка архива закрытых документов: удалено ${removed}`);
+        }
+    }
 
     window.onload = () => {
         window.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && activeModalId) { closeModal(activeModalId); return; }
             if (e.target.tagName === 'INPUT') return;
             if (e.key === 'Enter') { if (scanBuf.length > 2) handleScan(scanBuf); scanBuf = ""; } 
             else if (e.key.length === 1) { scanBuf += e.key; }
         });
+        document.querySelectorAll('.modal-overlay').forEach(m => {
+            m.addEventListener('click', (e) => {
+                if (e.target === m) closeModal(m.id);
+            });
+        });
         if (isMgr) { document.getElementById('screen-kiosk').classList.add('hidden'); document.getElementById('manager-view').classList.remove('hidden'); switchTab(curTab); if (curDocId) openDoc(curDocId); }
+        purgeOldClosedDocs(15);
         updateDataLists();
     };
 
@@ -408,21 +602,158 @@
 
     function handleScan(code) {
         if (code === "ADMIN") { loginSuccess(); return; }
+        if (isSearchPending) { showToast("Идёт поиск...", "danger"); return; }
         if (!isMgr) search1C(code);
         else { const inp = document.querySelector('input[data-art-field]'); if (inp) { inp.value = code; inp.dispatchEvent(new Event('input')); } }
     }
 
     async function search1C(id) {
+        if (isSearchPending) return;
+        setSearchLock(true);
         showToast("Поиск...");
-        if (!sets.url) { showProduct({ name: "Демо-ткань", articul: id, price: 10, stock: "5м", cell: "A1", width: "150", composition: "Хлопок" }); return; }
+        if (!sets.url) {
+            showProduct({
+                name: "Демо-ткань",
+                articul: id,
+                priceRub: 1290,
+                width: "150",
+                composition: "Хлопок",
+                images: [
+                    "https://images.unsplash.com/photo-1555529771-35a45f79cf5c?auto=format&fit=crop&w=1200&q=60",
+                    "https://images.unsplash.com/photo-1619596662488-085e45fddf72?auto=format&fit=crop&w=1200&q=60",
+                    "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=1200&q=60"
+                ],
+                stockRows: [
+                    { warehouse: "Магазин", cell: "A1", meters: 2.5 },
+                    { warehouse: "Склад", cell: "B-14", meters: 7.0 },
+                    { warehouse: "Розница", cell: "C3", meters: 1.5 }
+                ]
+            });
+            setSearchLock(false);
+            return;
+        }
         try {
             const res = await fetch(`${sets.url}/product?id=${id}`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ":" + (sets.pass || "")) } });
             if (res.ok) showProduct(await res.json()); else showToast("Не найдено", "danger");
         } catch (e) { showToast("Ошибка 1С", "danger"); logError(`Поиск 1С: ${e.message}`); }
+        finally { setSearchLock(false); }
     }
 
-    function showProduct(p) { document.getElementById('c-name').textContent = p.name; document.getElementById('c-price').textContent = (p.price || 0).toFixed(2) + " €"; document.getElementById('c-art').textContent = p.articul; document.getElementById('c-width').textContent = p.width; document.getElementById('c-comp').textContent = p.composition; document.getElementById('c-stock').textContent = p.stock; document.getElementById('c-cell').textContent = p.cell; document.getElementById('customer-view').classList.remove('hidden'); }
+    function toNumber(v) { return Number(String(v).replace(',', '.')) || 0; }
+    function normalizeId(v) { return String(v); }
+
+    function buildStockRows(p) {
+        if (Array.isArray(p.stockRows) && p.stockRows.length) return p.stockRows;
+        if (Array.isArray(p.stocks) && p.stocks.length) return p.stocks;
+        if (p.byWarehouse && typeof p.byWarehouse === 'object') {
+            return Object.entries(p.byWarehouse).map(([warehouse, info]) => ({
+                warehouse,
+                cell: info.cell || '-',
+                meters: toNumber(info.meters ?? info.m ?? 0)
+            }));
+        }
+        if (p.stock || p.cell) {
+            return [{ warehouse: 'Основной склад', cell: p.cell || '-', meters: toNumber(p.stock) }];
+        }
+        return [];
+    }
+
+    function renderCustomerGallery(images) {
+        const box = document.getElementById('c-img-box');
+        box.innerHTML = '';
+        if (!Array.isArray(images) || !images.length) {
+            const fallback = document.createElement('div');
+            fallback.className = 'customer-gallery-item';
+            fallback.textContent = 'Фото товара отсутствует';
+            box.appendChild(fallback);
+            return;
+        }
+        images.forEach((src, idx) => {
+            const slide = document.createElement('div');
+            slide.className = 'customer-gallery-item';
+            const img = document.createElement('img');
+            img.src = src;
+            img.alt = `Фото товара ${idx + 1}`;
+            slide.appendChild(img);
+            box.appendChild(slide);
+        });
+    }
+
+    function renderStockTable(rows) {
+        const table = document.getElementById('c-stock-table');
+        const summary = document.getElementById('c-stock-summary');
+        const total = rows.reduce((sum, row) => sum + toNumber(row.meters ?? row.m), 0);
+
+        if (!rows.length) {
+            table.innerHTML = '<tbody><tr><td>Нет остатков по складам</td></tr></tbody>';
+            summary.textContent = 'Общий метраж: 0 м';
+            return;
+        }
+
+        table.innerHTML = `
+            <thead>
+                <tr><th>Склад</th><th>Метраж, м</th><th>Ячейка</th></tr>
+            </thead>
+            <tbody>
+                ${rows.map(row => `<tr><td>${row.warehouse || row.wh || '-'}</td><td>${toNumber(row.meters ?? row.m).toFixed(2)}</td><td>${row.cell || row.shelf || '-'}</td></tr>`).join('')}
+            </tbody>`;
+        summary.textContent = `Общий метраж: ${total.toFixed(2)} м`;
+    }
+
+    function showProduct(p) {
+        currentProduct = p;
+        const rows = buildStockRows(p);
+        document.getElementById('c-name').textContent = p.name || 'Товар';
+        document.getElementById('c-price').textContent = `${toNumber(p.priceRub || p.price || 0).toFixed(2)} ₽`;
+        document.getElementById('c-art').textContent = p.articul || '-';
+        document.getElementById('c-width').textContent = p.width || '-';
+        document.getElementById('c-comp').textContent = p.composition || '-';
+        renderCustomerGallery(p.images || p.photos || p.gallery || []);
+        renderStockTable(rows);
+        document.getElementById('product-admin-row').classList.toggle('hidden', !isMgr);
+        document.getElementById('customer-view').classList.remove('hidden');
+    }
     function closeCustomerView() { document.getElementById('customer-view').classList.add('hidden'); }
+
+    function openProductEditModal() {
+        if (!isMgr) { showToast('Доступно только персоналу', 'danger'); return; }
+        if (!currentProduct) { showToast('Сначала найдите товар', 'danger'); return; }
+        document.getElementById('pe-art').value = currentProduct.articul || '';
+        document.getElementById('pe-width').value = currentProduct.width || '';
+        document.getElementById('pe-comp').value = currentProduct.composition || '';
+        openModal('modal-product-edit');
+    }
+
+    async function saveProductChanges() {
+        if (!currentProduct) return;
+        const articul = document.getElementById('pe-art').value.trim();
+        const width = document.getElementById('pe-width').value.trim();
+        const composition = document.getElementById('pe-comp').value.trim();
+        if (!articul) { showToast('Артикул не задан', 'danger'); return; }
+
+        const payload = { articul, width, composition };
+        currentProduct.width = width;
+        currentProduct.composition = composition;
+        showProduct(currentProduct);
+
+        if (!sets.url) { showToast('Изменено локально (демо режим)'); closeModal('modal-product-edit'); return; }
+
+        try {
+            const res = await fetch(`${sets.url}/update-product`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || ''))
+                },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) { showToast('Свойства товара обновлены в 1С'); closeModal('modal-product-edit'); }
+            else { showToast(`Ошибка 1С: ${res.status}`, 'danger'); }
+        } catch (e) {
+            showToast('Не удалось отправить изменения в 1С', 'danger');
+            logError(`Обновление номенклатуры: ${e.message}`);
+        }
+    }
 
     /* ПЕЧАТЬ */
     async function printLabel(art, comp, width, name) {
@@ -455,14 +786,21 @@
 
     /* МЕНЕДЖЕР */
     function doLogin() { if(document.getElementById('login-pass').value === sets.mgr){ loginSuccess(); closeModal('modal-login'); } else showToast("Ошибка", "danger"); }
-    function openLogin() { openModal('modal-login'); setTimeout(() => document.getElementById('login-pass').focus(), 300); }
-    function loginSuccess() { isMgr = true; saveAppState(); document.getElementById('screen-kiosk').classList.add('hidden'); document.getElementById('manager-view').classList.remove('hidden'); switchTab('receive'); }
-    function logout() { isMgr = false; curDocId = null; saveAppState(); document.getElementById('manager-view').classList.add('hidden'); document.getElementById('screen-kiosk').classList.remove('hidden'); }
+    function openLogin() { document.getElementById('login-pass').value = ''; openModal('modal-login'); setTimeout(() => document.getElementById('login-pass').focus(), 300); }
+    function loginSuccess() { isMgr = true; saveAppState(); document.getElementById('login-pass').value = ''; document.getElementById('screen-kiosk').classList.add('hidden'); document.getElementById('manager-view').classList.remove('hidden'); switchTab('receive'); }
+    function logout() { isMgr = false; curDocId = null; currentProduct = null; document.getElementById('login-pass').value = ''; closeModal('modal-login'); closeModal('modal-product-edit'); closeCustomerView(); saveAppState(); document.getElementById('screen-work').classList.add('hidden'); document.getElementById('screen-list').classList.remove('hidden'); document.getElementById('manager-view').classList.add('hidden'); document.getElementById('screen-kiosk').classList.remove('hidden'); }
     
     function switchTab(id) {
         curTab = id; curDocId = null; editingItemId = null; saveAppState();
         const titles = {receive:"Приёмка", move:"Перемещение", writeoff:"Списание", price:"Цены"};
+        const subtitles = {
+            receive: "Сканируйте товар и ведите документ по текущей операции",
+            move: "Быстро фиксируйте перемещения между складами и ячейками",
+            writeoff: "Списывайте остатки с указанием места хранения",
+            price: "Обновляйте цены и поддерживайте актуальность ценников"
+        };
         document.getElementById('list-title').textContent = titles[id];
+        document.getElementById('list-subtitle').textContent = subtitles[id];
         document.querySelectorAll('#tab-bar button').forEach(b => b.classList.remove('active'));
         document.getElementById('tab-'+id).classList.add('active');
         document.getElementById('screen-list').classList.remove('hidden'); document.getElementById('screen-work').classList.add('hidden');
@@ -470,9 +808,9 @@
     }
 
     function openCreateDocModal() { openModal('modal-create-doc'); document.getElementById('input-new-doc-name').value = "Документ " + new Date().toLocaleDateString(); setTimeout(()=>document.getElementById('input-new-doc-name').focus(), 300); }
-    function executeCreateDoc() { const name = document.getElementById('input-new-doc-name').value.trim(); if(!name) return; const newDoc = { id: Date.now().toString(36), name, status: 'active', createdAt: new Date().toISOString(), items: [] }; db[curTab].unshift(newDoc); save(); closeModal('modal-create-doc'); renderDocList(); openDoc(newDoc.id); }
+    function executeCreateDoc() { const name = document.getElementById('input-new-doc-name').value.trim(); if(!name) { showToast('Введите название документа', 'danger'); return; } const newDoc = { id: Date.now().toString(36), name, status: 'active', createdAt: new Date().toISOString(), items: [] }; db[curTab].unshift(newDoc); save(); closeModal('modal-create-doc'); renderDocList(); openDoc(newDoc.id); }
 
-    function renderDocList() { const q = document.getElementById('doc-search')?.value?.toLowerCase() || ""; const cont = document.getElementById('docs-list-container'); cont.innerHTML = ""; const list = db[curTab] || []; list.filter(d => d.name.toLowerCase().includes(q)).forEach(d => { const card = document.createElement('div'); card.className = `card doc-card ${d.status}`; card.onclick = () => openDoc(d.id); card.innerHTML = `<div class="flex justify-between font-bold"><span>${d.name}</span><span>${d.status==='active'?'🟡':'✅'}</span></div><div>Записей: ${d.items.length}</div>`; cont.appendChild(card); }); }
+    function renderDocList() { const q = document.getElementById('doc-search')?.value?.toLowerCase() || ""; const cont = document.getElementById('docs-list-container'); cont.innerHTML = ""; const list = db[curTab] || []; list.filter(d => d.name.toLowerCase().includes(q)).forEach(d => { const card = document.createElement('div'); card.className = `card doc-card ${d.status}`; card.onclick = () => openDoc(d.id); const head = document.createElement('div'); head.className = 'flex justify-between font-bold'; const nameEl = document.createElement('span'); nameEl.textContent = d.name; const statusEl = document.createElement('span'); statusEl.textContent = d.status==='active' ? '🟡' : '✅'; head.append(nameEl, statusEl); const rowsEl = document.createElement('div'); rowsEl.textContent = `Записей: ${d.items.length}`; card.append(head, rowsEl); cont.appendChild(card); }); }
 
     function openDoc(id) {
         curDocId = id; saveAppState();
@@ -491,7 +829,7 @@
         if(!d || d.status !== 'active') return;
         let artVal = sets.prefix + String(sets.nextNum).padStart(4,'0');
         if(curTab === 'receive') {
-            cont.innerHTML = `<div class="input-group"><label>APT</label><input type="text" id="f-art" data-art-field value="${artVal}" class="monospace font-bold"></div><div class="input-group"><label>ШИРИНА</label><input type="text" id="f-width" inputmode="decimal"></div>${sets.showDensity ? '<div class="input-group"><label>ПЛОТНОСТЬ</label><input type="text" id="f-density" inputmode="numeric"></div>' : ''}${sets.showBrand ? '<div class="input-group"><label>БРЕНД</label><input type="text" id="f-brand"></div>' : ''}${sets.showComp ? '<div class="input-group"><label>СОСТАВ</label><input type="text" id="f-comp" oninput="this.value = this.value.toUpperCase()"></div>' : ''}<div id="receive-cuts"></div><button class="btn-outline w-full mb-3" style="border-style:dashed; font-size:14px;" onclick="addCut()">+ Добавить отрез</button><div class="flex gap-2"><button class="btn-outline" style="flex:1" onclick="printFromForm()">🖨️ Печать</button><button class="btn-success" style="flex:2" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button></div>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+            cont.innerHTML = `<div class="input-group"><label>APT</label><input type="text" id="f-art" data-art-field value="${artVal}" class="monospace font-bold"></div>${sets.showWidth ? '<div class="input-group"><label>ШИРИНА</label><input type="text" id="f-width" inputmode="decimal"></div>' : ''}${sets.showDensity ? '<div class="input-group"><label>ПЛОТНОСТЬ</label><input type="text" id="f-density" inputmode="numeric"></div>' : ''}${sets.showBrand ? '<div class="input-group"><label>БРЕНД</label><input type="text" id="f-brand"></div>' : ''}${sets.showComp ? '<div class="input-group"><label>СОСТАВ</label><input type="text" id="f-comp" oninput="this.value = this.value.toUpperCase()"></div>' : ''}<div id="receive-cuts"></div><button class="btn-outline w-full mb-3" style="border-style:dashed; font-size:14px;" onclick="addCut()">+ Добавить отрез</button><div class="flex gap-2"><button class="btn-outline" style="flex:1" onclick="printFromForm()">🖨️ Печать</button><button class="btn-success" style="flex:2" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button></div>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
             if (!editingItemId) activeCuts = [{id:1, m:'', wh:sets.warehouses[0] || "", c:''}];
             renderCuts();
         } else if(curTab === 'move'){
@@ -509,22 +847,25 @@
     function uCut(id, f, v) { const c = activeCuts.find(x=>x.id===id); if(c) c[f]=v.replace(',','.'); }
 
     function saveLine() {
-        const d = db[curTab].find(x=>x.id===curDocId); const artInp = document.getElementById('f-art'); if(!artInp) return; const art = artInp.value; if(!art) return;
-        let item = { id: editingItemId || Date.now(), art, ts: new Date().toISOString() };
-        if(curTab === 'receive'){ const v = activeCuts.filter(c => !isNaN(parseFloat(c.m)) && parseFloat(c.m) > 0); if(!v.length) return; item.cuts = JSON.parse(JSON.stringify(v)); item.w = document.getElementById('f-width').value; if(sets.showDensity && document.getElementById('f-density')) item.dens = document.getElementById('f-density').value; if(sets.showBrand && document.getElementById('f-brand')) item.brand = document.getElementById('f-brand').value; if(sets.showComp && document.getElementById('f-comp')) item.comp = document.getElementById('f-comp').value; if (!editingItemId) sets.nextNum++; }
-        else if(curTab === 'move'){ item.m = document.getElementById('f-m').value; item.fromWh = document.getElementById('f-wh-from').value; item.fromCell = document.getElementById('f-cell-from').value; item.toWh = document.getElementById('f-wh-to').value; item.toCell = document.getElementById('f-cell-to').value; }
-        else if(curTab === 'writeoff'){ item.m = document.getElementById('f-m').value; item.wh = document.getElementById('f-wh').value; item.cell = document.getElementById('f-cell').value; }
-        else if(curTab === 'price'){ item.p = document.getElementById('f-p').value; }
-        if(editingItemId){ const idx = d.items.findIndex(i=>i.id===editingItemId); d.items[idx]=item; editingItemId=null; } else d.items.unshift(item);
+        const d = db[curTab].find(x=>x.id===curDocId); const artInp = document.getElementById('f-art'); if(!artInp) return; const art = artInp.value.trim(); if(!art) { showToast('Введите артикул', 'danger'); artInp.focus(); return; }
+        let item = { id: editingItemId || Date.now().toString(36), art, ts: new Date().toISOString() };
+        if(curTab === 'receive'){ const v = activeCuts.filter(c => !isNaN(parseFloat(c.m)) && parseFloat(c.m) > 0); if(!v.length) { showToast('Добавьте хотя бы один валидный отрез', 'danger'); return; } item.cuts = JSON.parse(JSON.stringify(v)); if(sets.showWidth && document.getElementById('f-width')) item.w = document.getElementById('f-width').value; if(sets.showDensity && document.getElementById('f-density')) item.dens = document.getElementById('f-density').value; if(sets.showBrand && document.getElementById('f-brand')) item.brand = document.getElementById('f-brand').value; if(sets.showComp && document.getElementById('f-comp')) item.comp = document.getElementById('f-comp').value; if (!editingItemId) sets.nextNum++; }
+        else if(curTab === 'move'){ item.m = document.getElementById('f-m').value; item.fromWh = document.getElementById('f-wh-from').value; item.fromCell = document.getElementById('f-cell-from').value; item.toWh = document.getElementById('f-wh-to').value; item.toCell = document.getElementById('f-cell-to').value; if(!parseFloat(item.m)) { showToast('Введите корректный метраж', 'danger'); return; } }
+        else if(curTab === 'writeoff'){ item.m = document.getElementById('f-m').value; item.wh = document.getElementById('f-wh').value; item.cell = document.getElementById('f-cell').value; if(!parseFloat(item.m)) { showToast('Введите корректное количество', 'danger'); return; } }
+        else if(curTab === 'price'){ item.p = document.getElementById('f-p').value; if(isNaN(parseFloat(item.p))) { showToast('Введите корректную цену', 'danger'); return; } }
+        if(editingItemId){ const idx = d.items.findIndex(i => normalizeId(i.id)===normalizeId(editingItemId)); if(idx >= 0) d.items[idx]=item; editingItemId=null; } else d.items.unshift(item);
         save(); renderForm(); renderRows(); showToast("Записано");
     }
 
     function editItem(id) {
         const d = db[curTab].find(x=>x.id===curDocId); const it = d.items.find(i=>i.id===id); if(!it) return;
-        editingItemId = id; renderForm();
+        editingItemId = normalizeId(id); renderForm();
         const fA = document.getElementById('f-art'); if(fA) fA.value = it.art;
         if(curTab==='receive'){
-            const fW = document.getElementById('f-width'); if(fW) fW.value = it.w || ''; const fD = document.getElementById('f-density'); if(fD) fD.value = it.dens || ''; const fB = document.getElementById('f-brand'); if(fB) fB.value = it.brand || ''; const fC = document.getElementById('f-comp'); if(fC) fC.value = it.comp || '';
+            const fW = document.getElementById('f-width'); if(fW) fW.value = it.w || '';
+            const fD = document.getElementById('f-density'); if(fD) fD.value = it.dens || '';
+            const fB = document.getElementById('f-brand'); if(fB) fB.value = it.brand || '';
+            const fC = document.getElementById('f-comp'); if(fC) fC.value = it.comp || '';
             activeCuts = JSON.parse(JSON.stringify(it.cuts)); renderCuts();
         } else if(curTab === 'move') { document.getElementById('f-m').value = it.m; document.getElementById('f-wh-from').value = it.fromWh; document.getElementById('f-cell-from').value = it.fromCell; document.getElementById('f-wh-to').value = it.toWh; document.getElementById('f-cell-to').value = it.toCell; }
         else if(curTab === 'writeoff') { document.getElementById('f-m').value = it.m; document.getElementById('f-wh').value = it.wh; document.getElementById('f-cell').value = it.cell; }
@@ -537,20 +878,59 @@
 
     function renderRows() {
         const cont = document.getElementById('rows-container'); const d = db[curTab].find(x=>x.id===curDocId); cont.innerHTML = "";
-        d.items.forEach(it => { const div = document.createElement('div'); div.className = 'history-item' + (editingItemId===it.id?' editing':''); let info = ""; if(curTab === 'move') info = `<div class="text-sm text-sec">${it.fromWh} → ${it.toWh} | ${it.m}м</div>`; else if(curTab === 'writeoff') info = `<div class="text-sm text-sec">${it.wh} | ${it.m}м</div>`; else if(curTab === 'price') info = `<div class="text-sm font-bold" style="color:var(--price-color)">${it.p} €</div>`; else info = `<div class="text-sm text-sec">${it.cuts ? it.cuts.length : 0} отр.</div>`; div.innerHTML = `<div><div class="font-bold">${it.art}</div>${info}</div><div class="flex gap-2">${d.status==='active' ? `<button class="btn-icon" onclick="editItem(${it.id})">✏️</button><button class="btn-icon text-danger" onclick="delRow(${it.id})">🗑️</button>` : ''}</div>`; cont.appendChild(div); });
+        d.items.forEach(it => {
+            const div = document.createElement('div');
+            div.className = 'history-item' + (normalizeId(editingItemId)===normalizeId(it.id) ? ' editing' : '');
+
+            const left = document.createElement('div');
+            const artEl = document.createElement('div');
+            artEl.className = 'font-bold';
+            artEl.textContent = it.art;
+            const infoEl = document.createElement('div');
+
+            if(curTab === 'move') { infoEl.className = 'text-sm text-sec'; infoEl.textContent = `${it.fromWh} → ${it.toWh} | ${it.m}м`; }
+            else if(curTab === 'writeoff') { infoEl.className = 'text-sm text-sec'; infoEl.textContent = `${it.wh} | ${it.m}м`; }
+            else if(curTab === 'price') { infoEl.className = 'text-sm font-bold'; infoEl.style.color = 'var(--price-color)'; infoEl.textContent = `${it.p} €`; }
+            else { infoEl.className = 'text-sm text-sec'; infoEl.textContent = `${it.cuts ? it.cuts.length : 0} отр.`; }
+
+            left.append(artEl, infoEl);
+
+            const actions = document.createElement('div');
+            actions.className = 'flex gap-2';
+            if (d.status === 'active') {
+                const editBtn = document.createElement('button');
+                editBtn.className = 'btn-icon';
+                editBtn.type = 'button';
+                editBtn.textContent = '✏️';
+                editBtn.setAttribute('aria-label', 'Редактировать строку');
+                editBtn.onclick = () => editItem(it.id);
+
+                const delBtn = document.createElement('button');
+                delBtn.className = 'btn-icon text-danger';
+                delBtn.type = 'button';
+                delBtn.textContent = '🗑️';
+                delBtn.setAttribute('aria-label', 'Удалить строку');
+                delBtn.onclick = () => delRow(it.id);
+
+                actions.append(editBtn, delBtn);
+            }
+
+            div.append(left, actions);
+            cont.appendChild(div);
+        });
         document.getElementById('work-counter').textContent = "Записей: " + d.items.length;
     }
 
     /* УТИЛИТЫ */
     function save() { localStorage.setItem('tsd_final_sets', JSON.stringify(sets)); localStorage.setItem('tsd_final_receive', JSON.stringify(db.receive)); localStorage.setItem('tsd_final_move', JSON.stringify(db.move)); localStorage.setItem('tsd_final_writeoff', JSON.stringify(db.writeoff)); localStorage.setItem('tsd_final_price', JSON.stringify(db.price)); updateDataLists(); }
     function updateDataLists() { const arts = new Set(), cells = new Set(); Object.values(db).forEach(list => { if(list) list.forEach(d => d.items.forEach(i => { if(i.art) arts.add(i.art); if(i.cuts) i.cuts.forEach(c => { if(c.c) cells.add(c.c); }); if(i.cell) cells.add(i.cell); if(i.fromCell) cells.add(i.fromCell); if(i.toCell) cells.add(i.toCell); } )) }); document.getElementById('list-arts').innerHTML = Array.from(arts).map(a=>`<option value="${a}">`).join(''); document.getElementById('list-cells').innerHTML = Array.from(cells).map(c=>`<option value="${c}">`).join(''); }
-    function openModal(id) { document.getElementById(id).classList.add('open'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-    function showToast(m, t) { const c = document.getElementById('toast-container'); if(c.children.length > 3) c.removeChild(c.firstChild); const d = document.createElement('div'); d.className = `toast`; d.style.background = t === 'danger' ? 'var(--danger)' : 'var(--primary)'; d.textContent = m; c.appendChild(d); setTimeout(()=>d.remove(), 2500); }
+    function openModal(id) { const modal = document.getElementById(id); if(!modal) return; lastFocusedElement = document.activeElement; activeModalId = id; modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); const focusable = modal.querySelector('input, button, select, textarea'); if (focusable) focusable.focus(); }
+    function closeModal(id) { const modal = document.getElementById(id); if(!modal) return; modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); if (activeModalId === id) activeModalId = null; if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') lastFocusedElement.focus(); }
+    function showToast(m, t) { const c = document.getElementById('toast-container'); if(c.children.length > 3) c.removeChild(c.firstChild); const d = document.createElement('div'); d.className = `toast`; d.setAttribute('role', 'status'); d.style.background = t === 'danger' ? 'var(--danger)' : 'var(--primary)'; d.textContent = m; c.appendChild(d); setTimeout(()=>d.remove(), 2500); }
     
-    function openSettings() { document.getElementById('set-show-density').checked = sets.showDensity; document.getElementById('set-show-brand').checked = sets.showBrand; document.getElementById('set-show-comp').checked = sets.showComp; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "rawbt"; togglePrintSettingsUI(); renderSettingsWh(); openModal('modal-settings'); }
+    function openSettings() { document.getElementById('set-show-width').checked = sets.showWidth !== false; document.getElementById('set-show-density').checked = sets.showDensity !== false; document.getElementById('set-show-brand').checked = sets.showBrand !== false; document.getElementById('set-show-comp').checked = sets.showComp !== false; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "rawbt"; togglePrintSettingsUI(); renderSettingsWh(); openModal('modal-settings'); }
     function togglePrintSettingsUI() { const method = document.getElementById('set-print-method').value; const block = document.getElementById('printnode-block'); if (block) block.style.display = (method === 'printnode') ? 'block' : 'none'; }
-    function saveSets() { sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; save(); }
+    function saveSets() { sets.showWidth = document.getElementById('set-show-width').checked; sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; save(); }
     function renderSettingsWh() { document.getElementById('settings-warehouses').innerHTML = sets.warehouses.map(w=>`<div class="wh-item"><span>${w}</span><button class="btn-icon text-danger" onclick="delWh('${w}')">🗑️</button></div>`).join(''); }
     function addWh() { const n = document.getElementById('new-wh-name'); if(n.value){sets.warehouses.push(n.value); n.value=''; renderSettingsWh(); saveSets();}}
     function delWh(w) { sets.warehouses = sets.warehouses.filter(x=>x!==w); renderSettingsWh(); saveSets();}
@@ -573,8 +953,8 @@
         }); 
     }
 
-    async function completeDoc() { if(!await customConfirm("Завершить документ?")) return; const d = db[curTab].find(x=>x.id===curDocId); d.status = 'closed'; save(); openDoc(curDocId); }
-    function reopenDoc() { const d = db[curTab].find(x=>x.id===curDocId); d.status = 'active'; save(); openDoc(curDocId); }
+    async function completeDoc() { if(!await customConfirm("Завершить документ?")) return; const d = db[curTab].find(x=>x.id===curDocId); d.status = 'closed'; d.closedAt = new Date().toISOString(); save(); openDoc(curDocId); }
+    function reopenDoc() { const d = db[curTab].find(x=>x.id===curDocId); d.status = 'active'; delete d.closedAt; save(); openDoc(curDocId); }
     
     async function syncWith1C() {
         const d = db[curTab].find(x=>x.id===curDocId); if(!sets.url) { showToast("URL 1С не настроен", "danger"); return; }
@@ -589,10 +969,10 @@
         try { const res = await fetch(`${url}/product?id=ping`, { headers: { 'Authorization': 'Basic ' + btoa(user + ":" + pass) } }); if (res.ok || res.status === 404) { showToast("Связь с 1С установлена!", "success"); } else { showToast(`Ошибка: ${res.status}`, "danger"); } } catch (e) { showToast("Ошибка соединения", "danger"); logError(`Тест 1С: ${e.message}`); }
     }
 
-    async function delRow(rid) { if(!await customConfirm("Удалить строку?")) return; const d = db[curTab].find(x=>x.id===curDocId); d.items = d.items.filter(x=>x.id!==rid); save(); renderRows(); }
+    async function delRow(rid) { if(!await customConfirm("Удалить строку?")) return; const d = db[curTab].find(x=>x.id===curDocId); d.items = d.items.filter(x=>normalizeId(x.id)!==normalizeId(rid)); save(); renderRows(); }
     async function deleteFullDoc() { if(!await customConfirm("УДАЛИТЬ ВЕСЬ ДОКУМЕНТ?")) return; db[curTab] = db[curTab].filter(x=>x.id!==curDocId); save(); exitWork(); }
     function openManualSearch() { openModal('modal-search'); setTimeout(() => document.getElementById('manual-search-input').focus(), 300); }
-    function doManualSearch() { const v = document.getElementById('manual-search-input').value.trim(); if(v){ closeModal('modal-search'); search1C(v); } }
+    function doManualSearch() { if (isSearchPending) return; const v = document.getElementById('manual-search-input').value.trim(); if(v){ closeModal('modal-search'); search1C(v); } }
     function exportData() { const blob = new Blob([JSON.stringify({db, sets})], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='backup.json'; a.click(); }
     function importData(event) { const file = event.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(e){ try{ const d = JSON.parse(e.target.result); if(d.db && d.sets){ db = d.db; sets = d.sets; save(); location.reload(); } }catch(err){showToast('Ошибка файла','danger');} }; reader.readAsText(file); }
 </script>
