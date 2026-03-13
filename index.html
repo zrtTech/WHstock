@@ -195,14 +195,40 @@
         }
         .customer-gallery-item img { width: 100%; height: 100%; object-fit: cover; }
         .customer-hero-price { font-size: 56px !important; font-weight: 900; color: var(--price-color); margin-bottom: 15px; }
-        .customer-specs { background:#f8f9fa; border:none; flex-grow:1; padding: 20px; }
-        .customer-spec-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 23px; margin-bottom: 8px; }
-        .customer-spec-row strong { font-size: 28px; }
-        .customer-spec-row span { font-weight: 700; }
+        .customer-specs {
+            background:#f8f9fa;
+            border:none;
+            flex-grow:1;
+            padding: 20px;
+            max-width: 940px;
+        }
+        .customer-spec-grid {
+            display: grid;
+            grid-template-columns: max-content max-content;
+            gap: 8px 14px;
+            align-items: baseline;
+            justify-content: start;
+            margin-bottom: 10px;
+        }
+        .customer-spec-row {
+            display: contents;
+            font-size: 23px;
+        }
+        .customer-spec-row strong { font-size: 28px; white-space: nowrap; }
+        .customer-spec-row span { font-weight: 700; white-space: nowrap; }
         .stock-table { width: 100%; margin-top: 10px; border-collapse: collapse; font-size: 18px; }
         .stock-table th, .stock-table td { border-bottom: 1px solid #e3e3e3; padding: 7px 4px; text-align: left; }
         .stock-table th { font-size: 13px; text-transform: uppercase; color: var(--text-sec); letter-spacing: .02em; }
         .stock-summary { margin-top: 8px; font-size: 18px; font-weight: 800; color: var(--primary); }
+
+        @media (min-width: 1100px) {
+            #customer-view { align-items: center; }
+            #customer-view > * { width: min(980px, 100%); }
+            .customer-spec-grid { grid-template-columns: 200px minmax(260px, 1fr); }
+            .stock-table th:first-child, .stock-table td:first-child { width: 42%; }
+            .stock-table th:nth-child(2), .stock-table td:nth-child(2) { width: 33%; }
+            .stock-table th:nth-child(3), .stock-table td:nth-child(3) { width: 25%; }
+        }
 
         .doc-action-btn { min-height: 60px; font-size: 17px; font-weight: 800; border: 2px solid #d7e6f7; background: #f4f9ff; }
         .doc-action-btn:hover { background: #e8f3ff; }
@@ -237,9 +263,11 @@
         <div id="c-img-box" class="customer-gallery" aria-label="Галерея фотографий товара"></div>
         <div id="c-price" class="customer-hero-price">0.00 ₽</div>
         <div class="card customer-specs">
-            <div class="customer-spec-row"><strong>Артикул:</strong> <span id="c-art">-</span></div>
-            <div class="customer-spec-row"><strong>Ширина:</strong> <span id="c-width">-</span></div>
-            <div class="customer-spec-row"><strong>Состав:</strong> <span id="c-comp">-</span></div>
+            <div class="customer-spec-grid">
+                <div class="customer-spec-row"><strong>Артикул:</strong> <span id="c-art">-</span></div>
+                <div class="customer-spec-row"><strong>Ширина:</strong> <span id="c-width">-</span></div>
+                <div class="customer-spec-row"><strong>Состав:</strong> <span id="c-comp">-</span></div>
+            </div>
             <table id="c-stock-table" class="stock-table"></table>
             <div id="c-stock-summary" class="stock-summary">Общий метраж: -</div>
         </div>
