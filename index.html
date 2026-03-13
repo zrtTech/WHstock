@@ -311,7 +311,10 @@
                     <h1 id="list-title">Приёмка</h1>
                     <p id="list-subtitle" class="screen-subtitle">Сканируйте товар и ведите документ по текущей операции</p>
                 </div>
-                <button class="btn-icon settings-btn" aria-label="Открыть настройки" onclick="openSettings()">⚙️</button>
+                <div class="flex gap-2">
+                    <button class="btn-icon" aria-label="Поиск товара для просмотра/правки" onclick="openManagerProductSearch()">🔎</button>
+                    <button class="btn-icon settings-btn" aria-label="Открыть настройки" onclick="openSettings()">⚙️</button>
+                </div>
             </div>
             <input type="text" id="doc-search" placeholder="🔍 Поиск документа..." oninput="renderDocList()" style="margin-bottom: 16px;">
             <button class="btn-primary w-full mb-4" style="height: 56px;" onclick="openCreateDocModal()">+ Создать документ</button>
@@ -603,7 +606,8 @@
     function handleScan(code) {
         if (code === "ADMIN") { loginSuccess(); return; }
         if (isSearchPending) { showToast("Идёт поиск...", "danger"); return; }
-        if (!isMgr) search1C(code);
+        const manualSearchOpen = document.getElementById('modal-search')?.classList.contains('open');
+        if (!isMgr || manualSearchOpen) search1C(code);
         else { const inp = document.querySelector('input[data-art-field]'); if (inp) { inp.value = code; inp.dispatchEvent(new Event('input')); } }
     }
 
@@ -972,6 +976,7 @@
     async function delRow(rid) { if(!await customConfirm("Удалить строку?")) return; const d = db[curTab].find(x=>x.id===curDocId); d.items = d.items.filter(x=>normalizeId(x.id)!==normalizeId(rid)); save(); renderRows(); }
     async function deleteFullDoc() { if(!await customConfirm("УДАЛИТЬ ВЕСЬ ДОКУМЕНТ?")) return; db[curTab] = db[curTab].filter(x=>x.id!==curDocId); save(); exitWork(); }
     function openManualSearch() { openModal('modal-search'); setTimeout(() => document.getElementById('manual-search-input').focus(), 300); }
+    function openManagerProductSearch() { openManualSearch(); }
     function doManualSearch() { if (isSearchPending) return; const v = document.getElementById('manual-search-input').value.trim(); if(v){ closeModal('modal-search'); search1C(v); } }
     function exportData() { const blob = new Blob([JSON.stringify({db, sets})], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='backup.json'; a.click(); }
     function importData(event) { const file = event.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(e){ try{ const d = JSON.parse(e.target.result); if(d.db && d.sets){ db = d.db; sets = d.sets; save(); location.reload(); } }catch(err){showToast('Ошибка файла','danger');} }; reader.readAsText(file); }
