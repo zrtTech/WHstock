@@ -26,7 +26,7 @@
             --text-sec: #757575;
             --border: #E0E0E0;
             --focus-ring: rgba(25, 118, 210, 0.3);
-            --tab-height: 62px;
+            --tab-height: 52px;
             --app-height: 100dvh;
             --keyboard-offset: 0px;
         }
@@ -95,7 +95,7 @@
         button:active { transform: scale(0.98); }
         .btn-main { background: white; color: var(--primary); height: 64px; font-size: 18px; font-weight: 800; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .btn-search-wide { justify-content: center; padding: 0 20px; font-size: 22px; letter-spacing: .01em; white-space: nowrap; }
-        .btn-manager-search { min-height: 48px; font-size: 14px; font-weight: 800; padding: 8px 12px; border-radius: 10px; }
+        .btn-manager-search { min-height: 44px; font-size: 15px; font-weight: 800; padding: 10px 14px; border-radius: 10px; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-success { background: var(--success); color: white; }
         .btn-danger { background: var(--danger); color: white; }
@@ -144,18 +144,18 @@
             font-size: 10px;
             padding: 4px 3px;
             gap: 2px;
-            min-height: 56px;
+            min-height: 52px;
             border-top: 0;
         }
-        #tab-bar button .tab-ico { font-size: 18px; line-height: 1; }
-        #tab-bar button .tab-label { font-size: 10px; font-weight: 700; line-height: 1; }
+        #tab-bar button .tab-ico { font-size: 17px; line-height: 1; }
+        #tab-bar button .tab-label { font-size: 9px; font-weight: 700; line-height: 1; }
         #tab-bar button.active {
             color: var(--primary);
             background: rgba(25,118,210,0.10);
         }
         #tab-bar button.logout-tab { color: var(--danger); }
         @media (pointer: coarse) {
-            #tab-bar button { min-height: 56px; }
+            #tab-bar button { min-height: 52px; }
         }
 
         /* ПЛАНШЕТНАЯ СЕТКА */
@@ -233,7 +233,8 @@
         }
         .manager-field-note { color: var(--text-sec); font-size: 13px; margin-top: 6px; }
         .customer-gallery-item img { width: 100%; height: auto; max-height: 420px; object-fit: contain; background: #f7f7f7; }
-        .customer-hero-price { font-size: 56px !important; font-weight: 900; color: var(--price-color); margin-bottom: 15px; }
+        .customer-hero-price { font-size: 56px !important; font-weight: 900; color: var(--price-color); margin-bottom: 2px; }
+        .customer-hero-price-sub { font-size: 14px; color: var(--text-sec); margin-bottom: 10px; font-weight: 700; }
         .customer-specs {
             background:#f8f9fa;
             border:none;
@@ -311,6 +312,7 @@
         <button id="c-photo-toggle" class="btn-outline customer-gallery-toggle" onclick="toggleCustomerGallery()">📷 Фото товара</button>
         <div id="c-img-box" class="customer-gallery" aria-label="Галерея фотографий товара"></div>
         <div id="c-price" class="customer-hero-price editable-value" data-edit-field="priceRub" data-edit-label="Цена, ₽">0.00 ₽</div>
+        <div id="c-price-ue" class="customer-hero-price-sub">≈ 0.00 у.е.</div>
         <div class="card customer-specs">
             <div class="customer-spec-grid">
                 <div class="customer-spec-row"><strong>Артикул:</strong> <span id="c-art" class="editable-value" data-edit-field="articul" data-edit-label="Артикул">-</span></div>
@@ -332,7 +334,7 @@
         </div>
         <div class="flex gap-2 mt-4">
             <button class="btn-outline w-full" style="height: 64px;" onclick="printLabelRawBT()">🖨️ Печать</button>
-            <button class="btn-primary w-full" style="height: 64px; font-size: 20px;" onclick="closeCustomerView()">ПОНЯТНО</button>
+            <button class="btn-primary w-full" style="height: 64px; font-size: 20px;" onclick="closeCustomerView()">Закрыть</button>
         </div>
     </div>
 
@@ -524,7 +526,7 @@
         <div class="input-group"><label>Бренд</label><input type="text" id="pe-brand"></div>
         <div class="input-group"><label>Плотность (г/м²)</label><input type="text" id="pe-density" inputmode="numeric"></div>
         <div class="input-group"><label>Количество</label><input type="text" id="pe-qty" inputmode="decimal"></div>
-        <div class="input-group"><label>Фото товара</label><input type="file" id="pe-photo" accept="image/*" capture="environment" onchange="applyProductPhoto(this)"></div>
+        <div class="input-group"><label>Фото товара</label><input type="file" id="pe-photo-camera" accept="image/*" capture="environment" class="hidden" onchange="applyProductPhoto(this, true)"><input type="file" id="pe-photo-file" accept="image/*" class="hidden" onchange="applyProductPhoto(this, false)"><div class="flex gap-2"><button class="btn-outline w-full" type="button" onclick="document.getElementById('pe-photo-camera').click()">📷 Камера</button><button class="btn-outline w-full" type="button" onclick="document.getElementById('pe-photo-file').click()">🖼️ Файл</button></div></div>
         <p class="manager-field-note">Склад/ячейку/метраж меняйте нажатием на строку нужного склада в таблице остатков.</p>
         <div class="flex gap-2 mt-3">
             <button class="btn-outline w-full" onclick="closeModal('modal-product-edit')">Отмена</button>
@@ -636,6 +638,7 @@
     let activeReceiveImages = [];
     let tempCustomerManagerMode = false;
     let loginMode = "full";
+    let customerAutoCloseTimer = null;
 
     function setSearchLock(locked) {
         isSearchPending = locked;
@@ -797,6 +800,15 @@
     }
 
     function handleScan(code) {
+        if (String(code).startsWith("STAFF:")) {
+            const pass = String(code).slice(6);
+            const customerOpen = !document.getElementById('customer-view')?.classList.contains('hidden');
+            if (pass === sets.mgr) {
+                if (customerOpen && !isMgr) enterCustomerManagerMode();
+                else loginSuccess();
+            } else showToast('Неверный QR сотрудника', 'danger');
+            return;
+        }
         if (code === "ADMIN") {
             const customerOpen = !document.getElementById('customer-view')?.classList.contains('hidden');
             if (customerOpen && !isMgr) { openLogin('customer'); return; }
@@ -835,6 +847,23 @@
         if (!before) return;
         const resolved = await resolveCodeToArt(before);
         if (resolved && resolved !== before) el.value = resolved;
+    }
+
+    async function loadPriceItemPreview() {
+        const box = document.getElementById('price-item-preview');
+        const art = document.getElementById('f-art')?.value?.trim();
+        if (!box) return;
+        if (!art) { box.textContent = 'Введите артикул для поиска товара'; return; }
+        if (!sets.url || isDemoMode) { box.textContent = `Демо: ${art} | текущая цена: 1000.00 ₽`; return; }
+        try {
+            let res = await fetch(`${sets.url}/product?id=${encodeURIComponent(art)}&type=barcode`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
+            if (!res.ok) res = await fetch(`${sets.url}/product?id=${encodeURIComponent(art)}&type=articul`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
+            if (!res.ok) { box.textContent = 'Товар не найден'; return; }
+            const p = await res.json();
+            box.textContent = `${p.name || p.articul || art} | текущая цена: ${toNumber(p.priceRub || p.price || 0).toFixed(2)} ₽`;
+        } catch (e) {
+            box.textContent = 'Ошибка поиска товара';
+        }
     }
 
     async function search1C(id, opts = {}) {
@@ -960,7 +989,7 @@
         rows.forEach((row, idx) => {
             const tr = document.createElement('tr');
             tr.innerHTML = `<td>${row.warehouse || row.wh || '-'}</td><td>${toNumber(row.meters ?? row.m).toFixed(2)}</td><td>${row.cell || row.shelf || '-'}</td>`;
-            if (isMgr) {
+            if (isCustomerManagerModeActive()) {
                 tr.style.cursor = 'pointer';
                 tr.title = 'Нажмите для изменения данных этого склада';
                 tr.onclick = () => openStockRowEditModal(idx);
@@ -979,6 +1008,7 @@
         const images = Array.isArray(allImages) ? allImages : [];
         document.getElementById('c-name').textContent = p.name || 'Товар';
         document.getElementById('c-price').textContent = `${toNumber(p.priceRub || p.price || 0).toFixed(2)} ₽`;
+        document.getElementById('c-price-ue').textContent = `≈ ${toNumber(p.price || (toNumber(p.priceRub || 0) / 100)).toFixed(2)} у.е.`;
         document.getElementById('c-art').textContent = p.articul || '-';
         document.getElementById('c-width').textContent = p.width || '-';
         document.getElementById('c-comp').textContent = p.composition || '-';
@@ -997,8 +1027,10 @@
         document.getElementById('btn-kiosk-manager-mode')?.classList.toggle('hidden', isCustomerManagerModeActive());
         document.getElementById('btn-exit-customer-manager')?.classList.toggle('hidden', !tempCustomerManagerMode);
         document.getElementById('customer-view').classList.remove('hidden');
+        if (customerAutoCloseTimer) clearTimeout(customerAutoCloseTimer);
+        if (!isCustomerManagerModeActive()) customerAutoCloseTimer = setTimeout(() => closeCustomerView(), 10000);
     }
-    function closeCustomerView() { customerGalleryExpanded = false; tempCustomerManagerMode = false; document.getElementById('customer-view').classList.add('hidden'); }
+    function closeCustomerView() { customerGalleryExpanded = false; tempCustomerManagerMode = false; if (customerAutoCloseTimer) clearTimeout(customerAutoCloseTimer); customerAutoCloseTimer = null; document.getElementById('customer-view').classList.add('hidden'); }
 
     function openInlineEditModal(el) {
         if (!isCustomerManagerModeActive() || !currentProduct) return;
@@ -1124,6 +1156,7 @@
             priceRub: toNumber(currentProduct.priceRub || currentProduct.price || 0),
             namePrint: currentProduct.namePrint || currentProduct.printName || currentProduct.name || '',
             fullName: currentProduct.fullName || currentProduct.fullname || '',
+            newPhoto: currentProduct.newPhoto || null,
             width: currentProduct.width || '',
             composition: currentProduct.composition || '',
             brand: currentProduct.brand || '',
@@ -1160,8 +1193,9 @@
     }
 
     /* ПЕЧАТЬ */
-    async function printLabel(art, comp, width, name) {
-        const zpl = `^XA^CI28^FO50,50^A0N,40,40^FD${name || 'Товар'}^FS^FO50,110^A0N,30,30^FDАрт: ${art}^FS^FO50,150^A0N,25,25^FDСостав: ${comp || '-'}^FS^FO100,190^BY2^BCN,60,Y,N,N^FD${art}^FS^XZ`;
+    async function printLabel(art, comp, width, name, brand = '', density = '', priceRub = 0) {
+        const price = `${toNumber(priceRub).toFixed(2)} ₽`;
+        const zpl = `^XA^CI28^FO30,30^A0N,34,34^FDАрт: ${art || '-'}^FS^FO30,70^A0N,26,26^FDШирина: ${width || '-'}^FS^FO30,105^A0N,26,26^FDПлотность: ${density || '-'}^FS^FO30,140^A0N,26,26^FDСостав: ${comp || '-'}^FS^FO30,175^A0N,26,26^FDБренд: ${brand || '-'}^FS^FO30,210^A0N,30,30^FDЦена: ${price}^FS^FO60,250^BY2^BCN,70,Y,N,N^FD${art || '-'}^FS^XZ`;
         if (sets.printMethod === 'printnode') {
             if (!sets.pnKey || !sets.pnPrinter) { showToast("PrintNode не настроен", "danger"); return; }
             const encoded = btoa(new TextEncoder().encode(zpl).reduce((d,b)=>d+String.fromCharCode(b),''));
@@ -1175,9 +1209,9 @@
         }
     }
 
-    function printFromForm() { const art = document.getElementById('f-art').value; const comp = document.getElementById('f-comp') ? document.getElementById('f-comp').value : ''; printLabel(art, comp, '', "Приёмка"); }
-    function printLabelRawBT() { const cA = document.getElementById('c-art').textContent; const cC = document.getElementById('c-comp').textContent; const cN = document.getElementById('c-name').textContent; printLabel(cA, cC, '', cN); }
-    function printLabelForItem(it) { printLabel(it.art || '-', it.comp || '', '', it.namePrint || it.art || 'Товар'); }
+    function printFromForm() { const art = document.getElementById('f-art').value; const comp = document.getElementById('f-comp') ? document.getElementById('f-comp').value : ''; const w = document.getElementById('f-width') ? document.getElementById('f-width').value : ''; const d = document.getElementById('f-density') ? document.getElementById('f-density').value : ''; const b = document.getElementById('f-brand') ? document.getElementById('f-brand').value : ''; printLabel(art, comp, w, "Приёмка", b, d, toNumber(currentProduct?.priceRub || 0)); }
+    function printLabelRawBT() { const p = currentProduct || {}; printLabel(p.articul || document.getElementById('c-art').textContent, p.composition || document.getElementById('c-comp').textContent, p.width || '', p.name || document.getElementById('c-name').textContent, p.brand || '', p.density || p.dens || '', toNumber(p.priceRub || p.price || 0)); }
+    function printLabelForItem(it) { printLabel(it.art || '-', it.comp || '', it.w || '', it.namePrint || it.art || 'Товар', it.brand || '', it.dens || '', toNumber(it.priceRub || it.pRub || 0)); }
 
     function fileToDataUrl(file) {
         return new Promise((resolve, reject) => {
@@ -1188,16 +1222,37 @@
         });
     }
 
-    function selectReceivePhoto() {
-        const i = document.getElementById('f-photo-input');
+    async function processPhotoFile(file, cropSquare = false) {
+        const src = await fileToDataUrl(file);
+        if (!cropSquare) return src;
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                const size = Math.min(img.width, img.height);
+                const sx = Math.floor((img.width - size) / 2);
+                const sy = Math.floor((img.height - size) / 2);
+                const canvas = document.createElement('canvas');
+                canvas.width = 1800;
+                canvas.height = 1800;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, sx, sy, size, size, 0, 0, 1800, 1800);
+                resolve(canvas.toDataURL('image/jpeg', 0.85));
+            };
+            img.onerror = () => reject(new Error('image load error'));
+            img.src = src;
+        });
+    }
+
+    function selectReceivePhoto(fromCamera = true) {
+        const i = document.getElementById(fromCamera ? 'f-photo-input-camera' : 'f-photo-input-file');
         if (i) i.click();
     }
 
-    async function applyReceivePhoto(input) {
+    async function applyReceivePhoto(input, fromCamera = false) {
         const file = input?.files?.[0];
         if (!file) return;
         try {
-            const data = await fileToDataUrl(file);
+            const data = await processPhotoFile(file, fromCamera);
             activeReceiveImages = [data];
             showToast('Фото добавлено');
         } catch (e) {
@@ -1205,12 +1260,13 @@
         }
     }
 
-    async function applyProductPhoto(input) {
+    async function applyProductPhoto(input, fromCamera = false) {
         const file = input?.files?.[0];
         if (!file || !currentProduct) return;
         try {
-            const data = await fileToDataUrl(file);
-            currentProduct.images = [data, ...(currentProduct.images || []).slice(0, 4)];
+            const data = await processPhotoFile(file, fromCamera);
+            currentProduct.images = [data];
+            currentProduct.newPhoto = data;
             markProductDirty();
             showProduct(currentProduct);
             showToast('Фото товара обновлено');
@@ -1312,7 +1368,7 @@
         if(!d || d.status !== 'active') return;
         let artVal = sets.prefix + String(sets.nextNum).padStart(4,'0');
         if(curTab === 'receive') {
-            cont.innerHTML = `<div class="input-group"><label>APT</label><input type="text" id="f-art" data-art-field value="${artVal}" class="monospace font-bold"></div><div class="input-group"><label>НАИМЕНОВАНИЕ (ДЛЯ ПЕЧАТИ)</label><input type="text" id="f-name-print" value="${sets.printNameDefault || ''}"></div>${sets.showFullName ? '<div class="input-group"><label>ПОЛНОЕ НАИМЕНОВАНИЕ</label><input type="text" id="f-full-name"></div>' : ''}${sets.showWidth ? '<div class="input-group"><label>ШИРИНА</label><input type="text" id="f-width" inputmode="decimal"></div>' : ''}${sets.showDensity ? '<div class="input-group"><label>ПЛОТНОСТЬ</label><input type="text" id="f-density" inputmode="numeric"></div>' : ''}${sets.showBrand ? '<div class="input-group"><label>БРЕНД</label><input type="text" id="f-brand"></div>' : ''}${sets.showComp ? '<div class="input-group"><label>СОСТАВ</label><input type="text" id="f-comp" oninput="this.value = this.value.toUpperCase()"></div>' : ''}<input id="f-photo-input" type="file" accept="image/*" capture="environment" class="hidden" onchange="applyReceivePhoto(this)"><button class="btn-outline w-full" style="font-size:14px;" onclick="selectReceivePhoto()">📷 Добавить фото</button><div id="receive-cuts"></div><button class="btn-outline w-full mb-2" style="border-style:dashed; font-size:14px;" onclick="addCut()">+ Добавить отрез</button><div class="flex gap-2"><button class="btn-outline" style="flex:1" onclick="printFromForm()">🖨️ Печать</button><button class="btn-success" style="flex:2" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button></div>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+            cont.innerHTML = `<div class="input-group"><label>APT</label><input type="text" id="f-art" data-art-field value="${artVal}" class="monospace font-bold"></div><div class="input-group"><label>НАИМЕНОВАНИЕ (ДЛЯ ПЕЧАТИ)</label><input type="text" id="f-name-print" value="${sets.printNameDefault || ''}"></div>${sets.showFullName ? '<div class="input-group"><label>ПОЛНОЕ НАИМЕНОВАНИЕ</label><input type="text" id="f-full-name"></div>' : ''}${sets.showWidth ? '<div class="input-group"><label>ШИРИНА</label><input type="text" id="f-width" inputmode="decimal"></div>' : ''}${sets.showDensity ? '<div class="input-group"><label>ПЛОТНОСТЬ</label><input type="text" id="f-density" inputmode="numeric"></div>' : ''}${sets.showBrand ? '<div class="input-group"><label>БРЕНД</label><input type="text" id="f-brand"></div>' : ''}${sets.showComp ? '<div class="input-group"><label>СОСТАВ</label><input type="text" id="f-comp" oninput="this.value = this.value.toUpperCase()"></div>' : ''}<input id="f-photo-input-camera" type="file" accept="image/*" capture="environment" class="hidden" onchange="applyReceivePhoto(this, true)"><input id="f-photo-input-file" type="file" accept="image/*" class="hidden" onchange="applyReceivePhoto(this, false)"><div class="flex gap-2"><button class="btn-outline w-full" style="font-size:14px;" onclick="selectReceivePhoto(true)">📷 Камера</button><button class="btn-outline w-full" style="font-size:14px;" onclick="selectReceivePhoto(false)">🖼️ Файл</button></div><div id="receive-cuts"></div><button class="btn-outline w-full mb-2" style="border-style:dashed; font-size:14px;" onclick="addCut()">+ Добавить отрез</button><div class="flex gap-2"><button class="btn-outline" style="flex:1" onclick="printFromForm()">🖨️ Печать</button><button class="btn-success" style="flex:2" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button></div>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
             if (!editingItemId) { activeCuts = [{id:1, m:'', wh:sets.warehouses[0] || "", c:''}]; activeReceiveImages = []; }
             renderCuts();
         } else if(curTab === 'move'){
@@ -1320,7 +1376,7 @@
         } else if(curTab === 'writeoff'){
             cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" onblur="resolveFormArtInput(this)" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this);}"></div><div class="flex gap-2"><div style="flex:1"><label>СКЛАД</label><select id="f-wh">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ЯЧЕЙКА</label><input type="text" id="f-cell" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div></div><div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-danger w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
         } else if(curTab === 'price'){
-            cont.innerHTML = `<label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" onblur="resolveFormArtInput(this)" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this);}"><label>Цена (€)</label><input type="text" id="f-p" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"><button class="btn-primary w-full" style="background:var(--price-color)" id="btn-save-line" onclick="saveLine()">ОК</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+            cont.innerHTML = `<label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" onblur="resolveFormArtInput(this); loadPriceItemPreview()" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this); loadPriceItemPreview();}"><div id="price-item-preview" class="text-sm text-sec" style="margin:4px 0 6px;">Введите артикул для поиска товара</div><label>Цена (у.е.)</label><input type="text" id="f-p" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"><button class="btn-primary w-full" style="background:var(--price-color)" id="btn-save-line" onclick="saveLine()">ОК</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
         }
         setupInputAssistancePolicy();
     }
@@ -1339,6 +1395,8 @@
         else if(curTab === 'price'){ item.p = document.getElementById('f-p').value; if(isNaN(parseFloat(item.p))) { showToast('Введите корректную цену', 'danger'); return; } }
         if(editingItemId){ const idx = d.items.findIndex(i => normalizeId(i.id)===normalizeId(editingItemId)); if(idx >= 0) d.items[idx]=item; editingItemId=null; } else d.items.unshift(item);
         save(); renderForm(); renderRows(); showToast("Записано");
+        const artField = document.getElementById('f-art');
+        if (artField) { artField.value = ""; setTimeout(() => artField.focus(), 30); }
     }
 
     function editItem(id) {
