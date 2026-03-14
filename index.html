@@ -568,7 +568,7 @@
         <div class="input-group" id="pe-full-name-group"><label>Полное наименование</label><input type="text" id="pe-full-name"></div>
         <div class="input-group"><label>Цена (₽)</label><input type="text" id="pe-price" inputmode="decimal"></div>
         <div class="input-group"><label>Ширина</label><input type="text" id="pe-width"></div>
-        <div class="input-group"><label>Состав</label><input type="text" id="pe-comp"></div>
+        <div class="input-group"><label>Состав</label><input type="text" id="pe-comp" oninput="formatCompositionInput(this)"></div>
         <div class="input-group"><label>Бренд</label><input type="text" id="pe-brand"></div>
         <div class="input-group"><label>Плотность (г/м²)</label><input type="text" id="pe-density" inputmode="numeric"></div>
         <div class="input-group"><label>Количество</label><input type="text" id="pe-qty" inputmode="decimal"></div>
@@ -798,9 +798,27 @@
         applyViewport();
     }
 
+    function formatCompositionText(value) {
+        return String(value || '')
+            .toUpperCase()
+            .replace(/(\d+(?:[.,]\d+)?)\s*(?!%)(?=[A-ZА-ЯЁ])/g, '$1%');
+    }
+
+    function formatCompositionInput(inputEl) {
+        if (!inputEl) return;
+        const pos = inputEl.selectionStart;
+        const prefix = typeof pos === 'number' ? inputEl.value.slice(0, pos) : inputEl.value;
+        inputEl.value = formatCompositionText(inputEl.value);
+        if (typeof pos === 'number') {
+            const newPos = formatCompositionText(prefix).length;
+            inputEl.setSelectionRange(newPos, newPos);
+        }
+    }
+
     function handleInlineInput(inputEl) {
         if (!inputEl || !inlineEditField) return;
-        const needsUpper = inlineEditField === 'composition' || inlineEditField === 'articul' || inlineEditField === 'brand';
+        if (inlineEditField === 'composition') { formatCompositionInput(inputEl); return; }
+        const needsUpper = inlineEditField === 'articul' || inlineEditField === 'brand';
         if (!needsUpper) return;
         const pos = inputEl.selectionStart;
         inputEl.value = inputEl.value.toUpperCase();
@@ -1131,7 +1149,8 @@
         const upperMode = inlineEditField === 'composition' || inlineEditField === 'articul' || inlineEditField === 'brand';
         input.setAttribute('autocapitalize', upperMode ? 'characters' : 'none');
         input.value = (inlineEditField === 'priceRub' ? toNumber(currentProduct.priceRub || currentProduct.price || 0).toFixed(2) : (currentProduct[inlineEditField] ?? '').toString());
-        if (upperMode) input.value = input.value.toUpperCase();
+        if (inlineEditField === 'composition') input.value = formatCompositionText(input.value);
+        else if (upperMode) input.value = input.value.toUpperCase();
         openModal('modal-inline-edit');
         setTimeout(() => { input.focus(); input.select(); }, 50);
     }
@@ -1139,7 +1158,8 @@
     function applyInlineEdit() {
         if (!currentProduct || !inlineEditField) return;
         let value = document.getElementById('ie-input').value.trim();
-        if (inlineEditField === 'composition' || inlineEditField === 'articul' || inlineEditField === 'brand') value = value.toUpperCase();
+        if (inlineEditField === 'composition') value = formatCompositionText(value);
+        else if (inlineEditField === 'articul' || inlineEditField === 'brand') value = value.toUpperCase();
         if (inlineEditField === 'priceRub') {
             currentProduct.priceRub = toNumber(value);
         } else currentProduct[inlineEditField] = value;
@@ -1204,7 +1224,7 @@
         document.getElementById('pe-full-name-group').classList.toggle('hidden', !sets.showFullName);
         document.getElementById('pe-price').value = toNumber(currentProduct.priceRub || currentProduct.price || 0).toFixed(2);
         document.getElementById('pe-width').value = currentProduct.width || '';
-        document.getElementById('pe-comp').value = currentProduct.composition || '';
+        document.getElementById('pe-comp').value = formatCompositionText(currentProduct.composition || '');
         document.getElementById('pe-brand').value = currentProduct.brand || '';
         document.getElementById('pe-density').value = currentProduct.density || currentProduct.dens || '';
         const row = Array.isArray(currentProduct.stockRows) && currentProduct.stockRows.length ? currentProduct.stockRows[0] : {};
@@ -1219,7 +1239,7 @@
         const fullName = document.getElementById('pe-full-name').value.trim();
         const priceRub = toNumber(document.getElementById('pe-price').value.trim());
         const width = document.getElementById('pe-width').value.trim();
-        const composition = document.getElementById('pe-comp').value.trim();
+        const composition = formatCompositionText(document.getElementById('pe-comp').value.trim());
         const brand = document.getElementById('pe-brand').value.trim();
         const density = document.getElementById('pe-density').value.trim();
         if (!articul) { showToast('Артикул не задан', 'danger'); return; }
@@ -1459,7 +1479,7 @@
         if(!d || d.status !== 'active') return;
         let artVal = sets.prefix + String(sets.nextNum).padStart(4,'0');
         if(curTab === 'receive') {
-            cont.innerHTML = `<div class="input-group"><label>APT</label><input type="text" id="f-art" data-art-field value="${artVal}" class="monospace font-bold"></div><div class="input-group"><label>НАИМЕНОВАНИЕ (ДЛЯ ПЕЧАТИ)</label><input type="text" id="f-name-print" value="${sets.printNameDefault || ''}"></div>${sets.showFullName ? '<div class="input-group"><label>ПОЛНОЕ НАИМЕНОВАНИЕ</label><input type="text" id="f-full-name"></div>' : ''}${sets.showWidth ? '<div class="input-group"><label>ШИРИНА</label><input type="text" id="f-width" inputmode="decimal"></div>' : ''}${sets.showDensity ? '<div class="input-group"><label>ПЛОТНОСТЬ</label><input type="text" id="f-density" inputmode="numeric"></div>' : ''}${sets.showBrand ? '<div class="input-group"><label>БРЕНД</label><input type="text" id="f-brand"></div>' : ''}${sets.showComp ? '<div class="input-group"><label>СОСТАВ</label><input type="text" id="f-comp" oninput="this.value = this.value.toUpperCase()"></div>' : ''}<input id="f-photo-input-camera" type="file" accept="image/*" capture="environment" class="hidden" onchange="applyReceivePhoto(this, true)"><input id="f-photo-input-file" type="file" accept="image/*" class="hidden" onchange="applyReceivePhoto(this, false)"><div class="flex gap-2"><button class="btn-outline w-full" style="font-size:14px;" onclick="selectReceivePhoto(true)">📷 Камера</button><button class="btn-outline w-full" style="font-size:14px;" onclick="selectReceivePhoto(false)">🖼️ Файл</button></div><div id="receive-cuts"></div><button class="btn-outline w-full mb-2" style="border-style:dashed; font-size:14px;" onclick="addCut()">+ Добавить отрез</button><div class="flex gap-2"><button class="btn-outline" style="flex:1" onclick="printFromForm()">🖨️ Печать</button><button class="btn-success" style="flex:2" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button></div>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+            cont.innerHTML = `<div class="input-group"><label>APT</label><input type="text" id="f-art" data-art-field value="${artVal}" class="monospace font-bold"></div><div class="input-group"><label>НАИМЕНОВАНИЕ (ДЛЯ ПЕЧАТИ)</label><input type="text" id="f-name-print" value="${sets.printNameDefault || ''}"></div>${sets.showFullName ? '<div class="input-group"><label>ПОЛНОЕ НАИМЕНОВАНИЕ</label><input type="text" id="f-full-name"></div>' : ''}${sets.showWidth ? '<div class="input-group"><label>ШИРИНА</label><input type="text" id="f-width" inputmode="decimal"></div>' : ''}${sets.showDensity ? '<div class="input-group"><label>ПЛОТНОСТЬ</label><input type="text" id="f-density" inputmode="numeric"></div>' : ''}${sets.showBrand ? '<div class="input-group"><label>БРЕНД</label><input type="text" id="f-brand"></div>' : ''}${sets.showComp ? '<div class="input-group"><label>СОСТАВ</label><input type="text" id="f-comp" oninput="formatCompositionInput(this)"></div>' : ''}<input id="f-photo-input-camera" type="file" accept="image/*" capture="environment" class="hidden" onchange="applyReceivePhoto(this, true)"><input id="f-photo-input-file" type="file" accept="image/*" class="hidden" onchange="applyReceivePhoto(this, false)"><div class="flex gap-2"><button class="btn-outline w-full" style="font-size:14px;" onclick="selectReceivePhoto(true)">📷 Камера</button><button class="btn-outline w-full" style="font-size:14px;" onclick="selectReceivePhoto(false)">🖼️ Файл</button></div><div id="receive-cuts"></div><button class="btn-outline w-full mb-2" style="border-style:dashed; font-size:14px;" onclick="addCut()">+ Добавить отрез</button><div class="flex gap-2"><button class="btn-outline" style="flex:1" onclick="printFromForm()">🖨️ Печать</button><button class="btn-success" style="flex:2" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button></div>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
             if (!editingItemId) { activeCuts = [{id:1, m:'', wh:sets.warehouses[0] || "", c:''}]; activeReceiveImages = []; }
             renderCuts();
         } else if(curTab === 'move'){
@@ -1480,7 +1500,7 @@
     function saveLine() {
         const d = db[curTab].find(x=>x.id===curDocId); const artInp = document.getElementById('f-art'); if(!artInp) return; const art = artInp.value.trim(); if(!art) { showToast('Введите артикул', 'danger'); artInp.focus(); return; }
         let item = { id: editingItemId || Date.now().toString(36), art, ts: new Date().toISOString() };
-        if(curTab === 'receive'){ const v = activeCuts.filter(c => !isNaN(parseFloat(c.m)) && parseFloat(c.m) > 0); if(!v.length) { showToast('Добавьте хотя бы один валидный отрез', 'danger'); return; } item.cuts = JSON.parse(JSON.stringify(v)); item.namePrint = document.getElementById('f-name-print')?.value?.trim() || ''; if(sets.showFullName && document.getElementById('f-full-name')) item.fullName = document.getElementById('f-full-name').value.trim(); if(sets.showWidth && document.getElementById('f-width')) item.w = document.getElementById('f-width').value; if(sets.showDensity && document.getElementById('f-density')) item.dens = document.getElementById('f-density').value; if(sets.showBrand && document.getElementById('f-brand')) item.brand = document.getElementById('f-brand').value; if(sets.showComp && document.getElementById('f-comp')) item.comp = document.getElementById('f-comp').value.toUpperCase(); if (activeReceiveImages.length) item.images = [...activeReceiveImages]; if (!editingItemId) sets.nextNum++; }
+        if(curTab === 'receive'){ const v = activeCuts.filter(c => !isNaN(parseFloat(c.m)) && parseFloat(c.m) > 0); if(!v.length) { showToast('Добавьте хотя бы один валидный отрез', 'danger'); return; } item.cuts = JSON.parse(JSON.stringify(v)); item.namePrint = document.getElementById('f-name-print')?.value?.trim() || ''; if(sets.showFullName && document.getElementById('f-full-name')) item.fullName = document.getElementById('f-full-name').value.trim(); if(sets.showWidth && document.getElementById('f-width')) item.w = document.getElementById('f-width').value; if(sets.showDensity && document.getElementById('f-density')) item.dens = document.getElementById('f-density').value; if(sets.showBrand && document.getElementById('f-brand')) item.brand = document.getElementById('f-brand').value; if(sets.showComp && document.getElementById('f-comp')) item.comp = formatCompositionText(document.getElementById('f-comp').value); if (activeReceiveImages.length) item.images = [...activeReceiveImages]; if (!editingItemId) sets.nextNum++; }
         else if(curTab === 'move'){ item.m = document.getElementById('f-m').value; item.fromWh = document.getElementById('f-wh-from').value; item.fromCell = document.getElementById('f-cell-from').value; item.toWh = document.getElementById('f-wh-to').value; item.toCell = document.getElementById('f-cell-to').value; if(!parseFloat(item.m)) { showToast('Введите корректный метраж', 'danger'); return; } }
         else if(curTab === 'writeoff'){ item.m = document.getElementById('f-m').value; item.wh = document.getElementById('f-wh').value; item.cell = document.getElementById('f-cell').value; if(!parseFloat(item.m)) { showToast('Введите корректное количество', 'danger'); return; } }
         else if(curTab === 'price'){ item.p = document.getElementById('f-p').value; if(isNaN(parseFloat(item.p))) { showToast('Введите корректную цену', 'danger'); return; } }
