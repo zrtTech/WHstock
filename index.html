@@ -312,7 +312,7 @@
         <button id="c-photo-toggle" class="btn-outline customer-gallery-toggle" onclick="toggleCustomerGallery()">📷 Фото товара</button>
         <div id="c-img-box" class="customer-gallery" aria-label="Галерея фотографий товара"></div>
         <div id="c-price" class="customer-hero-price editable-value" data-edit-field="priceRub" data-edit-label="Цена, ₽">0.00 ₽</div>
-        <div id="c-price-ue" class="customer-hero-price-sub">≈ 0.00 у.е.</div>
+        <div id="c-price-ue" class="customer-hero-price-sub hidden">≈ 0.00 у.е.</div>
         <div class="card customer-specs">
             <div class="customer-spec-grid">
                 <div class="customer-spec-row"><strong>Артикул:</strong> <span id="c-art" class="editable-value" data-edit-field="articul" data-edit-label="Артикул">-</span></div>
@@ -1008,7 +1008,12 @@
         const images = Array.isArray(allImages) ? allImages : [];
         document.getElementById('c-name').textContent = p.name || 'Товар';
         document.getElementById('c-price').textContent = `${toNumber(p.priceRub || p.price || 0).toFixed(2)} ₽`;
-        document.getElementById('c-price-ue').textContent = `≈ ${toNumber(p.price || (toNumber(p.priceRub || 0) / 100)).toFixed(2)} у.е.`;
+        const customerCanSeeInternalUnits = isCustomerManagerModeActive();
+        const uePriceEl = document.getElementById('c-price-ue');
+        if (uePriceEl) {
+            uePriceEl.textContent = `≈ ${toNumber(p.price || (toNumber(p.priceRub || 0) / 100)).toFixed(2)} у.е.`;
+            uePriceEl.classList.toggle('hidden', !customerCanSeeInternalUnits);
+        }
         document.getElementById('c-art').textContent = p.articul || '-';
         document.getElementById('c-width').textContent = p.width || '-';
         document.getElementById('c-comp').textContent = p.composition || '-';
