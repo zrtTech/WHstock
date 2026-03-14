@@ -327,7 +327,10 @@
             <button class="btn-main btn-search-wide w-full mb-4" onclick="openManualSearch()">🔎 Поиск товара по артикулу</button>
             <div class="kiosk-tools">
                 <button class="btn-outline" style="color:white;border-color:rgba(255,255,255,0.5);" onclick="enterKioskFullscreen()">⛶ Полноэкранный режим</button>
+                <button id="btn-a4-collect-toggle" class="btn-outline" style="color:white;border-color:rgba(255,255,255,0.5);" onclick="toggleKioskA4CollectMode()">📋 Собрать лист этикеток</button>
+                <button id="btn-a4-print" class="btn-outline" style="color:white;border-color:rgba(255,255,255,0.5);" onclick="printA4Buffer()">🖨️ Напечатать лист</button>
             </div>
+            <div id="kiosk-a4-status" class="text-sm" style="margin-top:8px; opacity:.85;">A4 буфер: 0/10</div>
         </div>
         <input type="text" id="kiosk-scanner-input" style="position: absolute; opacity: 0; pointer-events: none;">
     </div>
@@ -379,7 +382,7 @@
             </div>
         </div>
         <div class="flex gap-2 mt-4">
-            <button class="btn-outline w-full" style="height: 64px;" onclick="printLabelRawBT()">🖨️ Печать</button>
+            <button class="btn-outline w-full" style="height: 64px;" onclick="openPrintActionsModal()">🖨️ Печать</button>
             <button class="btn-primary w-full" style="height: 64px; font-size: 20px;" onclick="closeCustomerView()">Закрыть</button>
         </div>
     </div>
@@ -426,6 +429,7 @@
                             <div class="flex gap-2">
                                 <button class="btn-outline w-full doc-action-btn" onclick="reopenDoc()">🔄 Правка документа</button>
                                 <button class="btn-outline w-full doc-action-btn" onclick="shareDoc()">📤 Поделиться документом</button>
+                                <button class="btn-outline w-full doc-action-btn" onclick="printA4FromClosedDoc()">🖨️ Лист A4</button>
                             </div>
                         </div>
                         <div id="form-container" class="card" style="border: 2px solid #eee; position: relative;"></div>
@@ -464,6 +468,7 @@
             <h3>МЕТОД ПЕЧАТИ</h3>
             <div class="light-block">
                 <select id="set-print-method" onchange="togglePrintSettingsUI()">
+                    <option value="server">Серверная печать (рекомендуется)</option>
                     <option value="rawbt">Бесплатный (Android RawBT)</option>
                     <option value="printnode">Платный (PrintNode API)</option>
                 </select>
@@ -497,6 +502,22 @@
             <button class="btn-primary w-full mt-3" onclick="saveSets()">Сохранить склады</button>
         </div>
 
+
+
+        <div class="settings-section span-2" id="server-printers-block">
+            <h3>ПРИНТЕРЫ (СЕРВЕРНЫЕ)</h3>
+            <div class="light-block">
+                <div class="flex gap-2 mb-2">
+                    <button class="btn-outline" style="flex:1" onclick="loadServerPrinters(true)">🔄 Обновить список принтеров</button>
+                </div>
+                <p id="server-printers-status" class="text-sm" style="color: var(--text-sec); margin-bottom: 8px;">Список принтеров не загружен</p>
+                <div class="input-group"><label>Принтер клиентской этикетки</label><select id="set-printer-client" onchange="saveSets()"></select></div>
+                <div class="input-group"><label>Принтер складской этикетки</label><select id="set-printer-warehouse" onchange="saveSets()"></select></div>
+                <div class="input-group"><label>Принтер хангеров</label><select id="set-printer-hanger" onchange="saveSets()"></select></div>
+                <div class="input-group"><label>Принтер A4</label><select id="set-printer-a4" onchange="saveSets()"></select></div>
+            </div>
+        </div>
+
         <div class="settings-section" id="printnode-block">
             <h3>PRINTNODE API</h3>
             <div class="input-group"><label>API Ключ</label><input type="text" id="set-pn-key"></div>
@@ -522,6 +543,18 @@
 
         <button class="btn-primary w-full mt-2" style="height: 52px;" onclick="manualSync()">🔄 Полный обмен с 1С (вся база)</button>
         <button class="btn-success w-full mt-3" style="height: 60px;" onclick="closeSettings()">ГОТОВО</button>
+    </div>
+</div>
+
+
+<div id="modal-print-actions" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal-content">
+        <h2>Печать</h2>
+        <div class="flex gap-2 mt-3">
+            <button class="btn-primary w-full" onclick="printClientLabel()">Этикетка</button>
+            <button id="btn-print-hanger" class="btn-outline w-full hidden" onclick="printHangerLabel()">Ценник-хангер</button>
+        </div>
+        <button class="btn-outline w-full mt-3" onclick="closeModal('modal-print-actions')">Отмена</button>
     </div>
 </div>
 
@@ -654,7 +687,7 @@
     function safeLoad(key, def){ try { const val = localStorage.getItem(key); return val ? JSON.parse(val) : def; } catch(e) { return def; } }
 
     /* ДАННЫЕ */
-    const defSets = { url:"http://83.237.242.90:3000", user:"", pass:"", apiKey:"zX9#mK4$pL7@nQ2&wR8!vT3^hY6*jB5", mgr:"1234", warehouses:["Магазин","Склад","Розница"], prefix:"R26", nextNum:1, showWidth:true, showDensity:true, showBrand:true, showComp:true, showFullName:false, printNameDefault:"", printMethod: "rawbt", pnKey:"", pnPrinter:"" };
+    const defSets = { url:"http://83.237.242.90:3000", user:"", pass:"", apiKey:"zX9#mK4$pL7@nQ2&wR8!vT3^hY6*jB5", mgr:"1234", warehouses:["Магазин","Склад","Розница"], prefix:"R26", nextNum:1, showWidth:true, showDensity:true, showBrand:true, showComp:true, showFullName:false, printNameDefault:"", printMethod: "server", pnKey:"", pnPrinter:"", printerClient:"", printerWarehouse:"", printerHanger:"", printerA4:"" };
     let sets = { ...defSets, ...safeLoad('tsd_final_sets', defSets) };
     let db = {
         receive: safeLoad('tsd_final_receive', []),
@@ -686,6 +719,9 @@
     let loginMode = "full";
     let customerAutoCloseTimer = null;
     let customerScanOverlayTimer = null;
+    let serverPrinters = [];
+    let kioskA4CollectMode = false;
+    let kioskA4Buffer = [];
 
     function setSearchLock(locked) {
         isSearchPending = locked;
@@ -846,6 +882,7 @@
         if (isMgr) { document.getElementById('screen-kiosk').classList.add('hidden'); document.getElementById('manager-view').classList.remove('hidden'); switchTab(curTab); if (curDocId) openDoc(curDocId); }
         purgeOldClosedDocs(15);
         updateDataLists();
+        updateKioskA4Status();
     };
 
     function saveAppState() { localStorage.setItem('app_last_tab', curTab); localStorage.setItem('app_last_doc_id', curDocId); localStorage.setItem('app_is_mgr', isMgr); localStorage.setItem('app_demo_mode', isDemoMode); }
@@ -888,6 +925,10 @@
         lastScanAt = now;
         const manualSearchOpen = document.getElementById('modal-search')?.classList.contains('open');
         const customerOpen = !document.getElementById('customer-view')?.classList.contains('hidden');
+        if (kioskA4CollectMode && !isMgr && !customerOpen) {
+            collectA4ItemByCode(code);
+            return;
+        }
         if (customerOpen && !isCustomerManagerModeActive()) {
             searchAndShowCustomerOverlay(code);
             return;
@@ -1322,7 +1363,164 @@
 
     function printFromForm() { const art = document.getElementById('f-art').value; const comp = document.getElementById('f-comp') ? document.getElementById('f-comp').value : ''; const w = document.getElementById('f-width') ? document.getElementById('f-width').value : ''; const d = document.getElementById('f-density') ? document.getElementById('f-density').value : ''; const b = document.getElementById('f-brand') ? document.getElementById('f-brand').value : ''; printLabel(art, comp, w, "Приёмка", b, d, toNumber(currentProduct?.priceRub || 0)); }
     function printLabelRawBT() { const p = currentProduct || {}; printLabel(p.articul || document.getElementById('c-art').textContent, p.composition || document.getElementById('c-comp').textContent, p.width || '', p.name || document.getElementById('c-name').textContent, p.brand || '', p.density || p.dens || '', toNumber(p.priceRub || p.price || 0)); }
-    function printLabelForItem(it) { printLabel(it.art || '-', it.comp || '', it.w || '', it.namePrint || it.art || 'Товар', it.brand || '', it.dens || '', toNumber(it.priceRub || it.pRub || 0)); }
+    async function printLabelForItem(it) { if (sets.printMethod === 'server') { try { if (!sets.url) throw new Error('no-url'); const res = await fetch(`${sets.url}/print-label`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' }, body: JSON.stringify({ articul: it.art || '-', brand: it.brand || '', composition: it.comp || '', width: it.w || '', density: it.dens || '', priceRub: toNumber(it.priceRub || it.pRub || 0), ean13: it.ean13 || '', stockRows: it.cuts || [], labelType: 'warehouse', printerName: sets.printerWarehouse || '' }) }); if (!res.ok) throw new Error(`print-label ${res.status}`); showToast('Складская этикетка отправлена'); return; } catch (e) { logError(`print row server: ${e.message}`); showToast('Сервер печати недоступен, fallback'); } } printLabel(it.art || '-', it.comp || '', it.w || '', it.namePrint || it.art || 'Товар', it.brand || '', it.dens || '', toNumber(it.priceRub || it.pRub || 0)); }
+
+
+    function getCurrentProductSnapshot() {
+        const p = currentProduct || {};
+        return {
+            uid: p.uid || p.id || '',
+            articul: p.articul || document.getElementById('c-art')?.textContent || '',
+            brand: p.brand || '',
+            composition: p.composition || document.getElementById('c-comp')?.textContent || '',
+            width: p.width || '',
+            density: p.density || p.dens || '',
+            priceRub: toNumber(p.priceRub || p.price || 0),
+            ean13: p.ean13 || p.ean || '',
+            stockRows: p.stockRows || []
+        };
+    }
+
+    async function fetchServerPrinters(force = false) {
+        if (serverPrinters.length && !force) return serverPrinters;
+        if (!sets.url) return [];
+        try {
+            const res = await fetch(`${sets.url}/printers`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            serverPrinters = Array.isArray(data?.printers) ? data.printers : (Array.isArray(data) ? data : []);
+        } catch (e) {
+            logError(`printers: ${e.message}`);
+            serverPrinters = [];
+        }
+        return serverPrinters;
+    }
+
+    function renderPrinterSelect(id, selected) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const options = ['<option value="">(не выбрано)</option>', ...serverPrinters.map(p => `<option value="${p.name}">${p.name}${p.purpose ? ` (${p.purpose})` : ''}</option>`)];
+        el.innerHTML = options.join('');
+        el.value = selected || '';
+    }
+
+    async function loadServerPrinters(force = false) {
+        const list = await fetchServerPrinters(force);
+        renderPrinterSelect('set-printer-client', sets.printerClient);
+        renderPrinterSelect('set-printer-warehouse', sets.printerWarehouse);
+        renderPrinterSelect('set-printer-hanger', sets.printerHanger);
+        renderPrinterSelect('set-printer-a4', sets.printerA4);
+        const status = document.getElementById('server-printers-status');
+        if (status) status.textContent = list.length ? `Найдено принтеров: ${list.length}` : 'Сервер не вернул список принтеров';
+    }
+
+    async function sendServerPrintLabel(labelType = 'client') {
+        const payload = getCurrentProductSnapshot();
+        payload.labelType = labelType;
+        payload.printerName = labelType === 'warehouse' ? (sets.printerWarehouse || '') : (sets.printerClient || '');
+        payload.date = new Date().toISOString();
+        if (!sets.url) throw new Error('no-url');
+        const res = await fetch(`${sets.url}/print-label`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')),
+                'x-api-key': sets.apiKey || ''
+            },
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error(`print-label ${res.status}`);
+    }
+
+    async function openPrintActionsModal() {
+        const hangerBtn = document.getElementById('btn-print-hanger');
+        if (hangerBtn) hangerBtn.classList.toggle('hidden', !isCustomerManagerModeActive());
+        openModal('modal-print-actions');
+    }
+
+    async function printClientLabel() {
+        closeModal('modal-print-actions');
+        if (sets.printMethod === 'server') {
+            try { await sendServerPrintLabel('client'); showToast('Этикетка отправлена на сервер печати'); return; }
+            catch (e) { showToast('Серверная печать недоступна, fallback', 'danger'); logError(`server print client: ${e.message}`); }
+        }
+        printLabelRawBT();
+    }
+
+    async function printHangerLabel() {
+        closeModal('modal-print-actions');
+        const p = getCurrentProductSnapshot();
+        if (!sets.url) { showToast('URL не настроен', 'danger'); return; }
+        try {
+            const res = await fetch(`${sets.url}/print-hanger`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')),
+                    'x-api-key': sets.apiKey || ''
+                },
+                body: JSON.stringify({ articul: p.articul, uid: p.uid || '', printerName: sets.printerHanger || '' })
+            });
+            if (!res.ok) throw new Error(`print-hanger ${res.status}`);
+            showToast('Хангер отправлен на печать');
+        } catch (e) {
+            showToast('Ошибка печати хангера', 'danger');
+            logError(`print hanger: ${e.message}`);
+        }
+    }
+
+    function updateKioskA4Status() {
+        const status = document.getElementById('kiosk-a4-status');
+        const btn = document.getElementById('btn-a4-collect-toggle');
+        if (status) status.textContent = `A4 буфер: ${kioskA4Buffer.length}/10${kioskA4CollectMode ? ' (режим сбора включён)' : ''}`;
+        if (btn) btn.textContent = kioskA4CollectMode ? '✅ Режим сбора включен' : '📋 Собрать лист этикеток';
+    }
+
+    function toggleKioskA4CollectMode() {
+        kioskA4CollectMode = !kioskA4CollectMode;
+        updateKioskA4Status();
+    }
+
+    async function collectA4ItemByCode(code) {
+        if (kioskA4Buffer.length >= 10) { showToast('Максимум 10 позиций в листе', 'danger'); return; }
+        const art = await resolveCodeToArt(code);
+        if (!art) return;
+        kioskA4Buffer.push(art);
+        kioskA4Buffer = [...new Set(kioskA4Buffer)].slice(0, 10);
+        updateKioskA4Status();
+        showToast(`Добавлено в A4: ${art}`);
+    }
+
+    async function printA4Buffer() {
+        if (!kioskA4Buffer.length) { showToast('Буфер A4 пуст', 'danger'); return; }
+        if (!sets.url) { showToast('URL не настроен', 'danger'); return; }
+        try {
+            const res = await fetch(`${sets.url}/print-a4`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')),
+                    'x-api-key': sets.apiKey || ''
+                },
+                body: JSON.stringify({ articuls: kioskA4Buffer.slice(0, 10), printerName: sets.printerA4 || '' })
+            });
+            if (!res.ok) throw new Error(`print-a4 ${res.status}`);
+            showToast('Лист A4 отправлен на печать');
+            kioskA4Buffer = [];
+            updateKioskA4Status();
+        } catch (e) {
+            showToast('Ошибка печати A4', 'danger');
+            logError(`print a4: ${e.message}`);
+        }
+    }
+
+    async function printA4FromClosedDoc() {
+        const d = db[curTab].find(x=>x.id===curDocId);
+        if (!d || !Array.isArray(d.items) || !d.items.length) { showToast('Документ пуст', 'danger'); return; }
+        kioskA4Buffer = d.items.map(i => i.art).filter(Boolean).slice(0, 10);
+        updateKioskA4Status();
+        await printA4Buffer();
+    }
 
     function fileToDataUrl(file) {
         return new Promise((resolve, reject) => {
@@ -1591,9 +1789,9 @@
     function closeModal(id) { const modal = document.getElementById(id); if(!modal) return; modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); if (activeModalId === id) activeModalId = null; if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') lastFocusedElement.focus(); }
     function showToast(m, t) { const c = document.getElementById('toast-container'); if(c.children.length > 3) c.removeChild(c.firstChild); const d = document.createElement('div'); d.className = `toast`; d.setAttribute('role', 'status'); d.style.background = t === 'danger' ? 'var(--danger)' : 'var(--primary)'; d.textContent = m; c.appendChild(d); setTimeout(()=>d.remove(), 2500); }
     
-    function openSettings() { document.getElementById('set-show-width').checked = sets.showWidth !== false; document.getElementById('set-show-density').checked = sets.showDensity !== false; document.getElementById('set-show-brand').checked = sets.showBrand !== false; document.getElementById('set-show-comp').checked = sets.showComp !== false; document.getElementById('set-show-fullname').checked = sets.showFullName === true; document.getElementById('set-print-name-default').value = sets.printNameDefault || ''; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-api-key').value = sets.apiKey || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "rawbt"; togglePrintSettingsUI(); renderSettingsWh(); openModal('modal-settings'); }
-    function togglePrintSettingsUI() { const method = document.getElementById('set-print-method').value; const block = document.getElementById('printnode-block'); if (block) block.style.display = (method === 'printnode') ? 'block' : 'none'; }
-    function saveSets() { sets.showWidth = document.getElementById('set-show-width').checked; sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.showFullName = document.getElementById('set-show-fullname').checked; sets.printNameDefault = document.getElementById('set-print-name-default').value; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.apiKey = document.getElementById('set-api-key').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; save(); }
+    async function openSettings() { document.getElementById('set-show-width').checked = sets.showWidth !== false; document.getElementById('set-show-density').checked = sets.showDensity !== false; document.getElementById('set-show-brand').checked = sets.showBrand !== false; document.getElementById('set-show-comp').checked = sets.showComp !== false; document.getElementById('set-show-fullname').checked = sets.showFullName === true; document.getElementById('set-print-name-default').value = sets.printNameDefault || ''; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-api-key').value = sets.apiKey || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "server"; togglePrintSettingsUI(); renderSettingsWh(); await loadServerPrinters(); openModal('modal-settings'); }
+    function togglePrintSettingsUI() { const method = document.getElementById('set-print-method').value; const block = document.getElementById('printnode-block'); const serverBlock = document.getElementById('server-printers-block'); if (block) block.style.display = (method === 'printnode') ? 'block' : 'none'; if (serverBlock) serverBlock.style.display = (method === 'server') ? 'block' : 'none'; }
+    function saveSets() { sets.showWidth = document.getElementById('set-show-width').checked; sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.showFullName = document.getElementById('set-show-fullname').checked; sets.printNameDefault = document.getElementById('set-print-name-default').value; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.apiKey = document.getElementById('set-api-key').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; sets.printerClient = document.getElementById('set-printer-client')?.value || ''; sets.printerWarehouse = document.getElementById('set-printer-warehouse')?.value || ''; sets.printerHanger = document.getElementById('set-printer-hanger')?.value || ''; sets.printerA4 = document.getElementById('set-printer-a4')?.value || ''; save(); }
     function renderSettingsWh() { document.getElementById('settings-warehouses').innerHTML = sets.warehouses.map(w=>`<div class="wh-item"><span>${w}</span><button class="btn-icon text-danger" onclick="delWh('${w}')">🗑️</button></div>`).join(''); }
     function addWh() { const n = document.getElementById('new-wh-name'); if(n.value){sets.warehouses.push(n.value); n.value=''; renderSettingsWh(); saveSets();}}
     function delWh(w) { sets.warehouses = sets.warehouses.filter(x=>x!==w); renderSettingsWh(); saveSets();}
