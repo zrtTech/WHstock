@@ -307,7 +307,7 @@
         </div>
         <button id="c-photo-toggle" class="btn-outline customer-gallery-toggle" onclick="toggleCustomerGallery()">📷 Фото товара</button>
         <div id="c-img-box" class="customer-gallery" aria-label="Галерея фотографий товара"></div>
-        <div id="c-price" class="customer-hero-price">0.00 ₽</div>
+        <div id="c-price" class="customer-hero-price editable-value" data-edit-field="priceRub" data-edit-label="Цена, ₽">0.00 ₽</div>
         <div class="card customer-specs">
             <div class="customer-spec-grid">
                 <div class="customer-spec-row"><strong>Артикул:</strong> <span id="c-art" class="editable-value" data-edit-field="articul" data-edit-label="Артикул">-</span></div>
@@ -468,7 +468,8 @@
         </div>
         </div>
 
-        <button class="btn-success w-full mt-4" style="height: 60px;" onclick="closeSettings()">ГОТОВО</button>
+        <button class="btn-primary w-full mt-2" style="height: 52px;" onclick="manualSync()">🔄 Полный обмен с 1С (вся база)</button>
+        <button class="btn-success w-full mt-3" style="height: 60px;" onclick="closeSettings()">ГОТОВО</button>
     </div>
 </div>
 
@@ -788,6 +789,29 @@
         else { const inp = document.querySelector('input[data-art-field]'); if (inp) { inp.value = code; inp.dispatchEvent(new Event('input')); } }
     }
 
+    async function resolveCodeToArt(code) {
+        const value = String(code || '').trim();
+        if (!value) return '';
+        if (!sets.url || isDemoMode) return value;
+        try {
+            let res = await fetch(`${sets.url}/product?id=${encodeURIComponent(value)}&type=barcode`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
+            if (!res.ok) res = await fetch(`${sets.url}/product?id=${encodeURIComponent(value)}&type=articul`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
+            if (!res.ok) return value;
+            const data = await res.json();
+            return (data.articul || data.article || value).toString();
+        } catch (e) {
+            return value;
+        }
+    }
+
+    async function resolveFormArtInput(el) {
+        if (!el) return;
+        const before = el.value.trim();
+        if (!before) return;
+        const resolved = await resolveCodeToArt(before);
+        if (resolved && resolved !== before) el.value = resolved;
+    }
+
     async function search1C(id, opts = {}) {
         if (isSearchPending) return;
         setSearchLock(true);
@@ -868,7 +892,7 @@
         const btn = document.getElementById('c-photo-toggle');
         box.innerHTML = '';
         customerGalleryImages = Array.isArray(images) ? images : [];
-        if (btn) btn.textContent = `📷 Фото товара${customerGalleryImages.length ? ` (${customerGalleryImages.length})` : ''}`;
+        if (btn) btn.textContent = `📷 Фото товара${customerGalleryImages.length ? ' (1)' : ''}`;
         if (!customerGalleryExpanded) { box.classList.remove('open'); return; }
         box.classList.add('open');
         if (!Array.isArray(images) || !images.length) {
@@ -878,16 +902,15 @@
             box.appendChild(fallback);
             return;
         }
-        images.forEach((src, idx) => {
-            const slide = document.createElement('div');
-            slide.className = 'customer-gallery-item';
-            const img = document.createElement('img');
-            img.loading = 'lazy';
-            img.src = src;
-            img.alt = `Фото товара ${idx + 1}`;
-            slide.appendChild(img);
-            box.appendChild(slide);
-        });
+        const src = images[0];
+        const slide = document.createElement('div');
+        slide.className = 'customer-gallery-item';
+        const img = document.createElement('img');
+        img.loading = 'lazy';
+        img.src = src;
+        img.alt = 'Фото товара';
+        slide.appendChild(img);
+        box.appendChild(slide);
     }
 
     function toggleCustomerGallery() {
@@ -956,7 +979,7 @@
         const input = document.getElementById('ie-input');
         const upperMode = inlineEditField === 'composition' || inlineEditField === 'articul' || inlineEditField === 'brand';
         input.setAttribute('autocapitalize', upperMode ? 'characters' : 'none');
-        input.value = (currentProduct[inlineEditField] ?? '').toString();
+        input.value = (inlineEditField === 'priceRub' ? toNumber(currentProduct.priceRub || currentProduct.price || 0).toFixed(2) : (currentProduct[inlineEditField] ?? '').toString());
         if (upperMode) input.value = input.value.toUpperCase();
         openModal('modal-inline-edit');
         setTimeout(() => { input.focus(); input.select(); }, 50);
@@ -966,7 +989,9 @@
         if (!currentProduct || !inlineEditField) return;
         let value = document.getElementById('ie-input').value.trim();
         if (inlineEditField === 'composition' || inlineEditField === 'articul' || inlineEditField === 'brand') value = value.toUpperCase();
-        currentProduct[inlineEditField] = value;
+        if (inlineEditField === 'priceRub') {
+            currentProduct.priceRub = toNumber(value);
+        } else currentProduct[inlineEditField] = value;
         markProductDirty();
         showProduct(currentProduct);
         closeModal('modal-inline-edit');
@@ -1263,11 +1288,11 @@
             if (!editingItemId) { activeCuts = [{id:1, m:'', wh:sets.warehouses[0] || "", c:''}]; activeReceiveImages = []; }
             renderCuts();
         } else if(curTab === 'move'){
-            cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"></div><div class="flex gap-2"><div style="flex:1"><label>ОТКУДА (СКЛАД)</label><select id="f-wh-from">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ОТКУДА (ЯЧ)</label><input type="text" id="f-cell-from" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="flex gap-2"><div style="flex:1"><label>КУДА (СКЛАД)</label><select id="f-wh-to">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>КУДА (ЯЧ)</label><input type="text" id="f-cell-to" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div></div><div class="input-group"><label>МЕТРАЖ</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-primary w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+            cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" onblur="resolveFormArtInput(this)" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this);}"></div><div class="flex gap-2"><div style="flex:1"><label>ОТКУДА (СКЛАД)</label><select id="f-wh-from">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ОТКУДА (ЯЧ)</label><input type="text" id="f-cell-from" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="flex gap-2"><div style="flex:1"><label>КУДА (СКЛАД)</label><select id="f-wh-to">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>КУДА (ЯЧ)</label><input type="text" id="f-cell-to" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div></div><div class="input-group"><label>МЕТРАЖ</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-primary w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
         } else if(curTab === 'writeoff'){
-            cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"></div><div class="flex gap-2"><div style="flex:1"><label>СКЛАД</label><select id="f-wh">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ЯЧЕЙКА</label><input type="text" id="f-cell" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div></div><div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-danger w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+            cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" onblur="resolveFormArtInput(this)" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this);}"></div><div class="flex gap-2"><div style="flex:1"><label>СКЛАД</label><select id="f-wh">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ЯЧЕЙКА</label><input type="text" id="f-cell" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div></div><div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-danger w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
         } else if(curTab === 'price'){
-            cont.innerHTML = `<label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"><label>Цена (€)</label><input type="text" id="f-p" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"><button class="btn-primary w-full" style="background:var(--price-color)" id="btn-save-line" onclick="saveLine()">ОК</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+            cont.innerHTML = `<label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" onblur="resolveFormArtInput(this)" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this);}"><label>Цена (€)</label><input type="text" id="f-p" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"><button class="btn-primary w-full" style="background:var(--price-color)" id="btn-save-line" onclick="saveLine()">ОК</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
         }
         setupInputAssistancePolicy();
     }
