@@ -368,7 +368,8 @@
                     <div class="sticky-form">
                         <div id="closed-actions" class="hidden card text-center" style="border: 2px solid var(--success);">
                             <h3 style="color: var(--success); margin-bottom: 10px;">ДОКУМЕНТ ЗАКРЫТ</h3>
-                            <button class="btn-primary w-full mb-3" style="height: 64px; font-size: 18px;" onclick="syncWith1C()">🚀 ОТПРАВИТЬ В 1С</button>
+                            <button class="btn-primary w-full mb-2" style="height: 64px; font-size: 18px;" onclick="syncWith1C()">🚀 ОТПРАВИТЬ В 1С</button>
+                            <button class="btn-primary w-full mb-3" style="height: 56px; font-size: 16px;" onclick="manualSync()">Синхронизировать с 1С</button>
                             <div class="flex gap-2">
                                 <button class="btn-outline w-full doc-action-btn" onclick="reopenDoc()">🔄 Правка документа</button>
                                 <button class="btn-outline w-full doc-action-btn" onclick="shareDoc()">📤 Поделиться документом</button>
@@ -457,6 +458,7 @@
                 <label>URL Сервиса</label><input type="text" id="set-url" onchange="saveSets()" placeholder="https://...">
                 <label>Логин</label><input type="text" id="set-user" onchange="saveSets()">
                 <label>Пароль</label><input type="password" id="set-pass" onchange="saveSets()">
+                <label>API-ключ</label><input type="text" id="set-api-key" onchange="saveSets()">
                 <button class="btn-outline w-full mt-2" onclick="test1CConnection()">📡 Проверить связь с 1С</button>
             </details>
         </div>
@@ -592,7 +594,7 @@
     function safeLoad(key, def){ try { const val = localStorage.getItem(key); return val ? JSON.parse(val) : def; } catch(e) { return def; } }
 
     /* ДАННЫЕ */
-    const defSets = { url:"", user:"", pass:"", mgr:"1234", warehouses:["Магазин","Склад","Розница"], prefix:"R26", nextNum:1, showWidth:true, showDensity:true, showBrand:true, showComp:true, printMethod: "rawbt", pnKey:"", pnPrinter:"" };
+    const defSets = { url:"http://83.237.242.90:3000", user:"", pass:"", apiKey:"zX9#mK4$pL7@nQ2&wR8!vT3^hY6*jB5", mgr:"1234", warehouses:["Магазин","Склад","Розница"], prefix:"R26", nextNum:1, showWidth:true, showDensity:true, showBrand:true, showComp:true, printMethod: "rawbt", pnKey:"", pnPrinter:"" };
     let sets = { ...defSets, ...safeLoad('tsd_final_sets', defSets) };
     let db = {
         receive: safeLoad('tsd_final_receive', []),
@@ -805,7 +807,7 @@
             return;
         }
         try {
-            const res = await fetch(`${sets.url}/product?id=${id}`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ":" + (sets.pass || "")) } });
+            const res = await fetch(`${sets.url}/product?id=${id}`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ":" + (sets.pass || "")), 'x-api-key': sets.apiKey || "" } });
             if (res.ok) { isProductDirty = false; showProduct(await res.json()); } else showToast("Не найдено", "danger");
         } catch (e) { showToast("Ошибка 1С", "danger"); logError(`Поиск 1С: ${e.message}`); }
         finally { setSearchLock(false); }
@@ -1024,7 +1026,7 @@
         markProductDirty();
         showProduct(currentProduct);
         closeModal('modal-product-edit');
-        showToast('Изменения сохранены в память');
+        showToast('Сохранено. Будет отправлено в 1С при синхронизации.');
     }
 
     async function pushProductChangesTo1C() {
@@ -1052,14 +1054,15 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || ''))
+                    'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')),
+                    'x-api-key': sets.apiKey || ''
                 },
                 body: JSON.stringify(payload)
             });
             if (res.ok) {
                 isProductDirty = false;
                 updateProductSyncButton();
-                showToast('Товар обновлён в 1С');
+                showToast('Сохранено. Будет отправлено в 1С при синхронизации.');
             } else showToast(`Ошибка 1С: ${res.status}`, 'danger');
         } catch (e) {
             showToast('Не удалось отправить изменения в 1С', 'danger');
@@ -1278,9 +1281,9 @@
     function closeModal(id) { const modal = document.getElementById(id); if(!modal) return; modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); if (activeModalId === id) activeModalId = null; if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') lastFocusedElement.focus(); }
     function showToast(m, t) { const c = document.getElementById('toast-container'); if(c.children.length > 3) c.removeChild(c.firstChild); const d = document.createElement('div'); d.className = `toast`; d.setAttribute('role', 'status'); d.style.background = t === 'danger' ? 'var(--danger)' : 'var(--primary)'; d.textContent = m; c.appendChild(d); setTimeout(()=>d.remove(), 2500); }
     
-    function openSettings() { document.getElementById('set-show-width').checked = sets.showWidth !== false; document.getElementById('set-show-density').checked = sets.showDensity !== false; document.getElementById('set-show-brand').checked = sets.showBrand !== false; document.getElementById('set-show-comp').checked = sets.showComp !== false; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "rawbt"; togglePrintSettingsUI(); renderSettingsWh(); openModal('modal-settings'); }
+    function openSettings() { document.getElementById('set-show-width').checked = sets.showWidth !== false; document.getElementById('set-show-density').checked = sets.showDensity !== false; document.getElementById('set-show-brand').checked = sets.showBrand !== false; document.getElementById('set-show-comp').checked = sets.showComp !== false; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-api-key').value = sets.apiKey || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "rawbt"; togglePrintSettingsUI(); renderSettingsWh(); openModal('modal-settings'); }
     function togglePrintSettingsUI() { const method = document.getElementById('set-print-method').value; const block = document.getElementById('printnode-block'); if (block) block.style.display = (method === 'printnode') ? 'block' : 'none'; }
-    function saveSets() { sets.showWidth = document.getElementById('set-show-width').checked; sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; save(); }
+    function saveSets() { sets.showWidth = document.getElementById('set-show-width').checked; sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.apiKey = document.getElementById('set-api-key').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; save(); }
     function renderSettingsWh() { document.getElementById('settings-warehouses').innerHTML = sets.warehouses.map(w=>`<div class="wh-item"><span>${w}</span><button class="btn-icon text-danger" onclick="delWh('${w}')">🗑️</button></div>`).join(''); }
     function addWh() { const n = document.getElementById('new-wh-name'); if(n.value){sets.warehouses.push(n.value); n.value=''; renderSettingsWh(); saveSets();}}
     function delWh(w) { sets.warehouses = sets.warehouses.filter(x=>x!==w); renderSettingsWh(); saveSets();}
@@ -1321,10 +1324,31 @@
     }
     function reopenDoc() { const d = db[curTab].find(x=>x.id===curDocId); d.status = 'active'; delete d.closedAt; save(); openDoc(curDocId); }
     
+
+    async function manualSync() {
+        if (!sets.url) { showToast("URL не настроен", "danger"); return; }
+        showToast("Синхронизация...");
+        try {
+            const res = await fetch(`${sets.url}/trigger-sync`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': sets.apiKey || ""
+                }
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok) showToast(`Отправлено: ${data.sent ?? 0}, ошибок: ${data.errors ?? 0}`);
+            else showToast("Ошибка синхронизации", "danger");
+        } catch(e) {
+            showToast("Сервер недоступен", "danger");
+            logError(`manualSync: ${e.message}`);
+        }
+    }
+
     async function syncWith1C() {
         const d = db[curTab].find(x=>x.id===curDocId); if(!sets.url) { showToast("URL 1С не настроен", "danger"); return; }
         showToast("Отправка в 1С...");
-        try { const res = await fetch(`${sets.url}/post-document`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Basic '+btoa(sets.user+":"+(sets.pass||""))}, body:JSON.stringify({type:curTab.toUpperCase(), data:d}) }); if(res.ok) showToast("Успешно проведено!"); else showToast("1С вернула ошибку", "danger"); } catch(e) { showToast("Сервер 1С недоступен", "danger"); logError(`Синхронизация 1С: ${e.message}`); }
+        try { const res = await fetch(`${sets.url}/post-document`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Basic '+btoa(sets.user+":"+(sets.pass||"")),'x-api-key': sets.apiKey || ''}, body:JSON.stringify({type:curTab.toUpperCase(), data:d}) }); if(res.ok) showToast("Успешно проведено!"); else showToast("1С вернула ошибку", "danger"); } catch(e) { showToast("Сервер 1С недоступен", "danger"); logError(`Синхронизация 1С: ${e.message}`); }
     }
 
     async function test1CConnection() {
