@@ -303,7 +303,10 @@
     <div id="customer-view" class="hidden" style="position:fixed; inset:0; background:white; z-index:1500; padding:24px; display:flex; flex-direction:column;">
         <div class="flex justify-between items-center mb-4">
             <h1 id="c-name" class="customer-view-title" style="flex: 1;">Товар</h1>
-            <button class="btn-icon" aria-label="Закрыть карточку" onclick="closeCustomerView()">✕</button>
+            <div class="flex gap-2">
+                <button id="btn-kiosk-manager-mode" class="btn-outline hidden" style="min-height:48px;" onclick="openLogin('customer')">🔒 Режим менеджера</button>
+                <button class="btn-icon" aria-label="Закрыть карточку" onclick="closeCustomerView()">✕</button>
+            </div>
         </div>
         <button id="c-photo-toggle" class="btn-outline customer-gallery-toggle" onclick="toggleCustomerGallery()">📷 Фото товара</button>
         <div id="c-img-box" class="customer-gallery" aria-label="Галерея фотографий товара"></div>
@@ -324,6 +327,7 @@
                     <button class="btn-outline w-full" style="min-height:58px;font-size:18px;" onclick="openStockRowEditModal(-1)">➕ Добавить склад</button>
                 </div>
                 <button id="btn-sync-product" class="btn-primary w-full mt-2" style="min-height:58px;font-size:18px;" onclick="pushProductChangesTo1C()">🚀 Отправить изменения товара в 1С</button>
+                <button id="btn-exit-customer-manager" class="btn-outline w-full mt-2 hidden" style="min-height:52px;font-size:16px;" onclick="exitCustomerManagerMode()">✅ Завершить правку (клиентский режим)</button>
             </div>
         </div>
         <div class="flex gap-2 mt-4">
@@ -630,6 +634,8 @@
     let customerGalleryExpanded = false;
     let customerGalleryImages = [];
     let activeReceiveImages = [];
+    let tempCustomerManagerMode = false;
+    let loginMode = "full";
 
     function setSearchLock(locked) {
         isSearchPending = locked;
@@ -776,8 +782,27 @@
 
     function saveAppState() { localStorage.setItem('app_last_tab', curTab); localStorage.setItem('app_last_doc_id', curDocId); localStorage.setItem('app_is_mgr', isMgr); localStorage.setItem('app_demo_mode', isDemoMode); }
 
+    function isCustomerManagerModeActive() { return isMgr || tempCustomerManagerMode; }
+
+    function enterCustomerManagerMode() {
+        tempCustomerManagerMode = true;
+        if (currentProduct) showProduct(currentProduct);
+        showToast('Режим менеджера включён для текущей карточки');
+    }
+
+    function exitCustomerManagerMode() {
+        tempCustomerManagerMode = false;
+        if (currentProduct) showProduct(currentProduct);
+        showToast('Возврат в клиентский режим');
+    }
+
     function handleScan(code) {
-        if (code === "ADMIN") { loginSuccess(); return; }
+        if (code === "ADMIN") {
+            const customerOpen = !document.getElementById('customer-view')?.classList.contains('hidden');
+            if (customerOpen && !isMgr) { openLogin('customer'); return; }
+            loginSuccess();
+            return;
+        }
         if (isSearchPending) { showToast("Идёт поиск...", "danger"); return; }
         const now = Date.now();
         if (code === lastScanCode && (now - lastScanAt) < SCAN_COOLDOWN_MS) return;
@@ -961,19 +986,22 @@
         document.getElementById('c-density').textContent = p.density || p.dens || '-';
         renderCustomerGallery(images);
         renderStockTable(rows);
-        document.getElementById('product-admin-row').classList.toggle('hidden', !isMgr);
+        const canManage = isCustomerManagerModeActive();
+        document.getElementById('product-admin-row').classList.toggle('hidden', !canManage);
         document.querySelectorAll('.editable-value').forEach(el => {
-            el.classList.toggle('editable-enabled', isMgr);
-            el.title = isMgr ? 'Нажмите, чтобы изменить значение' : '';
+            el.classList.toggle('editable-enabled', canManage);
+            el.title = canManage ? 'Нажмите, чтобы изменить значение' : '';
             el.onclick = () => openInlineEditModal(el);
         });
         updateProductSyncButton();
+        document.getElementById('btn-kiosk-manager-mode')?.classList.toggle('hidden', isCustomerManagerModeActive());
+        document.getElementById('btn-exit-customer-manager')?.classList.toggle('hidden', !tempCustomerManagerMode);
         document.getElementById('customer-view').classList.remove('hidden');
     }
-    function closeCustomerView() { customerGalleryExpanded = false; document.getElementById('customer-view').classList.add('hidden'); }
+    function closeCustomerView() { customerGalleryExpanded = false; tempCustomerManagerMode = false; document.getElementById('customer-view').classList.add('hidden'); }
 
     function openInlineEditModal(el) {
-        if (!isMgr || !currentProduct) return;
+        if (!isCustomerManagerModeActive() || !currentProduct) return;
         inlineEditField = el.dataset.editField;
         document.getElementById('ie-title').textContent = `Изменить: ${el.dataset.editLabel || 'Поле'}`;
         const input = document.getElementById('ie-input');
@@ -999,7 +1027,7 @@
     }
 
     function openStockRowEditModal(index) {
-        if (!isMgr || !currentProduct) return;
+        if (!isCustomerManagerModeActive() || !currentProduct) return;
         activeStockRowIndex = index;
         const list = currentProduct.stockRows || [];
         const row = index >= 0 ? (list[index] || {}) : {};
@@ -1045,7 +1073,7 @@
     }
 
     function openProductEditModal() {
-        if (!isMgr) { showToast('Доступно только персоналу', 'danger'); return; }
+        if (!isCustomerManagerModeActive()) { showToast('Доступно только персоналу', 'danger'); return; }
         if (!currentProduct) { showToast('Сначала найдите товар', 'danger'); return; }
         document.getElementById('pe-art').value = currentProduct.articul || '';
         document.getElementById('pe-name-print').value = currentProduct.namePrint || currentProduct.printName || currentProduct.name || '';
@@ -1202,11 +1230,11 @@
     }
 
     /* МЕНЕДЖЕР */
-    function doLogin() { if(document.getElementById('login-pass').value === sets.mgr){ loginSuccess(); closeModal('modal-login'); } else showToast("Ошибка", "danger"); }
-    function loginDemo() { isDemoMode = true; loginSuccess(); closeModal('modal-login'); showToast('Демо-режим включён'); }
-    function openLogin() { document.getElementById('login-pass').value = ''; openModal('modal-login'); setTimeout(() => document.getElementById('login-pass').focus(), 300); }
+    function doLogin() { if(document.getElementById('login-pass').value === sets.mgr){ if (loginMode === 'customer') enterCustomerManagerMode(); else loginSuccess(); closeModal('modal-login'); } else showToast("Ошибка", "danger"); }
+    function loginDemo() { isDemoMode = true; if (loginMode === 'customer') enterCustomerManagerMode(); else loginSuccess(); closeModal('modal-login'); showToast('Демо-режим включён'); }
+    function openLogin(mode = 'full') { loginMode = mode; document.getElementById('login-pass').value = ''; openModal('modal-login'); setTimeout(() => document.getElementById('login-pass').focus(), 300); }
     function loginSuccess() { isMgr = true; saveAppState(); document.getElementById('login-pass').value = ''; document.getElementById('screen-kiosk').classList.add('hidden'); document.getElementById('manager-view').classList.remove('hidden'); switchTab('receive'); }
-    function logout() { isMgr = false; isDemoMode = false; curDocId = null; currentProduct = null; document.getElementById('login-pass').value = ''; closeModal('modal-login'); closeModal('modal-product-edit'); closeCustomerView(); saveAppState(); document.getElementById('screen-work').classList.add('hidden'); document.getElementById('screen-list').classList.remove('hidden'); document.getElementById('manager-view').classList.add('hidden'); document.getElementById('screen-kiosk').classList.remove('hidden'); }
+    function logout() { isMgr = false; tempCustomerManagerMode = false; isDemoMode = false; curDocId = null; currentProduct = null; document.getElementById('login-pass').value = ''; closeModal('modal-login'); closeModal('modal-product-edit'); closeCustomerView(); saveAppState(); document.getElementById('screen-work').classList.add('hidden'); document.getElementById('screen-list').classList.remove('hidden'); document.getElementById('manager-view').classList.add('hidden'); document.getElementById('screen-kiosk').classList.remove('hidden'); }
     
     function switchTab(id) {
         curTab = id; curDocId = null; editingItemId = null; saveAppState();
