@@ -26,7 +26,7 @@
             --text-sec: #757575;
             --border: #E0E0E0;
             --focus-ring: rgba(25, 118, 210, 0.3);
-            --tab-height: 88px;
+            --tab-height: 62px;
             --app-height: 100dvh;
             --keyboard-offset: 0px;
         }
@@ -104,15 +104,15 @@
         .settings-btn { background: #E3F2FD; color: var(--primary); border: 1px solid #BBDEFB; box-shadow: 0 2px 8px rgba(25,118,210,0.2); }
 
         /* КАРТОЧКИ */
-        .card { background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); transition: box-shadow 0.2s; }
+        .card { background: var(--card); border-radius: 12px; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border); transition: box-shadow 0.2s; }
         .doc-card { cursor: pointer; border-left: 6px solid var(--border); transition: 0.1s; margin-bottom: 12px; }
         .doc-card:active { background: #f9f9f9; }
         .doc-card.active { border-left-color: var(--primary); }
         .doc-card.closed { opacity: 0.7; border-left-color: var(--text-sec); }
 
         /* ВВОД */
-        .input-group { margin-bottom: 10px; }
-        input, select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; background: white; color: var(--text); transition: border-color 0.2s; }
+        .input-group { margin-bottom: 6px; }
+        input, select { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; background: white; color: var(--text); transition: border-color 0.2s; }
         input:focus, select:focus, button:focus-visible { border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px var(--focus-ring); }
         label { display: block; margin-bottom: 4px; font-size: 11px; color: var(--text-sec); font-weight: 700; text-transform: uppercase; }
 
@@ -141,22 +141,21 @@
             flex-direction: column;
             background: none;
             color: #616161;
-            font-size: 12px;
-            padding: 10px 4px;
-            gap: 6px;
-            min-height: 72px;
-            border-top: 3px solid transparent;
+            font-size: 10px;
+            padding: 4px 3px;
+            gap: 2px;
+            min-height: 56px;
+            border-top: 0;
         }
-        #tab-bar button .tab-ico { font-size: 24px; line-height: 1; }
-        #tab-bar button .tab-label { font-size: 12px; font-weight: 700; line-height: 1; }
+        #tab-bar button .tab-ico { font-size: 18px; line-height: 1; }
+        #tab-bar button .tab-label { font-size: 10px; font-weight: 700; line-height: 1; }
         #tab-bar button.active {
             color: var(--primary);
-            border-top-color: var(--primary);
-            background: linear-gradient(180deg, rgba(25,118,210,0.12), rgba(25,118,210,0.02));
+            background: rgba(25,118,210,0.10);
         }
         #tab-bar button.logout-tab { color: var(--danger); }
         @media (pointer: coarse) {
-            #tab-bar button { min-height: 78px; }
+            #tab-bar button { min-height: 56px; }
         }
 
         /* ПЛАНШЕТНАЯ СЕТКА */
@@ -210,12 +209,14 @@
         .toast { padding: 14px; border-radius: 8px; color: white; margin-bottom: 8px; text-align: center; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.1); animation: slideIn 0.3s forwards; }
         @keyframes slideIn { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        .header-fixed { position: sticky; top: 0; z-index: 50; background: #F5F7FA; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+        .header-fixed { position: sticky; top: 0; z-index: 50; background: #F5F7FA; padding: 8px 12px; border-bottom: 1px solid var(--border); }
         .screen-subtitle { color: var(--text-sec); font-size: 14px; margin-top: 4px; }
 
         .customer-view-title { font-size: 30px !important; font-weight: 900; }
         #customer-view { height: var(--app-height); overflow-y: auto; overscroll-behavior: contain; padding-bottom: calc(24px + var(--keyboard-offset)); }
-        .customer-gallery { width: 100%; margin-bottom: 16px; }
+        .customer-gallery { width: 100%; margin-bottom: 8px; display:none; }
+        .customer-gallery.open { display:block; }
+        .customer-gallery-toggle { width:100%; min-height:42px; font-size:14px; font-weight:700; margin-bottom:8px; }
         .customer-gallery-item {
             width: 100%;
             min-height: 220px;
@@ -304,6 +305,7 @@
             <h1 id="c-name" class="customer-view-title" style="flex: 1;">Товар</h1>
             <button class="btn-icon" aria-label="Закрыть карточку" onclick="closeCustomerView()">✕</button>
         </div>
+        <button id="c-photo-toggle" class="btn-outline customer-gallery-toggle" onclick="toggleCustomerGallery()">📷 Фото товара</button>
         <div id="c-img-box" class="customer-gallery" aria-label="Галерея фотографий товара"></div>
         <div id="c-price" class="customer-hero-price">0.00 ₽</div>
         <div class="card customer-specs">
@@ -368,8 +370,7 @@
                     <div class="sticky-form">
                         <div id="closed-actions" class="hidden card text-center" style="border: 2px solid var(--success);">
                             <h3 style="color: var(--success); margin-bottom: 10px;">ДОКУМЕНТ ЗАКРЫТ</h3>
-                            <button class="btn-primary w-full mb-2" style="height: 64px; font-size: 18px;" onclick="syncWith1C()">🚀 ОТПРАВИТЬ В 1С</button>
-                            <button class="btn-primary w-full mb-3" style="height: 56px; font-size: 16px;" onclick="manualSync()">Синхронизировать с 1С</button>
+                            <button class="btn-primary w-full mb-3" style="height: 58px; font-size: 16px;" onclick="syncWith1C()">🚀 ОТПРАВИТЬ В 1С</button>
                             <div class="flex gap-2">
                                 <button class="btn-outline w-full doc-action-btn" onclick="reopenDoc()">🔄 Правка документа</button>
                                 <button class="btn-outline w-full doc-action-btn" onclick="shareDoc()">📤 Поделиться документом</button>
@@ -424,6 +425,8 @@
                 <label class="checkbox-row">Показывать поле «Плотность (г/м²)» <input type="checkbox" id="set-show-density" onchange="saveSets()"></label>
                 <label class="checkbox-row">Показывать поле «Бренд» <input type="checkbox" id="set-show-brand" onchange="saveSets()"></label>
                 <label class="checkbox-row">Показывать поле «Состав» <input type="checkbox" id="set-show-comp" onchange="saveSets()"></label>
+                <label class="checkbox-row">Показывать поле «Полное наименование» <input type="checkbox" id="set-show-fullname" onchange="saveSets()"></label>
+                <div class="input-group"><label>Наименование для печати (по умолчанию)</label><input type="text" id="set-print-name-default" onchange="saveSets()"></div>
             </div>
         </div>
 
@@ -460,6 +463,7 @@
                 <label>Пароль</label><input type="password" id="set-pass" onchange="saveSets()">
                 <label>API-ключ</label><input type="text" id="set-api-key" onchange="saveSets()">
                 <button class="btn-outline w-full mt-2" onclick="test1CConnection()">📡 Проверить связь с 1С</button>
+                <button class="btn-primary w-full mt-2" onclick="manualSync()">🔄 Синхронизировать всю базу с 1С</button>
             </details>
         </div>
         </div>
@@ -501,18 +505,21 @@
 </div>
 
 <div id="modal-search" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true"><div class="modal-content"><h2>Поиск</h2><input type="text" id="manual-search-input" placeholder="Введите код..." autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters" inputmode="text" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') doManualSearch()"><div class="flex gap-2 mt-4"><button class="btn-outline w-full" onclick="closeModal('modal-search')">Отмена</button><button class="btn-primary w-full" onclick="doManualSearch()">Найти</button></div></div></div>
-<div id="modal-login" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true"><div class="modal-content" style="text-align:center"><h2>Вход персонала</h2><input type="password" id="login-pass" placeholder="Пароль" autocomplete="new-password" autocorrect="off" spellcheck="false" autocapitalize="none" style="font-size:24px; text-align:center;" onkeydown="if(event.key==='Enter') doLogin()"><button class="btn-primary w-full" onclick="doLogin()">Войти</button><button class="btn-outline w-full mt-2" onclick="closeModal('modal-login')">Назад</button></div></div>
+<div id="modal-login" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true"><div class="modal-content" style="text-align:center"><h2>Вход персонала</h2><input type="password" id="login-pass" placeholder="Пароль" autocomplete="new-password" autocorrect="off" spellcheck="false" autocapitalize="none" style="font-size:24px; text-align:center;" onkeydown="if(event.key==='Enter') doLogin()"><button class="btn-primary w-full" onclick="doLogin()">Войти</button><button class="btn-outline w-full mt-2" onclick="loginDemo()">Демо-режим</button><button class="btn-outline w-full mt-2" onclick="closeModal('modal-login')">Назад</button></div></div>
 <div id="modal-product-edit" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="modal-content">
         <h2>Изменение номенклатуры</h2>
         <p class="text-sm" style="color:var(--text-sec);margin-bottom:10px;">Изменения применяются в мобильном приложении и отправляются в 1С.</p>
         <div class="input-group"><label>Артикул</label><input type="text" id="pe-art" readonly></div>
+        <div class="input-group"><label>Наименование (для печати)</label><input type="text" id="pe-name-print"></div>
+        <div class="input-group" id="pe-full-name-group"><label>Полное наименование</label><input type="text" id="pe-full-name"></div>
         <div class="input-group"><label>Цена (₽)</label><input type="text" id="pe-price" inputmode="decimal"></div>
         <div class="input-group"><label>Ширина</label><input type="text" id="pe-width"></div>
         <div class="input-group"><label>Состав</label><input type="text" id="pe-comp"></div>
         <div class="input-group"><label>Бренд</label><input type="text" id="pe-brand"></div>
         <div class="input-group"><label>Плотность (г/м²)</label><input type="text" id="pe-density" inputmode="numeric"></div>
         <div class="input-group"><label>Количество</label><input type="text" id="pe-qty" inputmode="decimal"></div>
+        <div class="input-group"><label>Фото товара</label><input type="file" id="pe-photo" accept="image/*" capture="environment" onchange="applyProductPhoto(this)"></div>
         <p class="manager-field-note">Склад/ячейку/метраж меняйте нажатием на строку нужного склада в таблице остатков.</p>
         <div class="flex gap-2 mt-3">
             <button class="btn-outline w-full" onclick="closeModal('modal-product-edit')">Отмена</button>
@@ -594,7 +601,7 @@
     function safeLoad(key, def){ try { const val = localStorage.getItem(key); return val ? JSON.parse(val) : def; } catch(e) { return def; } }
 
     /* ДАННЫЕ */
-    const defSets = { url:"http://83.237.242.90:3000", user:"", pass:"", apiKey:"zX9#mK4$pL7@nQ2&wR8!vT3^hY6*jB5", mgr:"1234", warehouses:["Магазин","Склад","Розница"], prefix:"R26", nextNum:1, showWidth:true, showDensity:true, showBrand:true, showComp:true, printMethod: "rawbt", pnKey:"", pnPrinter:"" };
+    const defSets = { url:"http://83.237.242.90:3000", user:"", pass:"", apiKey:"zX9#mK4$pL7@nQ2&wR8!vT3^hY6*jB5", mgr:"1234", warehouses:["Магазин","Склад","Розница"], prefix:"R26", nextNum:1, showWidth:true, showDensity:true, showBrand:true, showComp:true, showFullName:false, printNameDefault:"", printMethod: "rawbt", pnKey:"", pnPrinter:"" };
     let sets = { ...defSets, ...safeLoad('tsd_final_sets', defSets) };
     let db = {
         receive: safeLoad('tsd_final_receive', []),
@@ -615,9 +622,13 @@
     let isProductDirty = false;
     let inlineEditField = null;
     let activeStockRowIndex = null;
+    let isDemoMode = safeLoad('app_demo_mode', false);
     let lastScanAt = 0;
     let lastScanCode = "";
     const SCAN_COOLDOWN_MS = 1200;
+    let customerGalleryExpanded = false;
+    let customerGalleryImages = [];
+    let activeReceiveImages = [];
 
     function setSearchLock(locked) {
         isSearchPending = locked;
@@ -762,7 +773,7 @@
         updateDataLists();
     };
 
-    function saveAppState() { localStorage.setItem('app_last_tab', curTab); localStorage.setItem('app_last_doc_id', curDocId); localStorage.setItem('app_is_mgr', isMgr); }
+    function saveAppState() { localStorage.setItem('app_last_tab', curTab); localStorage.setItem('app_last_doc_id', curDocId); localStorage.setItem('app_is_mgr', isMgr); localStorage.setItem('app_demo_mode', isDemoMode); }
 
     function handleScan(code) {
         if (code === "ADMIN") { loginSuccess(); return; }
@@ -773,15 +784,15 @@
         lastScanCode = code;
         lastScanAt = now;
         const manualSearchOpen = document.getElementById('modal-search')?.classList.contains('open');
-        if (!isMgr || manualSearchOpen) search1C(code);
+        if (!isMgr || manualSearchOpen) search1C(code, { type: 'barcode' });
         else { const inp = document.querySelector('input[data-art-field]'); if (inp) { inp.value = code; inp.dispatchEvent(new Event('input')); } }
     }
 
-    async function search1C(id) {
+    async function search1C(id, opts = {}) {
         if (isSearchPending) return;
         setSearchLock(true);
         showToast("Поиск...");
-        if (!sets.url) {
+        if (!sets.url || isDemoMode) {
             isProductDirty = false;
             showProduct({
                 name: "Демо-ткань",
@@ -807,7 +818,11 @@
             return;
         }
         try {
-            const res = await fetch(`${sets.url}/product?id=${id}`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ":" + (sets.pass || "")), 'x-api-key': sets.apiKey || "" } });
+            const type = opts.type || 'barcode';
+            let res = await fetch(`${sets.url}/product?id=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ":" + (sets.pass || "")), 'x-api-key': sets.apiKey || "" } });
+            if (!res.ok && type === 'barcode') {
+                res = await fetch(`${sets.url}/product?id=${encodeURIComponent(id)}&type=articul`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ":" + (sets.pass || "")), 'x-api-key': sets.apiKey || "" } });
+            }
             if (res.ok) { isProductDirty = false; showProduct(await res.json()); } else showToast("Не найдено", "danger");
         } catch (e) { showToast("Ошибка 1С", "danger"); logError(`Поиск 1С: ${e.message}`); }
         finally { setSearchLock(false); }
@@ -850,7 +865,12 @@
 
     function renderCustomerGallery(images) {
         const box = document.getElementById('c-img-box');
+        const btn = document.getElementById('c-photo-toggle');
         box.innerHTML = '';
+        customerGalleryImages = Array.isArray(images) ? images : [];
+        if (btn) btn.textContent = `📷 Фото товара${customerGalleryImages.length ? ` (${customerGalleryImages.length})` : ''}`;
+        if (!customerGalleryExpanded) { box.classList.remove('open'); return; }
+        box.classList.add('open');
         if (!Array.isArray(images) || !images.length) {
             const fallback = document.createElement('div');
             fallback.className = 'customer-gallery-item';
@@ -862,11 +882,17 @@
             const slide = document.createElement('div');
             slide.className = 'customer-gallery-item';
             const img = document.createElement('img');
+            img.loading = 'lazy';
             img.src = src;
             img.alt = `Фото товара ${idx + 1}`;
             slide.appendChild(img);
             box.appendChild(slide);
         });
+    }
+
+    function toggleCustomerGallery() {
+        customerGalleryExpanded = !customerGalleryExpanded;
+        renderCustomerGallery(customerGalleryImages);
     }
 
     function renderStockTable(rows) {
@@ -902,7 +928,7 @@
         currentProduct = p;
         const rows = buildStockRows(p);
         const allImages = p.images || p.photos || p.gallery || [];
-        const images = Array.isArray(allImages) && allImages.length ? [allImages[0]] : [];
+        const images = Array.isArray(allImages) ? allImages : [];
         document.getElementById('c-name').textContent = p.name || 'Товар';
         document.getElementById('c-price').textContent = `${toNumber(p.priceRub || p.price || 0).toFixed(2)} ₽`;
         document.getElementById('c-art').textContent = p.articul || '-';
@@ -921,7 +947,7 @@
         updateProductSyncButton();
         document.getElementById('customer-view').classList.remove('hidden');
     }
-    function closeCustomerView() { document.getElementById('customer-view').classList.add('hidden'); }
+    function closeCustomerView() { customerGalleryExpanded = false; document.getElementById('customer-view').classList.add('hidden'); }
 
     function openInlineEditModal(el) {
         if (!isMgr || !currentProduct) return;
@@ -997,6 +1023,9 @@
         if (!isMgr) { showToast('Доступно только персоналу', 'danger'); return; }
         if (!currentProduct) { showToast('Сначала найдите товар', 'danger'); return; }
         document.getElementById('pe-art').value = currentProduct.articul || '';
+        document.getElementById('pe-name-print').value = currentProduct.namePrint || currentProduct.printName || currentProduct.name || '';
+        document.getElementById('pe-full-name').value = currentProduct.fullName || currentProduct.fullname || '';
+        document.getElementById('pe-full-name-group').classList.toggle('hidden', !sets.showFullName);
         document.getElementById('pe-price').value = toNumber(currentProduct.priceRub || currentProduct.price || 0).toFixed(2);
         document.getElementById('pe-width').value = currentProduct.width || '';
         document.getElementById('pe-comp').value = currentProduct.composition || '';
@@ -1010,6 +1039,8 @@
     async function saveProductChanges() {
         if (!currentProduct) return;
         const articul = document.getElementById('pe-art').value.trim();
+        const namePrint = document.getElementById('pe-name-print').value.trim();
+        const fullName = document.getElementById('pe-full-name').value.trim();
         const priceRub = toNumber(document.getElementById('pe-price').value.trim());
         const width = document.getElementById('pe-width').value.trim();
         const composition = document.getElementById('pe-comp').value.trim();
@@ -1018,6 +1049,8 @@
         if (!articul) { showToast('Артикул не задан', 'danger'); return; }
 
         currentProduct.priceRub = priceRub;
+        currentProduct.namePrint = namePrint;
+        currentProduct.fullName = fullName;
         currentProduct.width = width;
         currentProduct.composition = composition;
         currentProduct.brand = brand;
@@ -1032,9 +1065,12 @@
     async function pushProductChangesTo1C() {
         if (!currentProduct) return;
         if (!isProductDirty) { showToast('Нет несохранённых изменений'); return; }
+        if (isDemoMode) { showToast('Демо-режим: синхронизация отключена', 'danger'); return; }
         const payload = {
             articul: currentProduct.articul,
             priceRub: toNumber(currentProduct.priceRub || currentProduct.price || 0),
+            namePrint: currentProduct.namePrint || currentProduct.printName || currentProduct.name || '',
+            fullName: currentProduct.fullName || currentProduct.fullname || '',
             width: currentProduct.width || '',
             composition: currentProduct.composition || '',
             brand: currentProduct.brand || '',
@@ -1088,6 +1124,47 @@
 
     function printFromForm() { const art = document.getElementById('f-art').value; const comp = document.getElementById('f-comp') ? document.getElementById('f-comp').value : ''; printLabel(art, comp, '', "Приёмка"); }
     function printLabelRawBT() { const cA = document.getElementById('c-art').textContent; const cC = document.getElementById('c-comp').textContent; const cN = document.getElementById('c-name').textContent; printLabel(cA, cC, '', cN); }
+    function printLabelForItem(it) { printLabel(it.art || '-', it.comp || '', '', it.namePrint || it.art || 'Товар'); }
+
+    function fileToDataUrl(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(reader.error || new Error('File read error'));
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function selectReceivePhoto() {
+        const i = document.getElementById('f-photo-input');
+        if (i) i.click();
+    }
+
+    async function applyReceivePhoto(input) {
+        const file = input?.files?.[0];
+        if (!file) return;
+        try {
+            const data = await fileToDataUrl(file);
+            activeReceiveImages = [data];
+            showToast('Фото добавлено');
+        } catch (e) {
+            showToast('Не удалось загрузить фото', 'danger');
+        }
+    }
+
+    async function applyProductPhoto(input) {
+        const file = input?.files?.[0];
+        if (!file || !currentProduct) return;
+        try {
+            const data = await fileToDataUrl(file);
+            currentProduct.images = [data, ...(currentProduct.images || []).slice(0, 4)];
+            markProductDirty();
+            showProduct(currentProduct);
+            showToast('Фото товара обновлено');
+        } catch (e) {
+            showToast('Не удалось загрузить фото', 'danger');
+        }
+    }
 
     /* ШЕРИНГ */
     async function shareDoc() {
@@ -1101,9 +1178,10 @@
 
     /* МЕНЕДЖЕР */
     function doLogin() { if(document.getElementById('login-pass').value === sets.mgr){ loginSuccess(); closeModal('modal-login'); } else showToast("Ошибка", "danger"); }
+    function loginDemo() { isDemoMode = true; loginSuccess(); closeModal('modal-login'); showToast('Демо-режим включён'); }
     function openLogin() { document.getElementById('login-pass').value = ''; openModal('modal-login'); setTimeout(() => document.getElementById('login-pass').focus(), 300); }
     function loginSuccess() { isMgr = true; saveAppState(); document.getElementById('login-pass').value = ''; document.getElementById('screen-kiosk').classList.add('hidden'); document.getElementById('manager-view').classList.remove('hidden'); switchTab('receive'); }
-    function logout() { isMgr = false; curDocId = null; currentProduct = null; document.getElementById('login-pass').value = ''; closeModal('modal-login'); closeModal('modal-product-edit'); closeCustomerView(); saveAppState(); document.getElementById('screen-work').classList.add('hidden'); document.getElementById('screen-list').classList.remove('hidden'); document.getElementById('manager-view').classList.add('hidden'); document.getElementById('screen-kiosk').classList.remove('hidden'); }
+    function logout() { isMgr = false; isDemoMode = false; curDocId = null; currentProduct = null; document.getElementById('login-pass').value = ''; closeModal('modal-login'); closeModal('modal-product-edit'); closeCustomerView(); saveAppState(); document.getElementById('screen-work').classList.add('hidden'); document.getElementById('screen-list').classList.remove('hidden'); document.getElementById('manager-view').classList.add('hidden'); document.getElementById('screen-kiosk').classList.remove('hidden'); }
     
     function switchTab(id) {
         curTab = id; curDocId = null; editingItemId = null; saveAppState();
@@ -1181,20 +1259,20 @@
         if(!d || d.status !== 'active') return;
         let artVal = sets.prefix + String(sets.nextNum).padStart(4,'0');
         if(curTab === 'receive') {
-            cont.innerHTML = `<div class="input-group"><label>APT</label><input type="text" id="f-art" data-art-field value="${artVal}" class="monospace font-bold"></div>${sets.showWidth ? '<div class="input-group"><label>ШИРИНА</label><input type="text" id="f-width" inputmode="decimal"></div>' : ''}${sets.showDensity ? '<div class="input-group"><label>ПЛОТНОСТЬ</label><input type="text" id="f-density" inputmode="numeric"></div>' : ''}${sets.showBrand ? '<div class="input-group"><label>БРЕНД</label><input type="text" id="f-brand"></div>' : ''}${sets.showComp ? '<div class="input-group"><label>СОСТАВ</label><input type="text" id="f-comp" oninput="this.value = this.value.toUpperCase()"></div>' : ''}<div id="receive-cuts"></div><button class="btn-outline w-full mb-3" style="border-style:dashed; font-size:14px;" onclick="addCut()">+ Добавить отрез</button><div class="flex gap-2"><button class="btn-outline" style="flex:1" onclick="printFromForm()">🖨️ Печать</button><button class="btn-success" style="flex:2" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button></div>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
-            if (!editingItemId) activeCuts = [{id:1, m:'', wh:sets.warehouses[0] || "", c:''}];
+            cont.innerHTML = `<div class="input-group"><label>APT</label><input type="text" id="f-art" data-art-field value="${artVal}" class="monospace font-bold"></div><div class="input-group"><label>НАИМЕНОВАНИЕ (ДЛЯ ПЕЧАТИ)</label><input type="text" id="f-name-print" value="${sets.printNameDefault || ''}"></div>${sets.showFullName ? '<div class="input-group"><label>ПОЛНОЕ НАИМЕНОВАНИЕ</label><input type="text" id="f-full-name"></div>' : ''}${sets.showWidth ? '<div class="input-group"><label>ШИРИНА</label><input type="text" id="f-width" inputmode="decimal"></div>' : ''}${sets.showDensity ? '<div class="input-group"><label>ПЛОТНОСТЬ</label><input type="text" id="f-density" inputmode="numeric"></div>' : ''}${sets.showBrand ? '<div class="input-group"><label>БРЕНД</label><input type="text" id="f-brand"></div>' : ''}${sets.showComp ? '<div class="input-group"><label>СОСТАВ</label><input type="text" id="f-comp" oninput="this.value = this.value.toUpperCase()"></div>' : ''}<input id="f-photo-input" type="file" accept="image/*" capture="environment" class="hidden" onchange="applyReceivePhoto(this)"><button class="btn-outline w-full" style="font-size:14px;" onclick="selectReceivePhoto()">📷 Добавить фото</button><div id="receive-cuts"></div><button class="btn-outline w-full mb-2" style="border-style:dashed; font-size:14px;" onclick="addCut()">+ Добавить отрез</button><div class="flex gap-2"><button class="btn-outline" style="flex:1" onclick="printFromForm()">🖨️ Печать</button><button class="btn-success" style="flex:2" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button></div>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+            if (!editingItemId) { activeCuts = [{id:1, m:'', wh:sets.warehouses[0] || "", c:''}]; activeReceiveImages = []; }
             renderCuts();
         } else if(curTab === 'move'){
-            cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"></div><div class="flex gap-2"><div style="flex:1"><label>ОТКУДА (СКЛАД)</label><select id="f-wh-from">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ОТКУДА (ЯЧ)</label><input type="text" id="f-cell-from" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="flex gap-2"><div style="flex:1"><label>КУДА (СКЛАД)</label><select id="f-wh-to">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>КУДА (ЯЧ)</label><input type="text" id="f-cell-to" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="input-group"><label>МЕТРАЖ</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal"></div><button class="btn-primary w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+            cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"></div><div class="flex gap-2"><div style="flex:1"><label>ОТКУДА (СКЛАД)</label><select id="f-wh-from">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ОТКУДА (ЯЧ)</label><input type="text" id="f-cell-from" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="flex gap-2"><div style="flex:1"><label>КУДА (СКЛАД)</label><select id="f-wh-to">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>КУДА (ЯЧ)</label><input type="text" id="f-cell-to" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div></div><div class="input-group"><label>МЕТРАЖ</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-primary w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
         } else if(curTab === 'writeoff'){
-            cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"></div><div class="flex gap-2"><div style="flex:1"><label>СКЛАД</label><select id="f-wh">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ЯЧЕЙКА</label><input type="text" id="f-cell" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal"></div><button class="btn-danger w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+            cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"></div><div class="flex gap-2"><div style="flex:1"><label>СКЛАД</label><select id="f-wh">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ЯЧЕЙКА</label><input type="text" id="f-cell" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div></div><div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-danger w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
         } else if(curTab === 'price'){
-            cont.innerHTML = `<label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"><label>Цена (€)</label><input type="text" id="f-p" inputmode="decimal"><button class="btn-primary w-full" style="background:var(--price-color)" id="btn-save-line" onclick="saveLine()">ОК</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+            cont.innerHTML = `<label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts"><label>Цена (€)</label><input type="text" id="f-p" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"><button class="btn-primary w-full" style="background:var(--price-color)" id="btn-save-line" onclick="saveLine()">ОК</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
         }
         setupInputAssistancePolicy();
     }
 
-    function renderCuts() { const box = document.getElementById('receive-cuts'); if(!box) return; box.innerHTML = activeCuts.map(c=>`<div class="cut-row"><select onchange="uCut(${c.id},'wh',this.value)">${sets.warehouses.length > 0 ? sets.warehouses.map(w=>`<option ${c.wh===w?'selected':''}>${w}</option>`) : '<option value="">-</option>'}</select><input type="text" placeholder="М" value="${c.m}" oninput="uCut(${c.id},'m',this.value)" inputmode="decimal"><input type="text" placeholder="Яч" value="${c.c}" oninput="this.value = this.value.toUpperCase(); uCut(${c.id},'c',this.value)" list="list-cells"><button class="btn-icon" onclick="remCut(${c.id})">✕</button></div>`).join(''); }
+    function renderCuts() { const box = document.getElementById('receive-cuts'); if(!box) return; box.innerHTML = activeCuts.map(c=>`<div class="cut-row"><select onchange="uCut(${c.id},'wh',this.value)">${sets.warehouses.length > 0 ? sets.warehouses.map(w=>`<option ${c.wh===w?'selected':''}>${w}</option>`) : '<option value="">-</option>'}</select><input type="text" placeholder="М" value="${c.m}" oninput="uCut(${c.id},'m',this.value)" inputmode="decimal"><input type="text" placeholder="Яч" value="${c.c}" oninput="this.value = this.value.toUpperCase(); uCut(${c.id},'c',this.value)" onkeydown="if(event.key==='Enter') saveLine()" list="list-cells"><button class="btn-icon" onclick="remCut(${c.id})">✕</button></div>`).join(''); }
     function addCut() { const newId = Date.now(); activeCuts.push({id: newId, m:'', wh:sets.warehouses[0] || "", c:''}); renderCuts(); setTimeout(() => { const inputs = document.querySelectorAll('#receive-cuts input[placeholder="М"]'); if(inputs.length) inputs[inputs.length-1].focus(); }, 50); }
     function remCut(id) { if(activeCuts.length > 1) { activeCuts = activeCuts.filter(x=>x.id!==id); renderCuts(); } }
     function uCut(id, f, v) { const c = activeCuts.find(x=>x.id===id); if(c) c[f]=v.replace(',','.'); }
@@ -1202,7 +1280,7 @@
     function saveLine() {
         const d = db[curTab].find(x=>x.id===curDocId); const artInp = document.getElementById('f-art'); if(!artInp) return; const art = artInp.value.trim(); if(!art) { showToast('Введите артикул', 'danger'); artInp.focus(); return; }
         let item = { id: editingItemId || Date.now().toString(36), art, ts: new Date().toISOString() };
-        if(curTab === 'receive'){ const v = activeCuts.filter(c => !isNaN(parseFloat(c.m)) && parseFloat(c.m) > 0); if(!v.length) { showToast('Добавьте хотя бы один валидный отрез', 'danger'); return; } item.cuts = JSON.parse(JSON.stringify(v)); if(sets.showWidth && document.getElementById('f-width')) item.w = document.getElementById('f-width').value; if(sets.showDensity && document.getElementById('f-density')) item.dens = document.getElementById('f-density').value; if(sets.showBrand && document.getElementById('f-brand')) item.brand = document.getElementById('f-brand').value; if(sets.showComp && document.getElementById('f-comp')) item.comp = document.getElementById('f-comp').value.toUpperCase(); if (!editingItemId) sets.nextNum++; }
+        if(curTab === 'receive'){ const v = activeCuts.filter(c => !isNaN(parseFloat(c.m)) && parseFloat(c.m) > 0); if(!v.length) { showToast('Добавьте хотя бы один валидный отрез', 'danger'); return; } item.cuts = JSON.parse(JSON.stringify(v)); item.namePrint = document.getElementById('f-name-print')?.value?.trim() || ''; if(sets.showFullName && document.getElementById('f-full-name')) item.fullName = document.getElementById('f-full-name').value.trim(); if(sets.showWidth && document.getElementById('f-width')) item.w = document.getElementById('f-width').value; if(sets.showDensity && document.getElementById('f-density')) item.dens = document.getElementById('f-density').value; if(sets.showBrand && document.getElementById('f-brand')) item.brand = document.getElementById('f-brand').value; if(sets.showComp && document.getElementById('f-comp')) item.comp = document.getElementById('f-comp').value.toUpperCase(); if (activeReceiveImages.length) item.images = [...activeReceiveImages]; if (!editingItemId) sets.nextNum++; }
         else if(curTab === 'move'){ item.m = document.getElementById('f-m').value; item.fromWh = document.getElementById('f-wh-from').value; item.fromCell = document.getElementById('f-cell-from').value; item.toWh = document.getElementById('f-wh-to').value; item.toCell = document.getElementById('f-cell-to').value; if(!parseFloat(item.m)) { showToast('Введите корректный метраж', 'danger'); return; } }
         else if(curTab === 'writeoff'){ item.m = document.getElementById('f-m').value; item.wh = document.getElementById('f-wh').value; item.cell = document.getElementById('f-cell').value; if(!parseFloat(item.m)) { showToast('Введите корректное количество', 'danger'); return; } }
         else if(curTab === 'price'){ item.p = document.getElementById('f-p').value; if(isNaN(parseFloat(item.p))) { showToast('Введите корректную цену', 'danger'); return; } }
@@ -1215,10 +1293,13 @@
         editingItemId = normalizeId(id); renderForm();
         const fA = document.getElementById('f-art'); if(fA) fA.value = it.art;
         if(curTab==='receive'){
+            const fNP = document.getElementById('f-name-print'); if(fNP) fNP.value = it.namePrint || '';
+            const fFN = document.getElementById('f-full-name'); if(fFN) fFN.value = it.fullName || '';
             const fW = document.getElementById('f-width'); if(fW) fW.value = it.w || '';
             const fD = document.getElementById('f-density'); if(fD) fD.value = it.dens || '';
             const fB = document.getElementById('f-brand'); if(fB) fB.value = it.brand || '';
             const fC = document.getElementById('f-comp'); if(fC) fC.value = it.comp || '';
+            activeReceiveImages = Array.isArray(it.images) ? [...it.images] : [];
             activeCuts = JSON.parse(JSON.stringify(it.cuts)); renderCuts();
         } else if(curTab === 'move') { document.getElementById('f-m').value = it.m; document.getElementById('f-wh-from').value = it.fromWh; document.getElementById('f-cell-from').value = it.fromCell; document.getElementById('f-wh-to').value = it.toWh; document.getElementById('f-cell-to').value = it.toCell; }
         else if(curTab === 'writeoff') { document.getElementById('f-m').value = it.m; document.getElementById('f-wh').value = it.wh; document.getElementById('f-cell').value = it.cell; }
@@ -1250,6 +1331,13 @@
 
             const actions = document.createElement('div');
             actions.className = 'flex gap-2';
+            const printBtn = document.createElement('button');
+            printBtn.className = 'btn-icon';
+            printBtn.type = 'button';
+            printBtn.textContent = '🖨️';
+            printBtn.setAttribute('aria-label', 'Печать этикетки');
+            printBtn.onclick = () => printLabelForItem(it);
+            actions.append(printBtn);
             if (d.status === 'active') {
                 const editBtn = document.createElement('button');
                 editBtn.className = 'btn-icon';
@@ -1281,9 +1369,9 @@
     function closeModal(id) { const modal = document.getElementById(id); if(!modal) return; modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); if (activeModalId === id) activeModalId = null; if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') lastFocusedElement.focus(); }
     function showToast(m, t) { const c = document.getElementById('toast-container'); if(c.children.length > 3) c.removeChild(c.firstChild); const d = document.createElement('div'); d.className = `toast`; d.setAttribute('role', 'status'); d.style.background = t === 'danger' ? 'var(--danger)' : 'var(--primary)'; d.textContent = m; c.appendChild(d); setTimeout(()=>d.remove(), 2500); }
     
-    function openSettings() { document.getElementById('set-show-width').checked = sets.showWidth !== false; document.getElementById('set-show-density').checked = sets.showDensity !== false; document.getElementById('set-show-brand').checked = sets.showBrand !== false; document.getElementById('set-show-comp').checked = sets.showComp !== false; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-api-key').value = sets.apiKey || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "rawbt"; togglePrintSettingsUI(); renderSettingsWh(); openModal('modal-settings'); }
+    function openSettings() { document.getElementById('set-show-width').checked = sets.showWidth !== false; document.getElementById('set-show-density').checked = sets.showDensity !== false; document.getElementById('set-show-brand').checked = sets.showBrand !== false; document.getElementById('set-show-comp').checked = sets.showComp !== false; document.getElementById('set-show-fullname').checked = sets.showFullName === true; document.getElementById('set-print-name-default').value = sets.printNameDefault || ''; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-api-key').value = sets.apiKey || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "rawbt"; togglePrintSettingsUI(); renderSettingsWh(); openModal('modal-settings'); }
     function togglePrintSettingsUI() { const method = document.getElementById('set-print-method').value; const block = document.getElementById('printnode-block'); if (block) block.style.display = (method === 'printnode') ? 'block' : 'none'; }
-    function saveSets() { sets.showWidth = document.getElementById('set-show-width').checked; sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.apiKey = document.getElementById('set-api-key').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; save(); }
+    function saveSets() { sets.showWidth = document.getElementById('set-show-width').checked; sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.showFullName = document.getElementById('set-show-fullname').checked; sets.printNameDefault = document.getElementById('set-print-name-default').value; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.apiKey = document.getElementById('set-api-key').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; save(); }
     function renderSettingsWh() { document.getElementById('settings-warehouses').innerHTML = sets.warehouses.map(w=>`<div class="wh-item"><span>${w}</span><button class="btn-icon text-danger" onclick="delWh('${w}')">🗑️</button></div>`).join(''); }
     function addWh() { const n = document.getElementById('new-wh-name'); if(n.value){sets.warehouses.push(n.value); n.value=''; renderSettingsWh(); saveSets();}}
     function delWh(w) { sets.warehouses = sets.warehouses.filter(x=>x!==w); renderSettingsWh(); saveSets();}
@@ -1327,6 +1415,7 @@
 
     async function manualSync() {
         if (!sets.url) { showToast("URL не настроен", "danger"); return; }
+        if (isDemoMode) { showToast('Демо-режим: синхронизация отключена', 'danger'); return; }
         showToast("Синхронизация...");
         try {
             const res = await fetch(`${sets.url}/trigger-sync`, {
@@ -1347,6 +1436,7 @@
 
     async function syncWith1C() {
         const d = db[curTab].find(x=>x.id===curDocId); if(!sets.url) { showToast("URL 1С не настроен", "danger"); return; }
+        if (isDemoMode) { showToast('Демо-режим: синхронизация отключена', 'danger'); return; }
         showToast("Отправка в 1С...");
         try { const res = await fetch(`${sets.url}/post-document`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Basic '+btoa(sets.user+":"+(sets.pass||"")),'x-api-key': sets.apiKey || ''}, body:JSON.stringify({type:curTab.toUpperCase(), data:d}) }); if(res.ok) showToast("Успешно проведено!"); else showToast("1С вернула ошибку", "danger"); } catch(e) { showToast("Сервер 1С недоступен", "danger"); logError(`Синхронизация 1С: ${e.message}`); }
     }
@@ -1362,7 +1452,7 @@
     async function deleteFullDoc() { if(!await customConfirm("УДАЛИТЬ ВЕСЬ ДОКУМЕНТ?")) return; db[curTab] = db[curTab].filter(x=>x.id!==curDocId); save(); exitWork(); }
     function openManualSearch() { openModal('modal-search'); setTimeout(() => document.getElementById('manual-search-input').focus(), 300); }
     function openManagerProductSearch() { openManualSearch(); }
-    function doManualSearch() { if (isSearchPending) return; const v = document.getElementById('manual-search-input').value.trim(); if(v){ closeModal('modal-search'); search1C(v); } }
+    function doManualSearch() { if (isSearchPending) return; const v = document.getElementById('manual-search-input').value.trim(); if(v){ closeModal('modal-search'); search1C(v, { type: 'barcode' }); } }
     function exportData() { const blob = new Blob([JSON.stringify({db, sets})], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='backup.json'; a.click(); }
     function importData(event) { const file = event.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(e){ try{ const d = JSON.parse(e.target.result); if(d.db && d.sets){ db = d.db; sets = d.sets; save(); location.reload(); } }catch(err){showToast('Ошибка файла','danger');} }; reader.readAsText(file); }
 </script>
