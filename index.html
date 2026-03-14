@@ -166,17 +166,17 @@
         }
 
         /* МОДАЛКИ */
-        .modal-overlay { 
-            position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; 
-            display: flex; justify-content: center; align-items: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.2s; 
-            padding: 20px;
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000;
+            display: flex; justify-content: center; align-items: flex-end;
+            opacity: 0; pointer-events: none; transition: opacity 0.2s;
+            padding: 0;
         }
         .modal-overlay.open { opacity: 1; pointer-events: all; }
-        .modal-content { 
-            background: white; width: 100%; max-width: 500px; border-radius: 16px;
-            padding: 24px; transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.1, 0.9, 0.2, 1); 
-            max-height: 90vh; overflow-y: auto;
+        .modal-content {
+            background: white; width: 100%; max-width: 500px; border-radius: 16px 16px 0 0;
+            padding: 20px; transform: translateY(100%); transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.2, 1);
+            max-height: 92vh; overflow-y: auto;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         }
         #modal-settings .modal-content { max-width: 920px; }
@@ -185,10 +185,12 @@
         .settings-section.span-2 { grid-column: 1 / -1; }
         .settings-spoiler { border: 1px dashed #d8d8d8; border-radius: 10px; padding: 10px; background: #fcfcfc; }
         .settings-spoiler summary { cursor: pointer; font-weight: 700; color: var(--text-sec); margin-bottom: 8px; }
-        .modal-overlay.open .modal-content { transform: scale(1); }
+        .modal-overlay.open .modal-content { transform: translateY(0); }
 
-        @media (max-height: 500px) {
-            .modal-overlay { align-items: flex-start; padding-top: 10px; }
+        @media (min-width: 700px) {
+            .modal-overlay { align-items: center; padding: 20px; }
+            .modal-content { border-radius: 16px; transform: scale(0.92); max-height: 90vh; padding: 24px; }
+            .modal-overlay.open .modal-content { transform: scale(1); }
         }
 
         .settings-section { margin-bottom: 20px; }
@@ -214,6 +216,29 @@
 
         .customer-view-title { font-size: 30px !important; font-weight: 900; }
         #customer-view { height: var(--app-height); overflow-y: auto; overscroll-behavior: contain; padding-bottom: calc(24px + var(--keyboard-offset)); }
+        .customer-layout { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        .customer-main-left { display: flex; flex-direction: column; }
+        .customer-main-right { min-width: 0; }
+        .customer-scan-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1700;
+            background: rgba(0,0,0,0.62);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 24px;
+        }
+        .customer-scan-overlay .overlay-card {
+            width: min(420px, 100%);
+            background: rgba(13, 26, 47, 0.9);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 16px;
+            padding: 18px;
+        }
+        .customer-scan-overlay .overlay-price { font-size: 42px; font-weight: 900; color: #7ff5e5; margin: 8px 0 10px; }
         .customer-gallery { width: 100%; margin-bottom: 8px; display:none; }
         .customer-gallery.open { display:block; }
         .customer-gallery-toggle { width:100%; min-height:42px; font-size:14px; font-weight:700; margin-bottom:8px; }
@@ -264,13 +289,20 @@
         .stock-table th { font-size: 13px; text-transform: uppercase; color: var(--text-sec); letter-spacing: .02em; }
         .stock-summary { margin-top: 8px; font-size: 18px; font-weight: 800; color: var(--primary); }
 
-        @media (min-width: 1100px) {
+        @media (min-width: 900px) {
             #customer-view { align-items: center; }
             #customer-view > * { width: min(980px, 100%); }
+            .customer-layout { grid-template-columns: minmax(260px, 360px) minmax(0, 1fr); gap: 16px; align-items: start; }
             .customer-spec-grid { grid-template-columns: 200px minmax(260px, 1fr); }
             .stock-table th:first-child, .stock-table td:first-child { width: 42%; }
             .stock-table th:nth-child(2), .stock-table td:nth-child(2) { width: 25%; }
             .stock-table th:nth-child(3), .stock-table td:nth-child(3) { width: 33%; }
+        }
+        @media (max-height: 520px) and (orientation: landscape) {
+            .customer-layout { grid-template-columns: minmax(230px, 320px) minmax(0, 1fr); gap: 10px; }
+            .customer-hero-price { font-size: 42px !important; }
+            .customer-spec-row { font-size: 18px; }
+            .customer-spec-row strong { font-size: 22px; }
         }
 
         .doc-action-btn { min-height: 60px; font-size: 17px; font-weight: 800; border: 2px solid #d7e6f7; background: #f4f9ff; }
@@ -309,27 +341,41 @@
                 <button class="btn-icon" aria-label="Закрыть карточку" onclick="closeCustomerView()">✕</button>
             </div>
         </div>
-        <button id="c-photo-toggle" class="btn-outline customer-gallery-toggle" onclick="toggleCustomerGallery()">📷 Фото товара</button>
-        <div id="c-img-box" class="customer-gallery" aria-label="Галерея фотографий товара"></div>
-        <div id="c-price" class="customer-hero-price editable-value" data-edit-field="priceRub" data-edit-label="Цена, ₽">0.00 ₽</div>
-        <div id="c-price-ue" class="customer-hero-price-sub hidden">≈ 0.00 у.е.</div>
-        <div class="card customer-specs">
-            <div class="customer-spec-grid">
-                <div class="customer-spec-row"><strong>Артикул:</strong> <span id="c-art" class="editable-value" data-edit-field="articul" data-edit-label="Артикул">-</span></div>
-                <div class="customer-spec-row"><strong>Ширина:</strong> <span id="c-width" class="editable-value" data-edit-field="width" data-edit-label="Ширина">-</span></div>
-                <div class="customer-spec-row"><strong>Состав:</strong> <span id="c-comp" class="editable-value" data-edit-field="composition" data-edit-label="Состав">-</span></div>
-                <div class="customer-spec-row"><strong>Бренд:</strong> <span id="c-brand" class="editable-value" data-edit-field="brand" data-edit-label="Бренд">-</span></div>
-                <div class="customer-spec-row"><strong>Плотность:</strong> <span id="c-density" class="editable-value" data-edit-field="density" data-edit-label="Плотность">-</span></div>
+        <div class="customer-layout">
+            <div class="customer-main-left">
+                <button id="c-photo-toggle" class="btn-outline customer-gallery-toggle" onclick="toggleCustomerGallery()">📷 Фото товара</button>
+                <div id="c-img-box" class="customer-gallery" aria-label="Галерея фотографий товара"></div>
+                <div id="c-price" class="customer-hero-price editable-value" data-edit-field="priceRub" data-edit-label="Цена, ₽">0.00 ₽</div>
+                <div id="c-price-ue" class="customer-hero-price-sub hidden">≈ 0.00 у.е.</div>
             </div>
-            <table id="c-stock-table" class="stock-table"></table>
-            <div id="c-stock-summary" class="stock-summary">Общий метраж: -</div>
-            <div id="product-admin-row" class="product-admin-row hidden">
-                <div class="flex gap-2">
-                    <button class="btn-outline w-full" style="min-height:58px;font-size:18px;" onclick="openProductEditModal()">✏️ Массовая правка полей</button>
-                    <button class="btn-outline w-full" style="min-height:58px;font-size:18px;" onclick="openStockRowEditModal(-1)">➕ Добавить склад</button>
+            <div class="customer-main-right">
+                <div class="card customer-specs">
+                    <div class="customer-spec-grid">
+                        <div class="customer-spec-row"><strong>Артикул:</strong> <span id="c-art" class="editable-value" data-edit-field="articul" data-edit-label="Артикул">-</span></div>
+                        <div class="customer-spec-row"><strong>Ширина:</strong> <span id="c-width" class="editable-value" data-edit-field="width" data-edit-label="Ширина">-</span></div>
+                        <div class="customer-spec-row"><strong>Состав:</strong> <span id="c-comp" class="editable-value" data-edit-field="composition" data-edit-label="Состав">-</span></div>
+                        <div class="customer-spec-row"><strong>Бренд:</strong> <span id="c-brand" class="editable-value" data-edit-field="brand" data-edit-label="Бренд">-</span></div>
+                        <div class="customer-spec-row"><strong>Плотность:</strong> <span id="c-density" class="editable-value" data-edit-field="density" data-edit-label="Плотность">-</span></div>
+                    </div>
+                    <table id="c-stock-table" class="stock-table"></table>
+                    <div id="c-stock-summary" class="stock-summary">Общий метраж: -</div>
+                    <div id="product-admin-row" class="product-admin-row hidden">
+                        <div class="flex gap-2">
+                            <button class="btn-outline w-full" style="min-height:58px;font-size:18px;" onclick="openProductEditModal()">✏️ Массовая правка полей</button>
+                            <button class="btn-outline w-full" style="min-height:58px;font-size:18px;" onclick="openStockRowEditModal(-1)">➕ Добавить склад</button>
+                        </div>
+                        <button id="btn-sync-product" class="btn-primary w-full mt-2" style="min-height:58px;font-size:18px;" onclick="pushProductChangesTo1C()">🚀 Отправить изменения товара в 1С</button>
+                        <button id="btn-exit-customer-manager" class="btn-outline w-full mt-2 hidden" style="min-height:52px;font-size:16px;" onclick="exitCustomerManagerMode()">✅ Завершить правку (клиентский режим)</button>
+                    </div>
                 </div>
-                <button id="btn-sync-product" class="btn-primary w-full mt-2" style="min-height:58px;font-size:18px;" onclick="pushProductChangesTo1C()">🚀 Отправить изменения товара в 1С</button>
-                <button id="btn-exit-customer-manager" class="btn-outline w-full mt-2 hidden" style="min-height:52px;font-size:16px;" onclick="exitCustomerManagerMode()">✅ Завершить правку (клиентский режим)</button>
+            </div>
+        </div>
+        <div id="customer-scan-overlay" class="customer-scan-overlay hidden">
+            <div class="overlay-card">
+                <h2 id="customer-overlay-title">Новый товар</h2>
+                <div id="customer-overlay-price" class="overlay-price">0.00 ₽</div>
+                <div id="customer-overlay-art" style="opacity:.8; margin-bottom: 14px;">Арт: -</div>
+                <button class="btn-outline w-full" style="color: #fff; border-color: rgba(255,255,255,0.35);" onclick="closeCustomerScanOverlay()">Закрыть</button>
             </div>
         </div>
         <div class="flex gap-2 mt-4">
@@ -639,6 +685,7 @@
     let tempCustomerManagerMode = false;
     let loginMode = "full";
     let customerAutoCloseTimer = null;
+    let customerScanOverlayTimer = null;
 
     function setSearchLock(locked) {
         isSearchPending = locked;
@@ -822,6 +869,11 @@
         lastScanCode = code;
         lastScanAt = now;
         const manualSearchOpen = document.getElementById('modal-search')?.classList.contains('open');
+        const customerOpen = !document.getElementById('customer-view')?.classList.contains('hidden');
+        if (customerOpen && !isCustomerManagerModeActive()) {
+            searchAndShowCustomerOverlay(code);
+            return;
+        }
         if (!isMgr || manualSearchOpen) search1C(code, { type: 'barcode' });
         else { const inp = document.querySelector('input[data-art-field]'); if (inp) { inp.value = code; inp.dispatchEvent(new Event('input')); } }
     }
@@ -864,6 +916,39 @@
         } catch (e) {
             box.textContent = 'Ошибка поиска товара';
         }
+    }
+
+    async function searchAndShowCustomerOverlay(id) {
+        if (!sets.url || isDemoMode) {
+            showCustomerScanOverlay({ name: 'Демо-ткань', articul: id, priceRub: 1290 });
+            return;
+        }
+        try {
+            let res = await fetch(`${sets.url}/product?id=${encodeURIComponent(id)}&type=barcode`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
+            if (!res.ok) res = await fetch(`${sets.url}/product?id=${encodeURIComponent(id)}&type=articul`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
+            if (!res.ok) { showToast('Не найдено', 'danger'); return; }
+            showCustomerScanOverlay(await res.json());
+        } catch (e) {
+            showToast('Ошибка 1С', 'danger');
+        }
+    }
+
+    function showCustomerScanOverlay(p) {
+        const root = document.getElementById('customer-scan-overlay');
+        if (!root) return;
+        document.getElementById('customer-overlay-title').textContent = p.name || 'Товар';
+        document.getElementById('customer-overlay-price').textContent = `${toNumber(p.priceRub || p.price || 0).toFixed(2)} ₽`;
+        document.getElementById('customer-overlay-art').textContent = `Арт: ${p.articul || '-'}`;
+        root.classList.remove('hidden');
+        if (customerScanOverlayTimer) clearTimeout(customerScanOverlayTimer);
+        customerScanOverlayTimer = setTimeout(() => closeCustomerScanOverlay(), 10000);
+    }
+
+    function closeCustomerScanOverlay() {
+        const root = document.getElementById('customer-scan-overlay');
+        if (root) root.classList.add('hidden');
+        if (customerScanOverlayTimer) clearTimeout(customerScanOverlayTimer);
+        customerScanOverlayTimer = null;
     }
 
     async function search1C(id, opts = {}) {
@@ -1002,6 +1087,7 @@
     }
 
     function showProduct(p) {
+        closeCustomerScanOverlay();
         currentProduct = p;
         const rows = buildStockRows(p);
         const allImages = p.images || p.photos || p.gallery || [];
@@ -1035,7 +1121,7 @@
         if (customerAutoCloseTimer) clearTimeout(customerAutoCloseTimer);
         if (!isCustomerManagerModeActive()) customerAutoCloseTimer = setTimeout(() => closeCustomerView(), 10000);
     }
-    function closeCustomerView() { customerGalleryExpanded = false; tempCustomerManagerMode = false; if (customerAutoCloseTimer) clearTimeout(customerAutoCloseTimer); customerAutoCloseTimer = null; document.getElementById('customer-view').classList.add('hidden'); }
+    function closeCustomerView() { customerGalleryExpanded = false; tempCustomerManagerMode = false; if (customerAutoCloseTimer) clearTimeout(customerAutoCloseTimer); customerAutoCloseTimer = null; closeCustomerScanOverlay(); document.getElementById('customer-view').classList.add('hidden'); }
 
     function openInlineEditModal(el) {
         if (!isCustomerManagerModeActive() || !currentProduct) return;
