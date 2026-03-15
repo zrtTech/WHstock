@@ -18,6 +18,11 @@
 
     <style>
         :root {
+            --background: 225 25% 97%;
+            --foreground: 230 25% 10%;
+            --primary-hsl: 230 80% 56%;
+            --primary-glow: 250 85% 65%;
+            --muted-foreground: 225 10% 50%;
             --primary: hsl(221 83% 53%);
             --primary-hover: hsl(221 83% 47%);
             --success: hsl(142 71% 40%);
@@ -36,7 +41,7 @@
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         html, body { width: 100%; height: 100%; overflow: hidden; }
-        body { font-family: "Inter", -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: radial-gradient(circle at 10% 0%, hsl(217 91% 96%), transparent 42%), var(--bg); color: var(--text); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+        body { font-family: "Inter", -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: radial-gradient(circle at 10% 0%, hsl(217 91% 96%), transparent 42%), hsl(var(--background)); color: hsl(var(--foreground)); line-height: 1.5; -webkit-font-smoothing: antialiased; }
         .hidden { display: none !important; }
         .flex { display: flex; }
         .items-center { align-items: center; }
@@ -107,7 +112,7 @@
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
         }
         .product-admin-row { margin-top: 12px; }
-        .kiosk-inner { width: min(620px, 100%); }
+        .kiosk-inner { width: min(480px, 100%); }
         .kiosk-logo {
             width: 82px;
             height: 82px;
@@ -166,6 +171,11 @@
             font-weight: 800;
             box-shadow: 0 14px 28px rgba(4, 18, 34, 0.36);
         }
+        .kiosk-search-btn:active,
+        .kiosk-tool-btn:active,
+        .kiosk-staff-entry:active {
+            transform: translateY(1px) scale(0.99);
+        }
         .kiosk-search-btn svg {
             width: 30px;
             height: 30px;
@@ -181,12 +191,14 @@
         .kiosk-tool-btn {
             color: #e8f3ff;
             border-color: rgba(153, 202, 248, 0.5);
-            background: rgba(12, 39, 71, 0.36);
+            background: hsl(0 0% 100% / 0.12);
             border-radius: 14px;
             font-weight: 700;
             min-height: 52px;
             padding: 0 16px;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.14);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 2px 8px rgba(0,0,0,0.14);
         }
         #kiosk-a4-status {
             margin-top: 10px;
