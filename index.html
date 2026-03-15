@@ -10,22 +10,25 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Склад">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%231976D2'/%3E%3Cpath d='M256 120L120 188v136l136 68 136-68V188L256 120z' fill='%23fff'/%3E%3C/svg%3E">
     <link rel="manifest" href="manifest.webmanifest">
 
     <style>
         :root {
-            --primary: #1976D2;
-            --primary-hover: #1565C0;
-            --success: #388E3C;
-            --danger: #D32F2F;
-            --price-color: #00897B;
-            --bg: #F5F7FA;
-            --card: #FFFFFF;
-            --text: #212121;
-            --text-sec: #757575;
-            --border: #E0E0E0;
-            --focus-ring: rgba(25, 118, 210, 0.3);
+            --primary: hsl(221 83% 53%);
+            --primary-hover: hsl(221 83% 47%);
+            --success: hsl(142 71% 40%);
+            --danger: hsl(0 72% 51%);
+            --price-color: hsl(173 80% 33%);
+            --bg: hsl(210 40% 98%);
+            --card: hsl(0 0% 100% / 0.88);
+            --text: hsl(222 47% 11%);
+            --text-sec: hsl(215 16% 47%);
+            --border: hsl(214 32% 91%);
+            --focus-ring: hsl(221 83% 53% / 0.28);
             --tab-height: 52px;
             --app-height: 100dvh;
             --keyboard-offset: 0px;
@@ -33,7 +36,7 @@
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         html, body { width: 100%; height: 100%; overflow: hidden; }
-        body { font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+        body { font-family: "Inter", -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: radial-gradient(circle at 10% 0%, hsl(217 91% 96%), transparent 42%), var(--bg); color: var(--text); line-height: 1.5; -webkit-font-smoothing: antialiased; }
         .hidden { display: none !important; }
         .flex { display: flex; }
         .items-center { align-items: center; }
@@ -65,7 +68,7 @@
             margin: 0;
             position: relative;
             padding-bottom: calc(var(--tab-height) + 18px + env(safe-area-inset-bottom, 0px));
-            background: white;
+            background: transparent;
             overflow: hidden;
         }
 
@@ -100,13 +103,13 @@
         /* КНОПКИ */
         button {
             border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; padding: 12px 16px;
-            transition: background 0.2s, transform 0.1s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px;
+            transition: background 0.2s, transform 0.1s, box-shadow 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px;
         }
         button:active { transform: scale(0.98); }
         .btn-main { background: white; color: var(--primary); height: 64px; font-size: 18px; font-weight: 800; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .btn-search-wide { justify-content: center; padding: 0 20px; font-size: 22px; letter-spacing: .01em; white-space: nowrap; }
         .btn-manager-search { min-height: 44px; font-size: 15px; font-weight: 800; padding: 10px 14px; border-radius: 10px; }
-        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary { background: linear-gradient(180deg, hsl(221 86% 58%), hsl(221 83% 53%)); color: white; box-shadow: 0 10px 22px hsl(221 83% 53% / 0.28); }
         .btn-success { background: var(--success); color: white; }
         .btn-danger { background: var(--danger); color: white; }
         .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
@@ -114,7 +117,7 @@
         .settings-btn { background: #E3F2FD; color: var(--primary); border: 1px solid #BBDEFB; box-shadow: 0 2px 8px rgba(25,118,210,0.2); }
 
         /* КАРТОЧКИ */
-        .card { background: var(--card); border-radius: 12px; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border); transition: box-shadow 0.2s; }
+        .card { background: var(--card); backdrop-filter: blur(8px); border-radius: 14px; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border); box-shadow: 0 8px 24px hsl(215 25% 20% / 0.07); transition: box-shadow 0.2s; }
         .doc-card { cursor: pointer; border-left: 6px solid var(--border); transition: 0.1s; margin-bottom: 12px; }
         .doc-card:active { background: #f9f9f9; }
         .doc-card.active { border-left-color: var(--primary); }
@@ -122,7 +125,7 @@
 
         /* ВВОД */
         .input-group { margin-bottom: 6px; }
-        input, select { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; background: white; color: var(--text); transition: border-color 0.2s; }
+        input, select { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: hsl(0 0% 100% / 0.9); color: var(--text); transition: border-color 0.2s, box-shadow 0.2s; }
         input:focus, select:focus, button:focus-visible { border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px var(--focus-ring); }
         label { display: block; margin-bottom: 4px; font-size: 11px; color: var(--text-sec); font-weight: 700; text-transform: uppercase; }
 
@@ -134,9 +137,10 @@
             right: 0;
             display: flex;
             align-items: stretch;
-            background: white;
-            border-top: 1px solid var(--border);
-            box-shadow: 0 -6px 20px rgba(0,0,0,0.08);
+            background: hsl(0 0% 100% / 0.76);
+            backdrop-filter: blur(14px);
+            border-top: 1px solid hsl(214 32% 91% / 0.9);
+            box-shadow: 0 -12px 28px hsl(215 25% 20% / 0.12);
             z-index: 100;
             max-width: 100vw;
             margin: 0 auto;
@@ -150,7 +154,7 @@
             border-radius: 0;
             flex-direction: column;
             background: none;
-            color: #616161;
+            color: hsl(215 14% 42%);
             font-size: 10px;
             padding: 4px 3px;
             gap: 2px;
@@ -161,8 +165,8 @@
         #tab-bar button .tab-label { font-size: 9px; font-weight: 700; line-height: 1; }
         #tab-bar button.active {
             color: var(--primary);
-            background: rgba(25,118,210,0.10);
-            border-top: 2px solid var(--primary);
+            background: hsl(221 83% 53% / 0.14);
+            border-top: 2px solid hsl(221 83% 53% / 0.9);
         }
         .tab-badge { min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; background: var(--danger); color: #fff; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
         .tab-badge.hidden { display: none; }
@@ -251,7 +255,7 @@
         @keyframes slideIn { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes pulse { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
 
-        .header-fixed { position: sticky; top: 0; z-index: 50; background: #F5F7FA; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+        .header-fixed { position: sticky; top: 0; z-index: 50; background: hsl(210 40% 98% / 0.86); backdrop-filter: blur(10px); padding: 8px 12px; border-bottom: 1px solid var(--border); }
         .screen-subtitle { color: var(--text-sec); font-size: 14px; margin-top: 4px; }
 
         .customer-view-title { font-size: 30px !important; font-weight: 900; }
