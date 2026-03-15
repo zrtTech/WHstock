@@ -316,6 +316,14 @@
             .customer-spec-row strong { font-size: 22px; }
         }
 
+
+        .writeoff-stock-preview { border: 1px dashed #cfd8e3; border-radius: 10px; padding: 8px; margin-bottom: 8px; font-size: 13px; background: #fafcff; }
+        .writeoff-stock-preview .row { display: grid; grid-template-columns: 1.2fr .9fr .9fr; gap: 6px; padding: 4px 0; border-bottom: 1px solid #eef3f8; }
+        .writeoff-stock-preview .row:last-child { border-bottom: none; }
+        .a4-preview-list { max-height: 260px; overflow-y: auto; border:1px solid var(--border); border-radius: 8px; padding: 8px; background:#fafafa; }
+        .a4-preview-item { display:flex; justify-content:space-between; gap:8px; padding:6px 4px; border-bottom:1px solid #eee; font-size:14px; }
+        .a4-preview-item:last-child { border-bottom:none; }
+
         .doc-action-btn { min-height: 60px; font-size: 17px; font-weight: 800; border: 2px solid #d7e6f7; background: #f4f9ff; }
         .doc-action-btn:hover { background: #e8f3ff; }
         .cut-row { display: grid; grid-template-columns: 1.4fr 1.1fr 1fr auto; gap: 6px; align-items: center; margin-bottom: 8px; }
@@ -339,7 +347,7 @@
             <div class="kiosk-tools">
                 <button class="btn-outline" style="color:white;border-color:rgba(255,255,255,0.5);" onclick="enterKioskFullscreen()">⛶ Полноэкранный режим</button>
                 <button id="btn-a4-collect-toggle" class="btn-outline" style="color:white;border-color:rgba(255,255,255,0.5);" onclick="toggleKioskA4CollectMode()">📋 Собрать лист этикеток</button>
-                <button id="btn-a4-print" class="btn-outline" style="color:white;border-color:rgba(255,255,255,0.5);" onclick="printA4Buffer()">🖨️ Напечатать лист</button>
+                <button id="btn-a4-print" class="btn-outline" style="color:white;border-color:rgba(255,255,255,0.5);" onclick="openA4PreviewModal()">🖨️ Напечатать лист</button>
             </div>
             <div id="kiosk-a4-status" class="text-sm" style="margin-top:8px; opacity:.85;">A4 буфер: 0/10</div>
         </div>
@@ -472,6 +480,7 @@
             <h3>ДИАГНОСТИКА</h3>
             <div class="light-block">
                 <button class="btn-outline w-full mb-2" onclick="openLogsModal()">📋 Посмотреть логи ошибок</button>
+                <label class="checkbox-row">Демо-режим поиска в киоске <input type="checkbox" id="set-kiosk-demo" onchange="saveSets()"></label>
             </div>
         </div>
 
@@ -557,6 +566,20 @@
     </div>
 </div>
 
+
+
+<div id="modal-a4-preview" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal-content">
+        <h2>Лист А4 (до 10 товаров)</h2>
+        <p id="a4-preview-status" class="text-sm text-sec mb-2">0/10</p>
+        <div id="a4-preview-list" class="a4-preview-list"></div>
+        <div class="flex gap-2 mt-3">
+            <button class="btn-outline w-full" onclick="clearA4Buffer()">Очистить</button>
+            <button class="btn-primary w-full" onclick="printA4Buffer(true)">Печать листа</button>
+        </div>
+        <button class="btn-outline w-full mt-2" onclick="closeModal('modal-a4-preview')">Закрыть</button>
+    </div>
+</div>
 
 <div id="modal-print-actions" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="modal-content">
@@ -724,7 +747,7 @@
     }
 
     /* ДАННЫЕ */
-    const defSets = { url:"http://83.237.242.90:3000", user:"", pass:"", apiKey:"zX9#mK4$pL7@nQ2&wR8!vT3^hY6*jB5", mgr:"1234", warehouses:["Магазин","Склад","Розница"], prefix:"R26", nextNum:1, showWidth:true, showDensity:true, showBrand:true, showComp:true, showFullName:false, printNameDefault:"", printMethod: "server", pnKey:"", pnPrinter:"", printerClient:"", printerWarehouse:"", printerHanger:"", printerA4:"", mgrHash:"" };
+    const defSets = { url:"http://83.237.242.90:3000", user:"", pass:"", apiKey:"zX9#mK4$pL7@nQ2&wR8!vT3^hY6*jB5", mgr:"1234", warehouses:["Магазин","Склад","Розница"], prefix:"R26", nextNum:1, showWidth:true, showDensity:true, showBrand:true, showComp:true, showFullName:false, printNameDefault:"", printMethod: "server", pnKey:"", pnPrinter:"", printerClient:"", printerWarehouse:"", printerHanger:"", printerA4:"", mgrHash:"", kioskDemoMode:true };
     let sets = { ...defSets, ...safeLoad('tsd_final_sets', defSets) };
     let db = {
         receive: safeLoad('tsd_final_receive', []),
@@ -745,7 +768,7 @@
     let isProductDirty = false;
     let inlineEditField = null;
     let activeStockRowIndex = null;
-    let isDemoMode = safeLoad('app_demo_mode', false);
+    let isDemoMode = safeLoad('app_demo_mode', true);
     let lastScanAt = 0;
     let lastScanCode = "";
     const SCAN_COOLDOWN_MS = 1200;
@@ -1003,12 +1026,49 @@
         if (resolved && resolved !== before) el.value = resolved;
     }
 
+    function isKioskClientDemoMode() {
+        return !isMgr && sets.kioskDemoMode !== false;
+    }
+
+    async function loadWriteoffStockPreview() {
+        const box = document.getElementById('writeoff-stock-preview');
+        const art = document.getElementById('f-art')?.value?.trim();
+        if (!box) return;
+        if (!art) { box.innerHTML = '<div class="text-sec">Введите артикул, чтобы увидеть остатки по складам</div>'; return; }
+
+        let product = null;
+        if (!sets.url || isDemoMode || isKioskClientDemoMode()) {
+            product = {
+                stockRows: [
+                    { warehouse: 'Магазин', cell: 'A1', meters: 2.5 },
+                    { warehouse: 'Склад', cell: 'B-14', meters: 7.0 },
+                    { warehouse: 'Розница', cell: 'C3', meters: 1.5 }
+                ]
+            };
+        } else {
+            try {
+                let res = await apiFetch(`${sets.url}/product?id=${encodeURIComponent(art)}&type=barcode`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
+                if (!res.ok) res = await apiFetch(`${sets.url}/product?id=${encodeURIComponent(art)}&type=articul`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
+                if (res.ok) product = await res.json();
+            } catch (e) {
+                box.innerHTML = '<div class="text-danger">Ошибка поиска остатков</div>';
+                return;
+            }
+        }
+
+        const rows = buildStockRows(product || {});
+        if (!rows.length) { box.innerHTML = '<div class="text-sec">Остатки не найдены</div>'; return; }
+        const total = rows.reduce((s, r) => s + toNumber(r.meters ?? r.m), 0);
+        box.innerHTML = `<div class="text-sm mb-2"><strong>Остатки по складам:</strong> ${total.toFixed(2)} м</div>` +
+            rows.map(r => `<div class="row"><div>${r.warehouse || r.wh || '-'}</div><div>${toNumber(r.meters ?? r.m).toFixed(2)} м</div><div>${r.cell || r.shelf || '-'}</div></div>`).join('');
+    }
+
     async function loadPriceItemPreview() {
         const box = document.getElementById('price-item-preview');
         const art = document.getElementById('f-art')?.value?.trim();
         if (!box) return;
         if (!art) { box.textContent = 'Введите артикул для поиска товара'; return; }
-        if (!sets.url || isDemoMode) { box.textContent = `Демо: ${art} | текущая цена: 1000.00 ₽`; return; }
+        if (!sets.url || isDemoMode || isKioskClientDemoMode()) { box.textContent = `Демо: ${art} | текущая цена: 1000.00 ₽`; return; }
         try {
             let res = await apiFetch(`${sets.url}/product?id=${encodeURIComponent(art)}&type=barcode`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
             if (!res.ok) res = await apiFetch(`${sets.url}/product?id=${encodeURIComponent(art)}&type=articul`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
@@ -1021,7 +1081,7 @@
     }
 
     async function searchAndShowCustomerOverlay(id) {
-        if (!sets.url || isDemoMode) {
+        if (!sets.url || isDemoMode || isKioskClientDemoMode()) {
             showCustomerScanOverlay({ name: 'Демо-ткань', articul: id, priceRub: 1290 });
             return;
         }
@@ -1057,7 +1117,7 @@
         if (isSearchPending) return;
         setSearchLock(true);
         showToast("Поиск...");
-        if (!sets.url || isDemoMode) {
+        if (!sets.url || isDemoMode || isKioskClientDemoMode()) {
             isProductDirty = false;
             showProduct({
                 name: "Демо-ткань",
@@ -1521,6 +1581,31 @@
         const btn = document.getElementById('btn-a4-collect-toggle');
         if (status) status.textContent = `A4 буфер: ${kioskA4Buffer.length}/10${kioskA4CollectMode ? ' (режим сбора включён)' : ''}`;
         if (btn) btn.textContent = kioskA4CollectMode ? '✅ Режим сбора включен' : '📋 Собрать лист этикеток';
+        renderA4PreviewModal();
+    }
+
+    function renderA4PreviewModal() {
+        const box = document.getElementById('a4-preview-list');
+        const status = document.getElementById('a4-preview-status');
+        if (!box || !status) return;
+        status.textContent = `${kioskA4Buffer.length}/10`;
+        if (!kioskA4Buffer.length) { box.innerHTML = '<div class="text-sec">Буфер пуст. Отсканируйте товары или возьмите из документа.</div>'; return; }
+        box.innerHTML = kioskA4Buffer.map((art, i) => `<div class="a4-preview-item"><span>${i + 1}. ${art}</span><button class="btn-icon" onclick="removeA4Item(${i})">✕</button></div>`).join('');
+    }
+
+    function removeA4Item(idx) {
+        kioskA4Buffer.splice(idx, 1);
+        updateKioskA4Status();
+    }
+
+    function clearA4Buffer() {
+        kioskA4Buffer = [];
+        updateKioskA4Status();
+    }
+
+    function openA4PreviewModal() {
+        renderA4PreviewModal();
+        openModal('modal-a4-preview');
     }
 
     function toggleKioskA4CollectMode() {
@@ -1538,7 +1623,7 @@
         showToast(`Добавлено в A4: ${art}`);
     }
 
-    async function printA4Buffer() {
+    async function printA4Buffer(closeAfter = false) {
         if (!kioskA4Buffer.length) { showToast('Буфер A4 пуст', 'danger'); return; }
         if (!sets.url) { showToast('URL не настроен', 'danger'); return; }
         try {
@@ -1555,6 +1640,7 @@
             showToast('Лист A4 отправлен на печать');
             kioskA4Buffer = [];
             updateKioskA4Status();
+            if (closeAfter) closeModal('modal-a4-preview');
         } catch (e) {
             showToast('Ошибка печати A4', 'danger');
             logError(`print a4: ${e.message}`);
@@ -1566,7 +1652,7 @@
         if (!d || !Array.isArray(d.items) || !d.items.length) { showToast('Документ пуст', 'danger'); return; }
         kioskA4Buffer = d.items.map(i => i.art).filter(Boolean).slice(0, 10);
         updateKioskA4Status();
-        await printA4Buffer();
+        openA4PreviewModal();
     }
 
     function fileToDataUrl(file) {
@@ -1730,7 +1816,8 @@
         } else if(curTab === 'move'){
             cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" onblur="resolveFormArtInput(this)" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this);}"></div><div class="flex gap-2"><div style="flex:1"><label>ОТКУДА (СКЛАД)</label><select id="f-wh-from">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ОТКУДА (ЯЧ)</label><input type="text" id="f-cell-from" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="flex gap-2"><div style="flex:1"><label>КУДА (СКЛАД)</label><select id="f-wh-to">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>КУДА (ЯЧ)</label><input type="text" id="f-cell-to" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div></div><div class="input-group"><label>МЕТРАЖ</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-primary w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
         } else if(curTab === 'writeoff'){
-            cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" onblur="resolveFormArtInput(this)" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this);}"></div><div class="flex gap-2"><div style="flex:1"><label>СКЛАД</label><select id="f-wh">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ЯЧЕЙКА</label><input type="text" id="f-cell" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div></div><div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-danger w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+            cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" onblur="resolveFormArtInput(this); loadWriteoffStockPreview();" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this); loadWriteoffStockPreview();}"></div><div id="writeoff-stock-preview" class="writeoff-stock-preview">Введите артикул, чтобы увидеть остатки по складам</div><div class="flex gap-2"><div style="flex:1"><label>СКЛАД</label><select id="f-wh">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ЯЧЕЙКА</label><input type="text" id="f-cell" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div></div><div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-danger w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+            loadWriteoffStockPreview();
         } else if(curTab === 'price'){
             cont.innerHTML = `<label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" onblur="resolveFormArtInput(this); loadPriceItemPreview()" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this); loadPriceItemPreview();}"><div id="price-item-preview" class="text-sm text-sec" style="margin:4px 0 6px;">Введите артикул для поиска товара</div><label>Цена (у.е.)</label><input type="text" id="f-p" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"><button class="btn-primary w-full" style="background:var(--price-color)" id="btn-save-line" onclick="saveLine()">ОК</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
         }
@@ -1882,9 +1969,9 @@
     function closeModal(id) { const modal = document.getElementById(id); if(!modal) return; modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); if (activeModalId === id) activeModalId = null; if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') lastFocusedElement.focus(); }
     function showToast(m, t) { const c = document.getElementById('toast-container'); if(c.children.length > 3) c.removeChild(c.firstChild); const d = document.createElement('div'); d.className = `toast`; d.setAttribute('role', 'status'); d.style.background = t === 'danger' ? 'var(--danger)' : 'var(--primary)'; d.textContent = m; c.appendChild(d); setTimeout(()=>d.remove(), 2500); }
     
-    async function openSettings() { document.getElementById('set-show-width').checked = sets.showWidth !== false; document.getElementById('set-show-density').checked = sets.showDensity !== false; document.getElementById('set-show-brand').checked = sets.showBrand !== false; document.getElementById('set-show-comp').checked = sets.showComp !== false; document.getElementById('set-show-fullname').checked = sets.showFullName === true; document.getElementById('set-print-name-default').value = sets.printNameDefault || ''; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-api-key').value = sets.apiKey || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "server"; togglePrintSettingsUI(); renderSettingsWh(); await loadServerPrinters(); openModal('modal-settings'); }
+    async function openSettings() { document.getElementById('set-show-width').checked = sets.showWidth !== false; document.getElementById('set-show-density').checked = sets.showDensity !== false; document.getElementById('set-show-brand').checked = sets.showBrand !== false; document.getElementById('set-show-comp').checked = sets.showComp !== false; document.getElementById('set-show-fullname').checked = sets.showFullName === true; document.getElementById('set-print-name-default').value = sets.printNameDefault || ''; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-api-key').value = sets.apiKey || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "server"; document.getElementById('set-kiosk-demo').checked = sets.kioskDemoMode !== false; togglePrintSettingsUI(); renderSettingsWh(); await loadServerPrinters(); openModal('modal-settings'); }
     function togglePrintSettingsUI() { const method = document.getElementById('set-print-method').value; const block = document.getElementById('printnode-block'); const serverBlock = document.getElementById('server-printers-block'); if (block) block.style.display = (method === 'printnode') ? 'block' : 'none'; if (serverBlock) serverBlock.style.display = (method === 'server') ? 'block' : 'none'; }
-    function saveSets() { sets.showWidth = document.getElementById('set-show-width').checked; sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.showFullName = document.getElementById('set-show-fullname').checked; sets.printNameDefault = document.getElementById('set-print-name-default').value; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.apiKey = document.getElementById('set-api-key').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; sets.printerClient = document.getElementById('set-printer-client')?.value || ''; sets.printerWarehouse = document.getElementById('set-printer-warehouse')?.value || ''; sets.printerHanger = document.getElementById('set-printer-hanger')?.value || ''; sets.printerA4 = document.getElementById('set-printer-a4')?.value || ''; save(); }
+    function saveSets() { sets.showWidth = document.getElementById('set-show-width').checked; sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.showFullName = document.getElementById('set-show-fullname').checked; sets.printNameDefault = document.getElementById('set-print-name-default').value; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.apiKey = document.getElementById('set-api-key').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; sets.kioskDemoMode = document.getElementById('set-kiosk-demo').checked; sets.printerClient = document.getElementById('set-printer-client')?.value || ''; sets.printerWarehouse = document.getElementById('set-printer-warehouse')?.value || ''; sets.printerHanger = document.getElementById('set-printer-hanger')?.value || ''; sets.printerA4 = document.getElementById('set-printer-a4')?.value || ''; save(); }
     function renderSettingsWh() { const root = document.getElementById('settings-warehouses'); if (!root) return; root.innerHTML = ''; (sets.warehouses || []).forEach(w => { const row = document.createElement('div'); row.className = 'wh-item'; const label = document.createElement('span'); label.textContent = w; const btn = document.createElement('button'); btn.className = 'btn-icon text-danger'; btn.textContent = '🗑️'; btn.addEventListener('click', () => delWh(w)); row.append(label, btn); root.appendChild(row); }); }
     function addWh() { const n = document.getElementById('new-wh-name'); if(n.value){sets.warehouses.push(n.value); n.value=''; renderSettingsWh(); saveSets();}}
     function delWh(w) { sets.warehouses = sets.warehouses.filter(x=>x!==w); renderSettingsWh(); saveSets();}
