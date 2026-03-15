@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Склад">
     <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%231976D2'/%3E%3Cpath d='M256 120L120 188v136l136 68 136-68V188L256 120z' fill='%23fff'/%3E%3C/svg%3E">
-    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkNrbGFkc2tvaiBUZXJtaW5hbCAxQyIsCiAgInNob3J0X25hbWUiOiAiU2tsYWQiLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiI0Y1RjdGQSIsCiAgInRoZW1lX2NvbG9yIjogIiMxOTc2RDIiCn0=">
+    <link rel="manifest" href="manifest.webmanifest">
 
     <style>
         :root {
@@ -46,6 +46,16 @@
         .text-sm { font-size: 13px; }
         .text-primary { color: var(--primary); }
         .gap-2 { gap: 8px; }
+        .mb-2 { margin-bottom: 8px; }
+        .mb-3 { margin-bottom: 12px; }
+        .mb-4 { margin-bottom: 16px; }
+        .mb-6 { margin-bottom: 24px; }
+        .mt-2 { margin-top: 8px; }
+        .mt-3 { margin-top: 12px; }
+        .mt-4 { margin-top: 16px; }
+        .text-sec { color: var(--text-sec); }
+        .text-danger { color: var(--danger); }
+        .text-success { color: var(--success); }
 
         #app {
             width: 100vw;
@@ -210,6 +220,7 @@
         #toast-container { position: fixed; top: 100px; left: 50%; transform: translateX(-50%); z-index: 3000; width: 90%; max-width: 400px; pointer-events: none; }
         .toast { padding: 14px; border-radius: 8px; color: white; margin-bottom: 8px; text-align: center; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.1); animation: slideIn 0.3s forwards; }
         @keyframes slideIn { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes pulse { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
 
         .header-fixed { position: sticky; top: 0; z-index: 50; background: #F5F7FA; padding: 8px 12px; border-bottom: 1px solid var(--border); }
         .screen-subtitle { color: var(--text-sec); font-size: 14px; margin-top: 4px; }
@@ -686,8 +697,34 @@
     /* БЕЗОПАСНАЯ ЗАГРУЗКА */
     function safeLoad(key, def){ try { const val = localStorage.getItem(key); return val ? JSON.parse(val) : def; } catch(e) { return def; } }
 
+
+    async function sha256Hex(text) {
+        const msg = new TextEncoder().encode(String(text || ''));
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msg);
+        return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function verifyManagerPassword(pass) {
+        const raw = String(pass || '');
+        if (sets.mgrHash) {
+            try { return (await sha256Hex(raw)) === sets.mgrHash; }
+            catch (e) { logError(`hash verify: ${e.message}`); }
+        }
+        return raw === String(sets.mgr || '');
+    }
+
+    async function apiFetch(url, options = {}, timeoutMs = 15000) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+            return await fetch(url, { ...options, signal: controller.signal });
+        } finally {
+            clearTimeout(timer);
+        }
+    }
+
     /* ДАННЫЕ */
-    const defSets = { url:"http://83.237.242.90:3000", user:"", pass:"", apiKey:"zX9#mK4$pL7@nQ2&wR8!vT3^hY6*jB5", mgr:"1234", warehouses:["Магазин","Склад","Розница"], prefix:"R26", nextNum:1, showWidth:true, showDensity:true, showBrand:true, showComp:true, showFullName:false, printNameDefault:"", printMethod: "server", pnKey:"", pnPrinter:"", printerClient:"", printerWarehouse:"", printerHanger:"", printerA4:"" };
+    const defSets = { url:"http://83.237.242.90:3000", user:"", pass:"", apiKey:"zX9#mK4$pL7@nQ2&wR8!vT3^hY6*jB5", mgr:"1234", warehouses:["Магазин","Склад","Розница"], prefix:"R26", nextNum:1, showWidth:true, showDensity:true, showBrand:true, showComp:true, showFullName:false, printNameDefault:"", printMethod: "server", pnKey:"", pnPrinter:"", printerClient:"", printerWarehouse:"", printerHanger:"", printerA4:"", mgrHash:"" };
     let sets = { ...defSets, ...safeLoad('tsd_final_sets', defSets) };
     let db = {
         receive: safeLoad('tsd_final_receive', []),
@@ -719,6 +756,7 @@
     let loginMode = "full";
     let customerAutoCloseTimer = null;
     let customerScanOverlayTimer = null;
+    let scanBufResetTimer = null;
     let serverPrinters = [];
     let kioskA4CollectMode = false;
     let kioskA4Buffer = [];
@@ -871,8 +909,12 @@
         window.addEventListener('keydown', e => {
             if (e.key === 'Escape' && activeModalId) { closeModal(activeModalId); return; }
             if (e.target.tagName === 'INPUT') return;
-            if (e.key === 'Enter') { if (scanBuf.length > 2) handleScan(scanBuf); scanBuf = ""; } 
-            else if (e.key.length === 1) { scanBuf += e.key; }
+            if (e.key === 'Enter') { if (scanBuf.length > 2) handleScan(scanBuf); scanBuf = ""; if (scanBufResetTimer) clearTimeout(scanBufResetTimer); }
+            else if (e.key.length === 1) {
+                scanBuf += e.key;
+                if (scanBufResetTimer) clearTimeout(scanBufResetTimer);
+                scanBufResetTimer = setTimeout(() => { scanBuf = ""; }, 180);
+            }
         });
         document.querySelectorAll('.modal-overlay').forEach(m => {
             m.addEventListener('click', (e) => {
@@ -883,6 +925,7 @@
         purgeOldClosedDocs(15);
         updateDataLists();
         updateKioskA4Status();
+        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').catch(err => logError(`sw: ${err.message}`)); }
     };
 
     function saveAppState() { localStorage.setItem('app_last_tab', curTab); localStorage.setItem('app_last_doc_id', curDocId); localStorage.setItem('app_is_mgr', isMgr); localStorage.setItem('app_demo_mode', isDemoMode); }
@@ -901,11 +944,11 @@
         showToast('Возврат в клиентский режим');
     }
 
-    function handleScan(code) {
+    async function handleScan(code) {
         if (String(code).startsWith("STAFF:")) {
             const pass = String(code).slice(6);
             const customerOpen = !document.getElementById('customer-view')?.classList.contains('hidden');
-            if (pass === sets.mgr) {
+            if (await verifyManagerPassword(pass)) {
                 if (customerOpen && !isMgr) enterCustomerManagerMode();
                 else loginSuccess();
             } else showToast('Неверный QR сотрудника', 'danger');
@@ -942,8 +985,8 @@
         if (!value) return '';
         if (!sets.url || isDemoMode) return value;
         try {
-            let res = await fetch(`${sets.url}/product?id=${encodeURIComponent(value)}&type=barcode`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
-            if (!res.ok) res = await fetch(`${sets.url}/product?id=${encodeURIComponent(value)}&type=articul`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
+            let res = await apiFetch(`${sets.url}/product?id=${encodeURIComponent(value)}&type=barcode`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
+            if (!res.ok) res = await apiFetch(`${sets.url}/product?id=${encodeURIComponent(value)}&type=articul`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
             if (!res.ok) return value;
             const data = await res.json();
             return (data.articul || data.article || value).toString();
@@ -967,8 +1010,8 @@
         if (!art) { box.textContent = 'Введите артикул для поиска товара'; return; }
         if (!sets.url || isDemoMode) { box.textContent = `Демо: ${art} | текущая цена: 1000.00 ₽`; return; }
         try {
-            let res = await fetch(`${sets.url}/product?id=${encodeURIComponent(art)}&type=barcode`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
-            if (!res.ok) res = await fetch(`${sets.url}/product?id=${encodeURIComponent(art)}&type=articul`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
+            let res = await apiFetch(`${sets.url}/product?id=${encodeURIComponent(art)}&type=barcode`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
+            if (!res.ok) res = await apiFetch(`${sets.url}/product?id=${encodeURIComponent(art)}&type=articul`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
             if (!res.ok) { box.textContent = 'Товар не найден'; return; }
             const p = await res.json();
             box.textContent = `${p.name || p.articul || art} | текущая цена: ${toNumber(p.priceRub || p.price || 0).toFixed(2)} ₽`;
@@ -983,8 +1026,8 @@
             return;
         }
         try {
-            let res = await fetch(`${sets.url}/product?id=${encodeURIComponent(id)}&type=barcode`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
-            if (!res.ok) res = await fetch(`${sets.url}/product?id=${encodeURIComponent(id)}&type=articul`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
+            let res = await apiFetch(`${sets.url}/product?id=${encodeURIComponent(id)}&type=barcode`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
+            if (!res.ok) res = await apiFetch(`${sets.url}/product?id=${encodeURIComponent(id)}&type=articul`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
             if (!res.ok) { showToast('Не найдено', 'danger'); return; }
             showCustomerScanOverlay(await res.json());
         } catch (e) {
@@ -1041,9 +1084,9 @@
         }
         try {
             const type = opts.type || 'barcode';
-            let res = await fetch(`${sets.url}/product?id=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ":" + (sets.pass || "")), 'x-api-key': sets.apiKey || "" } });
+            let res = await apiFetch(`${sets.url}/product?id=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ":" + (sets.pass || "")), 'x-api-key': sets.apiKey || "" } });
             if (!res.ok && type === 'barcode') {
-                res = await fetch(`${sets.url}/product?id=${encodeURIComponent(id)}&type=articul`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ":" + (sets.pass || "")), 'x-api-key': sets.apiKey || "" } });
+                res = await apiFetch(`${sets.url}/product?id=${encodeURIComponent(id)}&type=articul`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ":" + (sets.pass || "")), 'x-api-key': sets.apiKey || "" } });
             }
             if (res.ok) { isProductDirty = false; showProduct(await res.json()); } else showToast("Не найдено", "danger");
         } catch (e) { showToast("Ошибка 1С", "danger"); logError(`Поиск 1С: ${e.message}`); }
@@ -1324,7 +1367,7 @@
 
         if (!sets.url) { showToast('Демо режим: изменения оставлены локально'); return; }
         try {
-            const res = await fetch(`${sets.url}/update-product`, {
+            const res = await apiFetch(`${sets.url}/update-product`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1344,15 +1387,19 @@
         }
     }
 
+    function sanitizeZplValue(v) {
+        return String(v ?? '').replace(/[\^~\\]/g, ' ').replace(/[\r\n]+/g, ' ').trim();
+    }
+
     /* ПЕЧАТЬ */
     async function printLabel(art, comp, width, name, brand = '', density = '', priceRub = 0) {
         const price = `${toNumber(priceRub).toFixed(2)} ₽`;
-        const zpl = `^XA^CI28^FO30,30^A0N,34,34^FDАрт: ${art || '-'}^FS^FO30,70^A0N,26,26^FDШирина: ${width || '-'}^FS^FO30,105^A0N,26,26^FDПлотность: ${density || '-'}^FS^FO30,140^A0N,26,26^FDСостав: ${comp || '-'}^FS^FO30,175^A0N,26,26^FDБренд: ${brand || '-'}^FS^FO30,210^A0N,30,30^FDЦена: ${price}^FS^FO60,250^BY2^BCN,70,Y,N,N^FD${art || '-'}^FS^XZ`;
+        const zpl = `^XA^CI28^FO30,30^A0N,34,34^FDАрт: ${sanitizeZplValue(art || '-')}^FS^FO30,70^A0N,26,26^FDШирина: ${sanitizeZplValue(width || '-')}^FS^FO30,105^A0N,26,26^FDПлотность: ${sanitizeZplValue(density || '-')}^FS^FO30,140^A0N,26,26^FDСостав: ${sanitizeZplValue(comp || '-')}^FS^FO30,175^A0N,26,26^FDБренд: ${sanitizeZplValue(brand || '-')}^FS^FO30,210^A0N,30,30^FDЦена: ${sanitizeZplValue(price)}^FS^FO60,250^BY2^BCN,70,Y,N,N^FD${sanitizeZplValue(art || '-')}^FS^XZ`;
         if (sets.printMethod === 'printnode') {
             if (!sets.pnKey || !sets.pnPrinter) { showToast("PrintNode не настроен", "danger"); return; }
             const encoded = btoa(new TextEncoder().encode(zpl).reduce((d,b)=>d+String.fromCharCode(b),''));
             try {
-                const res = await fetch('https://api.printnode.com/printjobs', { method: 'POST', headers: { 'Authorization': 'Basic ' + btoa(sets.pnKey + ':'), 'Content-Type': 'application/json' }, body: JSON.stringify({ printerId: parseInt(sets.pnPrinter), title: "Label", contentType: "raw_base64", content: encoded }) });
+                const res = await apiFetch('https://api.printnode.com/printjobs', { method: 'POST', headers: { 'Authorization': 'Basic ' + btoa(sets.pnKey + ':'), 'Content-Type': 'application/json' }, body: JSON.stringify({ printerId: parseInt(sets.pnPrinter), title: "Label", contentType: "raw_base64", content: encoded }) });
                 if(res.ok) showToast("Отправлено на PrintNode"); else showToast("Ошибка PrintNode", "danger");
             } catch(e) { showToast("Ошибка сети PrintNode", "danger"); logError(`Печать PN: ${e.message}`); }
         } else {
@@ -1363,7 +1410,7 @@
 
     function printFromForm() { const art = document.getElementById('f-art').value; const comp = document.getElementById('f-comp') ? document.getElementById('f-comp').value : ''; const w = document.getElementById('f-width') ? document.getElementById('f-width').value : ''; const d = document.getElementById('f-density') ? document.getElementById('f-density').value : ''; const b = document.getElementById('f-brand') ? document.getElementById('f-brand').value : ''; printLabel(art, comp, w, "Приёмка", b, d, toNumber(currentProduct?.priceRub || 0)); }
     function printLabelRawBT() { const p = currentProduct || {}; printLabel(p.articul || document.getElementById('c-art').textContent, p.composition || document.getElementById('c-comp').textContent, p.width || '', p.name || document.getElementById('c-name').textContent, p.brand || '', p.density || p.dens || '', toNumber(p.priceRub || p.price || 0)); }
-    async function printLabelForItem(it) { if (sets.printMethod === 'server') { try { if (!sets.url) throw new Error('no-url'); const res = await fetch(`${sets.url}/print-label`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' }, body: JSON.stringify({ articul: it.art || '-', brand: it.brand || '', composition: it.comp || '', width: it.w || '', density: it.dens || '', priceRub: toNumber(it.priceRub || it.pRub || 0), ean13: it.ean13 || '', stockRows: it.cuts || [], labelType: 'warehouse', printerName: sets.printerWarehouse || '' }) }); if (!res.ok) throw new Error(`print-label ${res.status}`); showToast('Складская этикетка отправлена'); return; } catch (e) { logError(`print row server: ${e.message}`); showToast('Сервер печати недоступен, fallback'); } } printLabel(it.art || '-', it.comp || '', it.w || '', it.namePrint || it.art || 'Товар', it.brand || '', it.dens || '', toNumber(it.priceRub || it.pRub || 0)); }
+    async function printLabelForItem(it) { if (sets.printMethod === 'server') { try { if (!sets.url) throw new Error('no-url'); const res = await apiFetch(`${sets.url}/print-label`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' }, body: JSON.stringify({ articul: it.art || '-', brand: it.brand || '', composition: it.comp || '', width: it.w || '', density: it.dens || '', priceRub: toNumber(it.priceRub || it.pRub || 0), ean13: it.ean13 || '', stockRows: it.cuts || [], labelType: 'warehouse', printerName: sets.printerWarehouse || '' }) }); if (!res.ok) throw new Error(`print-label ${res.status}`); showToast('Складская этикетка отправлена'); return; } catch (e) { logError(`print row server: ${e.message}`); showToast('Сервер печати недоступен, fallback'); } } printLabel(it.art || '-', it.comp || '', it.w || '', it.namePrint || it.art || 'Товар', it.brand || '', it.dens || '', toNumber(it.priceRub || it.pRub || 0)); }
 
 
     function getCurrentProductSnapshot() {
@@ -1385,7 +1432,7 @@
         if (serverPrinters.length && !force) return serverPrinters;
         if (!sets.url) return [];
         try {
-            const res = await fetch(`${sets.url}/printers`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
+            const res = await apiFetch(`${sets.url}/printers`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
             serverPrinters = Array.isArray(data?.printers) ? data.printers : (Array.isArray(data) ? data : []);
@@ -1420,7 +1467,7 @@
         payload.printerName = labelType === 'warehouse' ? (sets.printerWarehouse || '') : (sets.printerClient || '');
         payload.date = new Date().toISOString();
         if (!sets.url) throw new Error('no-url');
-        const res = await fetch(`${sets.url}/print-label`, {
+        const res = await apiFetch(`${sets.url}/print-label`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1452,7 +1499,7 @@
         const p = getCurrentProductSnapshot();
         if (!sets.url) { showToast('URL не настроен', 'danger'); return; }
         try {
-            const res = await fetch(`${sets.url}/print-hanger`, {
+            const res = await apiFetch(`${sets.url}/print-hanger`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1495,7 +1542,7 @@
         if (!kioskA4Buffer.length) { showToast('Буфер A4 пуст', 'danger'); return; }
         if (!sets.url) { showToast('URL не настроен', 'danger'); return; }
         try {
-            const res = await fetch(`${sets.url}/print-a4`, {
+            const res = await apiFetch(`${sets.url}/print-a4`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1595,7 +1642,7 @@
     }
 
     /* МЕНЕДЖЕР */
-    function doLogin() { if(document.getElementById('login-pass').value === sets.mgr){ if (loginMode === 'customer') enterCustomerManagerMode(); else loginSuccess(); closeModal('modal-login'); } else showToast("Ошибка", "danger"); }
+    async function doLogin() { const pass = document.getElementById('login-pass').value; if(await verifyManagerPassword(pass)){ if (loginMode === 'customer') enterCustomerManagerMode(); else loginSuccess(); closeModal('modal-login'); } else showToast("Ошибка", "danger"); }
     function loginDemo() { isDemoMode = true; if (loginMode === 'customer') enterCustomerManagerMode(); else loginSuccess(); closeModal('modal-login'); showToast('Демо-режим включён'); }
     function openLogin(mode = 'full') { loginMode = mode; document.getElementById('login-pass').value = ''; openModal('modal-login'); setTimeout(() => document.getElementById('login-pass').focus(), 300); }
     function loginSuccess() { isMgr = true; saveAppState(); document.getElementById('login-pass').value = ''; document.getElementById('screen-kiosk').classList.add('hidden'); document.getElementById('manager-view').classList.remove('hidden'); switchTab('receive'); }
@@ -1690,7 +1737,53 @@
         setupInputAssistancePolicy();
     }
 
-    function renderCuts() { const box = document.getElementById('receive-cuts'); if(!box) return; box.innerHTML = activeCuts.map(c=>`<div class="cut-row"><select onchange="uCut(${c.id},'wh',this.value)">${sets.warehouses.length > 0 ? sets.warehouses.map(w=>`<option ${c.wh===w?'selected':''}>${w}</option>`) : '<option value="">-</option>'}</select><input type="text" placeholder="М" value="${c.m}" oninput="uCut(${c.id},'m',this.value)" inputmode="decimal"><input type="text" placeholder="Яч" value="${c.c}" oninput="this.value = this.value.toUpperCase(); uCut(${c.id},'c',this.value)" onkeydown="if(event.key==='Enter') saveLine()" list="list-cells"><button class="btn-icon" onclick="remCut(${c.id})">✕</button></div>`).join(''); }
+    function renderCuts() {
+        const box = document.getElementById('receive-cuts');
+        if (!box) return;
+        box.innerHTML = '';
+        activeCuts.forEach(c => {
+            const row = document.createElement('div');
+            row.className = 'cut-row';
+
+            const sel = document.createElement('select');
+            const whs = sets.warehouses.length ? sets.warehouses : ['-'];
+            whs.forEach(w => {
+                const op = document.createElement('option');
+                op.value = w === '-' ? '' : w;
+                op.textContent = w;
+                if ((c.wh || '') === w) op.selected = true;
+                sel.appendChild(op);
+            });
+            sel.addEventListener('change', () => uCut(c.id, 'wh', sel.value));
+
+            const m = document.createElement('input');
+            m.type = 'text';
+            m.placeholder = 'М';
+            m.value = c.m;
+            m.inputMode = 'decimal';
+            m.addEventListener('input', () => uCut(c.id, 'm', m.value));
+
+            const cell = document.createElement('input');
+            cell.type = 'text';
+            cell.placeholder = 'Яч';
+            cell.value = c.c;
+            cell.setAttribute('list', 'list-cells');
+            cell.addEventListener('input', () => {
+                cell.value = cell.value.toUpperCase();
+                uCut(c.id, 'c', cell.value);
+            });
+            cell.addEventListener('keydown', (event) => { if (event.key === 'Enter') saveLine(); });
+
+            const del = document.createElement('button');
+            del.className = 'btn-icon';
+            del.textContent = '✕';
+            del.addEventListener('click', () => remCut(c.id));
+
+            row.append(sel, m, cell, del);
+            box.appendChild(row);
+        });
+    }
+
     function addCut() { const newId = Date.now(); activeCuts.push({id: newId, m:'', wh:sets.warehouses[0] || "", c:''}); renderCuts(); setTimeout(() => { const inputs = document.querySelectorAll('#receive-cuts input[placeholder="М"]'); if(inputs.length) inputs[inputs.length-1].focus(); }, 50); }
     function remCut(id) { if(activeCuts.length > 1) { activeCuts = activeCuts.filter(x=>x.id!==id); renderCuts(); } }
     function uCut(id, f, v) { const c = activeCuts.find(x=>x.id===id); if(c) c[f]=v.replace(',','.'); }
@@ -1783,7 +1876,7 @@
     }
 
     /* УТИЛИТЫ */
-    function save() { localStorage.setItem('tsd_final_sets', JSON.stringify(sets)); localStorage.setItem('tsd_final_receive', JSON.stringify(db.receive)); localStorage.setItem('tsd_final_move', JSON.stringify(db.move)); localStorage.setItem('tsd_final_writeoff', JSON.stringify(db.writeoff)); localStorage.setItem('tsd_final_price', JSON.stringify(db.price)); updateDataLists(); }
+    function save() { try { localStorage.setItem('tsd_final_sets', JSON.stringify(sets)); localStorage.setItem('tsd_final_receive', JSON.stringify(db.receive)); localStorage.setItem('tsd_final_move', JSON.stringify(db.move)); localStorage.setItem('tsd_final_writeoff', JSON.stringify(db.writeoff)); localStorage.setItem('tsd_final_price', JSON.stringify(db.price)); } catch (e) { if (e && (e.name === 'QuotaExceededError' || e.code === 22)) { showToast('Память устройства переполнена. Очистите старые документы.', 'danger'); logError('QuotaExceededError: localStorage full'); return; } throw e; } updateDataLists(); }
     function updateDataLists() { const arts = new Set(), cells = new Set(); Object.values(db).forEach(list => { if(list) list.forEach(d => d.items.forEach(i => { if(i.art) arts.add(i.art); if(i.cuts) i.cuts.forEach(c => { if(c.c) cells.add(c.c); }); if(i.cell) cells.add(i.cell); if(i.fromCell) cells.add(i.fromCell); if(i.toCell) cells.add(i.toCell); } )) }); document.getElementById('list-arts').innerHTML = Array.from(arts).map(a=>`<option value="${a}">`).join(''); document.getElementById('list-cells').innerHTML = Array.from(cells).map(c=>`<option value="${c}">`).join(''); }
     function openModal(id) { const modal = document.getElementById(id); if(!modal) return; lastFocusedElement = document.activeElement; activeModalId = id; modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); setupInputAssistancePolicy(); const focusable = modal.querySelector('input, button, select, textarea'); if (focusable) focusable.focus(); }
     function closeModal(id) { const modal = document.getElementById(id); if(!modal) return; modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); if (activeModalId === id) activeModalId = null; if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') lastFocusedElement.focus(); }
@@ -1792,7 +1885,7 @@
     async function openSettings() { document.getElementById('set-show-width').checked = sets.showWidth !== false; document.getElementById('set-show-density').checked = sets.showDensity !== false; document.getElementById('set-show-brand').checked = sets.showBrand !== false; document.getElementById('set-show-comp').checked = sets.showComp !== false; document.getElementById('set-show-fullname').checked = sets.showFullName === true; document.getElementById('set-print-name-default').value = sets.printNameDefault || ''; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-api-key').value = sets.apiKey || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "server"; togglePrintSettingsUI(); renderSettingsWh(); await loadServerPrinters(); openModal('modal-settings'); }
     function togglePrintSettingsUI() { const method = document.getElementById('set-print-method').value; const block = document.getElementById('printnode-block'); const serverBlock = document.getElementById('server-printers-block'); if (block) block.style.display = (method === 'printnode') ? 'block' : 'none'; if (serverBlock) serverBlock.style.display = (method === 'server') ? 'block' : 'none'; }
     function saveSets() { sets.showWidth = document.getElementById('set-show-width').checked; sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.showFullName = document.getElementById('set-show-fullname').checked; sets.printNameDefault = document.getElementById('set-print-name-default').value; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.apiKey = document.getElementById('set-api-key').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; sets.printerClient = document.getElementById('set-printer-client')?.value || ''; sets.printerWarehouse = document.getElementById('set-printer-warehouse')?.value || ''; sets.printerHanger = document.getElementById('set-printer-hanger')?.value || ''; sets.printerA4 = document.getElementById('set-printer-a4')?.value || ''; save(); }
-    function renderSettingsWh() { document.getElementById('settings-warehouses').innerHTML = sets.warehouses.map(w=>`<div class="wh-item"><span>${w}</span><button class="btn-icon text-danger" onclick="delWh('${w}')">🗑️</button></div>`).join(''); }
+    function renderSettingsWh() { const root = document.getElementById('settings-warehouses'); if (!root) return; root.innerHTML = ''; (sets.warehouses || []).forEach(w => { const row = document.createElement('div'); row.className = 'wh-item'; const label = document.createElement('span'); label.textContent = w; const btn = document.createElement('button'); btn.className = 'btn-icon text-danger'; btn.textContent = '🗑️'; btn.addEventListener('click', () => delWh(w)); row.append(label, btn); root.appendChild(row); }); }
     function addWh() { const n = document.getElementById('new-wh-name'); if(n.value){sets.warehouses.push(n.value); n.value=''; renderSettingsWh(); saveSets();}}
     function delWh(w) { sets.warehouses = sets.warehouses.filter(x=>x!==w); renderSettingsWh(); saveSets();}
     function closeSettings() { saveSets(); closeModal('modal-settings'); }
@@ -1838,7 +1931,7 @@
         if (isDemoMode) { showToast('Демо-режим: синхронизация отключена', 'danger'); return; }
         showToast("Синхронизация...");
         try {
-            const res = await fetch(`${sets.url}/trigger-sync`, {
+            const res = await apiFetch(`${sets.url}/trigger-sync`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1858,14 +1951,14 @@
         const d = db[curTab].find(x=>x.id===curDocId); if(!sets.url) { showToast("URL 1С не настроен", "danger"); return; }
         if (isDemoMode) { showToast('Демо-режим: синхронизация отключена', 'danger'); return; }
         showToast("Отправка в 1С...");
-        try { const res = await fetch(`${sets.url}/post-document`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Basic '+btoa(sets.user+":"+(sets.pass||"")),'x-api-key': sets.apiKey || ''}, body:JSON.stringify({type:curTab.toUpperCase(), data:d}) }); if(res.ok) showToast("Успешно проведено!"); else showToast("1С вернула ошибку", "danger"); } catch(e) { showToast("Сервер 1С недоступен", "danger"); logError(`Синхронизация 1С: ${e.message}`); }
+        try { const res = await apiFetch(`${sets.url}/post-document`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Basic '+btoa(sets.user+":"+(sets.pass||"")),'x-api-key': sets.apiKey || ''}, body:JSON.stringify({type:curTab.toUpperCase(), data:d}) }); if(res.ok) showToast("Успешно проведено!"); else showToast("1С вернула ошибку", "danger"); } catch(e) { showToast("Сервер 1С недоступен", "danger"); logError(`Синхронизация 1С: ${e.message}`); }
     }
 
     async function test1CConnection() {
         const url = document.getElementById('set-url').value; const user = document.getElementById('set-user').value; const pass = document.getElementById('set-pass').value;
         if (!url) { showToast("Сначала введите URL", "danger"); return; }
         showToast("Проверка связи...");
-        try { const res = await fetch(`${url}/product?id=ping`, { headers: { 'Authorization': 'Basic ' + btoa(user + ":" + pass) } }); if (res.ok || res.status === 404) { showToast("Связь с 1С установлена!", "success"); } else { showToast(`Ошибка: ${res.status}`, "danger"); } } catch (e) { showToast("Ошибка соединения", "danger"); logError(`Тест 1С: ${e.message}`); }
+        try { const res = await apiFetch(`${url}/product?id=ping`, { headers: { 'Authorization': 'Basic ' + btoa(user + ":" + pass) } }); if (res.ok || res.status === 404) { showToast("Связь с 1С установлена!", "success"); } else { showToast(`Ошибка: ${res.status}`, "danger"); } } catch (e) { showToast("Ошибка соединения", "danger"); logError(`Тест 1С: ${e.message}`); }
     }
 
     async function delRow(rid) { if(!await customConfirm("Удалить строку?")) return; const d = db[curTab].find(x=>x.id===curDocId); d.items = d.items.filter(x=>normalizeId(x.id)!==normalizeId(rid)); save(); renderRows(); }
