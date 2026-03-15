@@ -269,7 +269,28 @@
         }
         .manager-field-note { color: var(--text-sec); font-size: 13px; margin-top: 6px; }
         .customer-gallery-item img { width: 100%; height: auto; max-height: 420px; object-fit: contain; background: #f7f7f7; }
+        .customer-gallery-item img { touch-action: pinch-zoom; }
+        .customer-gallery-frame { position: relative; width: 100%; }
+        .gallery-nav-btn {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 38px; height: 38px; border-radius: 50%; border: none;
+            background: rgba(13,26,47,.72); color: #fff; font-size: 24px; line-height: 1;
+            cursor: pointer;
+        }
+        .gallery-nav-btn.prev { left: 10px; }
+        .gallery-nav-btn.next { right: 10px; }
+        .gallery-dots { display:flex; justify-content:center; gap:7px; margin-top: 8px; }
+        .gallery-dot { width:9px; height:9px; border-radius:50%; border:none; background:#c0c9d8; cursor:pointer; }
+        .gallery-dot.active { background:#1976d2; transform: scale(1.2); }
+        .gallery-placeholder {
+            width: 100%; min-height: 220px; max-height: 420px; border-radius: 12px;
+            border: 2px dashed #cad5e6; background: #f7faff; display:flex; flex-direction:column;
+            align-items:center; justify-content:center; color: #5e728f; gap:10px;
+        }
         .customer-hero-price { font-size: 56px !important; font-weight: 900; color: var(--price-color); margin-bottom: 2px; }
+        .customer-price-block { padding: 14px 16px; border-radius: 14px; margin-bottom: 10px; background: linear-gradient(120deg, #0ea5a4, #2bb7b2); color: #fff; }
+        .customer-price-block.price-empty { background: #eef2f7; color: #697c92; }
+        .price-empty .customer-hero-price { color: inherit; }
         .customer-hero-price-sub { font-size: 14px; color: var(--text-sec); margin-bottom: 10px; font-weight: 700; }
         .customer-specs {
             background:#f8f9fa;
@@ -299,6 +320,12 @@
         .stock-table th, .stock-table td { border-bottom: 1px solid #e3e3e3; padding: 7px 4px; text-align: left; }
         .stock-table th { font-size: 13px; text-transform: uppercase; color: var(--text-sec); letter-spacing: .02em; }
         .stock-summary { margin-top: 8px; font-size: 18px; font-weight: 800; color: var(--primary); }
+        .stock-summary-block { padding: 10px 12px; border-radius: 10px; color: #fff; background: linear-gradient(120deg, #1d4ed8, #2563eb); }
+        .stock-row-high { background: #f0fdf4; }
+        .stock-row-mid { background: #fff7ed; }
+        .stock-row-low { background: #fef2f2; }
+        .copyable-art { position: relative; display: inline-flex; align-items: center; gap: 6px; }
+        .copy-art-tip { font-size: 11px; color: #0f766e; font-weight: 700; }
 
         @media (min-width: 900px) {
             #customer-view { align-items: center; }
@@ -333,6 +360,7 @@
         .autoclose-track { height: 6px; background: #e8eef7; border-radius: 999px; overflow: hidden; }
         .autoclose-bar { height: 100%; width: 100%; background: linear-gradient(90deg, #2f80ed, #56ccf2); transition: width .1s linear; }
         .autoclose-text { font-size: 12px; color: var(--text-sec); margin-top: 6px; }
+        .autoclose-bar.urgent { background: linear-gradient(90deg, #ef4444, #f97316); }
         @keyframes spin { to { transform: rotate(360deg); } }
 
         .doc-action-btn { min-height: 60px; font-size: 17px; font-weight: 800; border: 2px solid #d7e6f7; background: #f4f9ff; }
@@ -379,20 +407,22 @@
             <div class="customer-main-left">
                 <button id="c-photo-toggle" class="btn-outline customer-gallery-toggle" onclick="toggleCustomerGallery()">📷 Фото товара</button>
                 <div id="c-img-box" class="customer-gallery" aria-label="Галерея фотографий товара"></div>
-                <div id="c-price" class="customer-hero-price editable-value" data-edit-field="priceRub" data-edit-label="Цена, ₽">0.00 ₽</div>
-                <div id="c-price-ue" class="customer-hero-price-sub hidden">≈ 0.00 у.е.</div>
+                <div id="c-price-block" class="customer-price-block">
+                    <div id="c-price" class="customer-hero-price editable-value" data-edit-field="priceRub" data-edit-label="Цена, ₽">0.00 ₽</div>
+                    <div id="c-price-ue" class="customer-hero-price-sub hidden">≈ 0.00 у.е.</div>
+                </div>
             </div>
             <div class="customer-main-right">
                 <div class="card customer-specs">
                     <div class="customer-spec-grid">
-                        <div id="c-row-art" class="customer-spec-row"><strong>Артикул:</strong> <span id="c-art" class="editable-value" data-edit-field="articul" data-edit-label="Артикул">-</span></div>
+                        <div id="c-row-art" class="customer-spec-row"><strong>Артикул:</strong> <span class="copyable-art"><span id="c-art" class="editable-value" data-edit-field="articul" data-edit-label="Артикул">-</span><span id="c-art-copy-tip" class="copy-art-tip hidden">Скопировано!</span></span></div>
                         <div id="c-row-width" class="customer-spec-row"><strong>Ширина:</strong> <span id="c-width" class="editable-value" data-edit-field="width" data-edit-label="Ширина">-</span></div>
                         <div id="c-row-comp" class="customer-spec-row"><strong>Состав:</strong> <span id="c-comp" class="editable-value" data-edit-field="composition" data-edit-label="Состав">-</span></div>
                         <div id="c-row-brand" class="customer-spec-row"><strong>Бренд:</strong> <span id="c-brand" class="editable-value" data-edit-field="brand" data-edit-label="Бренд">-</span></div>
                         <div id="c-row-density" class="customer-spec-row"><strong>Плотность:</strong> <span id="c-density" class="editable-value" data-edit-field="density" data-edit-label="Плотность">-</span></div>
                     </div>
                     <table id="c-stock-table" class="stock-table"></table>
-                    <div id="c-stock-summary" class="stock-summary">Общий метраж: -</div>
+                    <div id="c-stock-summary" class="stock-summary stock-summary-block">Общий метраж: -</div>
                     <div id="product-admin-row" class="product-admin-row hidden">
                         <div class="flex gap-2">
                             <button class="btn-outline w-full" style="min-height:58px;font-size:18px;" onclick="openProductEditModal()">✏️ Массовая правка полей</button>
@@ -418,7 +448,8 @@
         </div>
         <div id="customer-autoclose-wrap" class="autoclose-wrap hidden">
             <div class="autoclose-track"><div id="customer-autoclose-bar" class="autoclose-bar"></div></div>
-            <div id="customer-autoclose-text" class="autoclose-text">Автозакрытие через 10 сек</div>
+            <div id="customer-autoclose-text" class="autoclose-text">Закрытие через 15 сек</div>
+            <button id="customer-keep-open" class="btn-outline w-full mt-2" type="button" onclick="keepCustomerViewOpen()">⏸ Не закрывать</button>
         </div>
     </div>
 
@@ -808,12 +839,17 @@
     const SCAN_COOLDOWN_MS = 1200;
     let customerGalleryExpanded = false;
     let customerGalleryImages = [];
+    let customerGalleryIndex = 0;
     let activeReceiveImages = [];
     let tempCustomerManagerMode = false;
     let loginMode = "full";
     let customerAutoCloseTimer = null;
     let customerAutoCloseInterval = null;
     let customerAutoCloseDeadline = 0;
+    let customerCountdownInterval = null;
+    let customerCountdownRemaining = 0;
+    let customerCountdownPaused = false;
+    const CUSTOMER_AUTOCLOSE_SECONDS = 15;
     let customerScanOverlayTimer = null;
     let scanBufResetTimer = null;
     let serverPrinters = [];
@@ -830,43 +866,73 @@
         if (loading) loading.classList.toggle('hidden', !locked);
     }
 
-    function updateSpecRowVisibility(rowId, value) {
+    function updateSpecRowVisibility(rowId, value, forceShow = false) {
         const row = document.getElementById(rowId);
         if (!row) return;
+        if (forceShow) { row.classList.remove('hidden'); return; }
         const normalized = String(value ?? '').trim();
         row.classList.toggle('hidden', !normalized || normalized === '-');
     }
 
-    function clearCustomerAutoClose() {
-        if (customerAutoCloseTimer) clearTimeout(customerAutoCloseTimer);
-        if (customerAutoCloseInterval) clearInterval(customerAutoCloseInterval);
-        customerAutoCloseTimer = null;
-        customerAutoCloseInterval = null;
-        customerAutoCloseDeadline = 0;
-        const wrap = document.getElementById('customer-autoclose-wrap');
-        if (wrap) wrap.classList.add('hidden');
-    }
-
-    function startCustomerAutoClose(seconds = 10) {
-        clearCustomerAutoClose();
-        if (isCustomerManagerModeActive()) return;
+    function updateCountdownUI(leftMs, totalMs) {
         const wrap = document.getElementById('customer-autoclose-wrap');
         const bar = document.getElementById('customer-autoclose-bar');
         const text = document.getElementById('customer-autoclose-text');
-        const totalMs = Math.max(1000, Number(seconds || 10) * 1000);
+        if (!wrap || !bar || !text) return;
+        wrap.classList.remove('hidden');
+        const pct = Math.max(0, Math.min(100, (leftMs / totalMs) * 100));
+        customerCountdownRemaining = leftMs;
+        bar.style.width = `${pct}%`;
+        bar.classList.toggle('urgent', pct <= 30);
+        text.textContent = `Закрытие через ${Math.max(0, Math.ceil(leftMs / 1000))} сек`;
+    }
+
+    function stopCustomerCountdown(hide = true) {
+        if (customerAutoCloseTimer) clearTimeout(customerAutoCloseTimer);
+        if (customerAutoCloseInterval) clearInterval(customerAutoCloseInterval);
+        if (customerCountdownInterval) clearInterval(customerCountdownInterval);
+        customerAutoCloseTimer = null;
+        customerAutoCloseInterval = null;
+        customerCountdownInterval = null;
+        customerAutoCloseDeadline = 0;
+        customerCountdownRemaining = 0;
+        customerCountdownPaused = false;
+        const wrap = document.getElementById('customer-autoclose-wrap');
+        const bar = document.getElementById('customer-autoclose-bar');
+        if (bar) bar.classList.remove('urgent');
+        if (wrap && hide) wrap.classList.add('hidden');
+    }
+
+    function keepCustomerViewOpen() {
+        stopCustomerCountdown(false);
+        customerCountdownPaused = true;
+        const text = document.getElementById('customer-autoclose-text');
+        const bar = document.getElementById('customer-autoclose-bar');
+        if (text) text.textContent = 'Автозакрытие отключено';
+        if (bar) bar.style.width = '100%';
+    }
+
+    function startCustomerCountdown(seconds = CUSTOMER_AUTOCLOSE_SECONDS) {
+        stopCustomerCountdown();
+        if (isCustomerManagerModeActive()) return;
+        const totalMs = Math.max(1000, Number(seconds || CUSTOMER_AUTOCLOSE_SECONDS) * 1000);
         customerAutoCloseDeadline = Date.now() + totalMs;
-        if (wrap) wrap.classList.remove('hidden');
         customerAutoCloseTimer = setTimeout(() => closeCustomerView(), totalMs);
         const tick = () => {
+            if (customerCountdownPaused) return;
             const left = Math.max(0, customerAutoCloseDeadline - Date.now());
-            const pct = (left / totalMs) * 100;
-            if (bar) bar.style.width = `${pct}%`;
-            if (text) text.textContent = `Автозакрытие через ${Math.ceil(left / 1000)} сек`;
+            updateCountdownUI(left, totalMs);
             if (left <= 0 && customerAutoCloseInterval) clearInterval(customerAutoCloseInterval);
+            if (left <= 0 && customerCountdownInterval) clearInterval(customerCountdownInterval);
         };
         tick();
         customerAutoCloseInterval = setInterval(tick, 100);
+        customerCountdownInterval = customerAutoCloseInterval;
     }
+
+    function clearCustomerAutoClose() { stopCustomerCountdown(); }
+    function startCustomerAutoClose(seconds = CUSTOMER_AUTOCLOSE_SECONDS) { startCustomerCountdown(seconds); }
+    function resetCustomerCountdown() { startCustomerCountdown(CUSTOMER_AUTOCLOSE_SECONDS); }
 
     function purgeOldClosedDocs(days = 15) {
         const maxAgeMs = days * 24 * 60 * 60 * 1000;
@@ -1026,7 +1092,7 @@
             customerView.addEventListener('pointerdown', () => {
                 if (customerView.classList.contains('hidden')) return;
                 if (isCustomerManagerModeActive()) return;
-                startCustomerAutoClose(10);
+                resetCustomerCountdown();
             });
         }
         if (isMgr) { document.getElementById('screen-kiosk').classList.add('hidden'); document.getElementById('manager-view').classList.remove('hidden'); switchTab(curTab); if (curDocId) openDoc(curDocId); }
@@ -1279,17 +1345,20 @@
         const btn = document.getElementById('c-photo-toggle');
         box.innerHTML = '';
         customerGalleryImages = Array.isArray(images) ? images : [];
-        if (btn) btn.textContent = `📷 Фото товара${customerGalleryImages.length ? ' (1)' : ''}`;
+        if (btn) btn.textContent = `📷 Фото товара${customerGalleryImages.length ? ` (${customerGalleryImages.length})` : ''}`;
         if (!customerGalleryExpanded) { box.classList.remove('open'); return; }
         box.classList.add('open');
         if (!Array.isArray(images) || !images.length) {
             const fallback = document.createElement('div');
-            fallback.className = 'customer-gallery-item';
-            fallback.textContent = 'Фото товара отсутствует';
+            fallback.className = 'gallery-placeholder';
+            fallback.innerHTML = '<svg width="56" height="56" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 8h2l1-2h4l1 2h2a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="13" r="3" stroke="currentColor" stroke-width="1.5"/></svg><div>Фото товара отсутствует</div>';
             box.appendChild(fallback);
             return;
         }
-        const src = images[0];
+        customerGalleryIndex = Math.max(0, Math.min(customerGalleryIndex, images.length - 1));
+        const src = images[customerGalleryIndex];
+        const frame = document.createElement('div');
+        frame.className = 'customer-gallery-frame';
         const slide = document.createElement('div');
         slide.className = 'customer-gallery-item';
         const img = document.createElement('img');
@@ -1297,7 +1366,76 @@
         img.src = src;
         img.alt = 'Фото товара';
         slide.appendChild(img);
-        box.appendChild(slide);
+        frame.appendChild(slide);
+        if (images.length > 1) {
+            const prev = document.createElement('button');
+            prev.type = 'button';
+            prev.className = 'gallery-nav-btn prev';
+            prev.textContent = '‹';
+            prev.setAttribute('aria-label', 'Предыдущее фото');
+            prev.onclick = () => navigateGallery(-1);
+
+            const next = document.createElement('button');
+            next.type = 'button';
+            next.className = 'gallery-nav-btn next';
+            next.textContent = '›';
+            next.setAttribute('aria-label', 'Следующее фото');
+            next.onclick = () => navigateGallery(1);
+            frame.append(prev, next);
+        }
+        box.appendChild(frame);
+
+        if (images.length > 1) {
+            const dots = document.createElement('div');
+            dots.className = 'gallery-dots';
+            images.forEach((_, idx) => {
+                const dot = document.createElement('button');
+                dot.type = 'button';
+                dot.className = `gallery-dot${idx === customerGalleryIndex ? ' active' : ''}`;
+                dot.setAttribute('aria-label', `Открыть фото ${idx + 1}`);
+                dot.onclick = () => { customerGalleryIndex = idx; renderCustomerGallery(customerGalleryImages); };
+                dots.appendChild(dot);
+            });
+            box.appendChild(dots);
+        }
+    }
+
+    function navigateGallery(dir = 1) {
+        if (!Array.isArray(customerGalleryImages) || customerGalleryImages.length < 2) return;
+        const len = customerGalleryImages.length;
+        customerGalleryIndex = (customerGalleryIndex + dir + len) % len;
+        renderCustomerGallery(customerGalleryImages);
+    }
+
+    function showCopyTooltip() {
+        const tip = document.getElementById('c-art-copy-tip');
+        if (!tip) return;
+        tip.classList.remove('hidden');
+        setTimeout(() => tip.classList.add('hidden'), 1200);
+    }
+
+    function fallbackCopy(text) {
+        const el = document.createElement('textarea');
+        el.value = text;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+    }
+
+    async function copyArticulToClipboard() {
+        const art = String(document.getElementById('c-art')?.textContent || '').trim();
+        if (!art || art === '-') return;
+        try {
+            if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(art);
+            else fallbackCopy(art);
+            showCopyTooltip();
+            showToast('Артикул скопирован');
+        } catch (e) {
+            fallbackCopy(art);
+            showCopyTooltip();
+            showToast('Артикул скопирован');
+        }
     }
 
     function toggleCustomerGallery() {
@@ -1321,7 +1459,15 @@
         const tbody = document.createElement('tbody');
         rows.forEach((row, idx) => {
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${row.warehouse || row.wh || '-'}</td><td>${toNumber(row.meters ?? row.m).toFixed(2)}</td><td>${row.cell || row.shelf || '-'}</td>`;
+            const meters = toNumber(row.meters ?? row.m);
+            tr.className = meters > 5 ? 'stock-row-high' : (meters >= 1 ? 'stock-row-mid' : 'stock-row-low');
+            const tdWh = document.createElement('td');
+            const tdM = document.createElement('td');
+            const tdCell = document.createElement('td');
+            tdWh.textContent = row.warehouse || row.wh || '-';
+            tdM.textContent = meters.toFixed(2);
+            tdCell.textContent = row.cell || row.shelf || '-';
+            tr.append(tdWh, tdM, tdCell);
             if (isCustomerManagerModeActive()) {
                 tr.style.cursor = 'pointer';
                 tr.title = 'Нажмите для изменения данных этого склада';
@@ -1337,12 +1483,14 @@
     function showProduct(p) {
         closeCustomerScanOverlay();
         currentProduct = p;
+        customerGalleryIndex = 0;
         const rows = buildStockRows(p);
         const allImages = p.images || p.photos || p.gallery || [];
         const images = Array.isArray(allImages) ? allImages : [];
         document.getElementById('c-name').textContent = p.name || 'Товар';
         const price = toNumber(p.priceRub || p.price || 0);
         document.getElementById('c-price').textContent = price <= 0 ? 'Цена не указана' : `${price.toFixed(2)} ₽`;
+        document.getElementById('c-price-block')?.classList.toggle('price-empty', price <= 0);
         const customerCanSeeInternalUnits = isCustomerManagerModeActive();
         const uePriceEl = document.getElementById('c-price-ue');
         if (uePriceEl) {
@@ -1354,11 +1502,11 @@
         document.getElementById('c-comp').textContent = p.composition || '-';
         document.getElementById('c-brand').textContent = p.brand || '-';
         document.getElementById('c-density').textContent = p.density || p.dens || '-';
-        updateSpecRowVisibility('c-row-art', p.articul || '-');
-        updateSpecRowVisibility('c-row-width', p.width || '-');
-        updateSpecRowVisibility('c-row-comp', p.composition || '-');
-        updateSpecRowVisibility('c-row-brand', p.brand || '-');
-        updateSpecRowVisibility('c-row-density', p.density || p.dens || '-');
+        updateSpecRowVisibility('c-row-art', p.articul || '-', customerCanSeeInternalUnits);
+        updateSpecRowVisibility('c-row-width', p.width || '-', customerCanSeeInternalUnits);
+        updateSpecRowVisibility('c-row-comp', p.composition || '-', customerCanSeeInternalUnits);
+        updateSpecRowVisibility('c-row-brand', p.brand || '-', customerCanSeeInternalUnits);
+        updateSpecRowVisibility('c-row-density', p.density || p.dens || '-', customerCanSeeInternalUnits);
         renderCustomerGallery(images);
         renderStockTable(rows);
         const canManage = isCustomerManagerModeActive();
@@ -1366,13 +1514,14 @@
         document.querySelectorAll('.editable-value').forEach(el => {
             el.classList.toggle('editable-enabled', canManage);
             el.title = canManage ? 'Нажмите, чтобы изменить значение' : '';
-            el.onclick = () => openInlineEditModal(el);
+            if (!canManage && el.id === 'c-art') el.onclick = () => copyArticulToClipboard();
+            else el.onclick = () => openInlineEditModal(el);
         });
         updateProductSyncButton();
         document.getElementById('btn-kiosk-manager-mode')?.classList.toggle('hidden', isCustomerManagerModeActive());
         document.getElementById('btn-exit-customer-manager')?.classList.toggle('hidden', !tempCustomerManagerMode);
         document.getElementById('customer-view').classList.remove('hidden');
-        startCustomerAutoClose(10);
+        startCustomerCountdown(CUSTOMER_AUTOCLOSE_SECONDS);
     }
     function closeCustomerView() { customerGalleryExpanded = false; tempCustomerManagerMode = false; clearCustomerAutoClose(); closeCustomerScanOverlay(); document.getElementById('customer-view').classList.add('hidden'); }
 
