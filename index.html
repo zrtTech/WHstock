@@ -162,7 +162,10 @@
         #tab-bar button.active {
             color: var(--primary);
             background: rgba(25,118,210,0.10);
+            border-top: 2px solid var(--primary);
         }
+        .tab-badge { min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; background: var(--danger); color: #fff; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
+        .tab-badge.hidden { display: none; }
         #tab-bar button.logout-tab { color: var(--danger); }
         @media (pointer: coarse) {
             #tab-bar button { min-height: 52px; }
@@ -209,6 +212,13 @@
         .checkbox-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; cursor: pointer; color: var(--text-sec); font-size: 14px; }
         .checkbox-row input { width: 22px; height: 22px; margin: 0; cursor: pointer; accent-color: var(--primary); }
         .wh-item { display: flex; justify-content: space-between; align-items: center; background: #f0f0f0; padding: 8px 12px; border-radius: 8px; margin-bottom: 6px; }
+        .wh-actions { display:flex; gap:4px; }
+        .wh-move-btn { min-width: 34px; min-height: 34px; padding: 0; font-size: 14px; }
+        .settings-info-panel { background:#f2f7ff; border:1px solid #d8e6ff; border-radius:12px; padding:10px 12px; margin-bottom:12px; }
+        .storage-bar { height: 8px; background:#dbe6f6; border-radius: 999px; overflow:hidden; margin-top:6px; }
+        .storage-bar-fill { height:100%; width:0%; background: linear-gradient(90deg,#2563eb,#06b6d4); }
+        .input-error { border-color: var(--danger) !important; background: #fff6f6; }
+        .input-hint { font-size: 12px; color: var(--danger); margin-top: 4px; }
 
         /* ЖУРНАЛ */
         .history-item { border-bottom: 1px solid #eee; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
@@ -216,6 +226,25 @@
         .history-item.editing { background: #E3F2FD; border-radius: 8px; padding: 12px; border: 1px solid var(--primary); }
         .history-item .btn-icon { background: #F3F6FA; border: 1px solid #e4e9f0; border-radius: 10px; }
         .history-item .btn-icon.text-danger { color: var(--danger); }
+        .row-left { display:flex; align-items:flex-start; gap:8px; }
+        .row-num { width: 24px; height: 24px; border-radius: 50%; background: #eceff5; color:#5f6b7a; font-size: 12px; font-weight: 800; display:flex; align-items:center; justify-content:center; margin-top:2px; }
+        .row-content { display:flex; flex-direction:column; gap:4px; }
+        .row-cuts-detail { display:flex; flex-wrap:wrap; gap:4px; }
+        .cut-chip { background:#eef6ff; border:1px solid #d2e7ff; border-radius:999px; padding:2px 8px; font-size:11px; color:#305a8f; }
+        .history-item.just-added { animation: rowHighlight 2s ease; }
+        @keyframes rowHighlight { 0% { background:#dcfce7; } 100% { background: transparent; } }
+        .doc-group-divider { margin: 8px 0 10px; font-size: 12px; font-weight: 800; color: var(--text-sec); text-transform: uppercase; }
+        .doc-meta { font-size: 12px; color: var(--text-sec); margin-top: 4px; }
+        .doc-status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        .doc-status-dot.active { background: #f59e0b; box-shadow: 0 0 0 4px rgba(245,158,11,.15); animation: pulse 1.8s infinite; }
+        .doc-status-dot.closed { background: #16a34a; }
+        .closed-doc-summary { border: 1px dashed #cfe0f6; border-radius: 10px; padding: 10px; background: #f7fbff; margin-bottom: 10px; display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+        .sum-item { background:#fff; border:1px solid #e5eef9; border-radius: 8px; padding: 8px; }
+        .sum-label { font-size: 11px; color: var(--text-sec); text-transform: uppercase; }
+        .sum-value { font-size: 15px; font-weight: 800; color: var(--primary); }
+        .receive-photo-preview-box { border: 1px dashed #9ed7cd; border-radius: 10px; padding: 8px; margin-top: 8px; background: #f4fffd; }
+        .receive-photo-label { font-size: 12px; color: #0f766e; font-weight: 700; margin-bottom: 6px; }
+        .receive-photo-img { width: 100%; max-height: 180px; object-fit: contain; border-radius: 8px; background: #eef6f5; }
 
         #toast-container { position: fixed; top: 100px; left: 50%; transform: translateX(-50%); z-index: 3000; width: 90%; max-width: 400px; pointer-events: none; }
         .toast { padding: 14px; border-radius: 8px; color: white; margin-bottom: 8px; text-align: center; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.1); animation: slideIn 0.3s forwards; }
@@ -491,6 +520,7 @@
                     <div class="sticky-form">
                         <div id="closed-actions" class="hidden card text-center" style="border: 2px solid var(--success);">
                             <h3 style="color: var(--success); margin-bottom: 10px;">ДОКУМЕНТ ЗАКРЫТ</h3>
+                            <div id="closed-doc-summary" class="closed-doc-summary"></div>
                             <button class="btn-primary w-full mb-3" style="height: 58px; font-size: 16px;" onclick="syncWith1C()">🚀 ОТПРАВИТЬ В 1С</button>
                             <div class="flex gap-2">
                                 <button class="btn-outline w-full doc-action-btn" onclick="reopenDoc()">🔄 Правка документа</button>
@@ -509,10 +539,10 @@
         </div>
 
         <div id="tab-bar">
-            <button onclick="switchTab('receive')" id="tab-receive" aria-label="Вкладка Приёмка"><span class="tab-ico">📦</span><span class="tab-label">Приёмка</span></button>
-            <button onclick="switchTab('move')" id="tab-move" aria-label="Вкладка Перемещение"><span class="tab-ico">🔄</span><span class="tab-label">Перемещение</span></button>
-            <button onclick="switchTab('writeoff')" id="tab-writeoff" aria-label="Вкладка Списание"><span class="tab-ico">📋</span><span class="tab-label">Списание</span></button>
-            <button onclick="switchTab('price')" id="tab-price" aria-label="Вкладка Цены"><span class="tab-ico">🏷️</span><span class="tab-label">Цены</span></button>
+            <button onclick="switchTab('receive')" id="tab-receive" aria-label="Вкладка Приёмка"><span class="tab-ico">📦</span><span class="tab-label">Приёмка</span><span class="tab-badge hidden" id="badge-receive">0</span></button>
+            <button onclick="switchTab('move')" id="tab-move" aria-label="Вкладка Перемещение"><span class="tab-ico">🔄</span><span class="tab-label">Перемещение</span><span class="tab-badge hidden" id="badge-move">0</span></button>
+            <button onclick="switchTab('writeoff')" id="tab-writeoff" aria-label="Вкладка Списание"><span class="tab-ico">📋</span><span class="tab-label">Списание</span><span class="tab-badge hidden" id="badge-writeoff">0</span></button>
+            <button onclick="switchTab('price')" id="tab-price" aria-label="Вкладка Цены"><span class="tab-ico">🏷️</span><span class="tab-label">Цены</span><span class="tab-badge hidden" id="badge-price">0</span></button>
             <button onclick="logout()" class="logout-tab" aria-label="Выйти из режима персонала"><span class="tab-ico">🚪</span><span class="tab-label">Выход</span></button>
         </div>
     </div>
@@ -522,11 +552,15 @@
 <div id="modal-settings" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="modal-content">
         <div class="flex justify-between items-center mb-6"><h2>Настройки</h2><button class="btn-icon" aria-label="Закрыть настройки" onclick="closeSettings()">✕</button></div>
+        <div id="settings-info-panel" class="settings-info-panel"></div>
         <div class="settings-grid">
         <div class="settings-section">
             <h3>ДИАГНОСТИКА</h3>
             <div class="light-block">
                 <button class="btn-outline w-full mb-2" onclick="openLogsModal()">📋 Посмотреть логи ошибок</button>
+                <button class="btn-outline w-full mb-2" onclick="exportData()">💾 Экспорт данных</button>
+                <input type="file" id="settings-import-file" class="hidden" accept="application/json" onchange="importData(event)">
+                <button class="btn-outline w-full mb-2" onclick="document.getElementById('settings-import-file').click()">📥 Импорт данных</button>
                 <label class="checkbox-row">Режим разработки (без 1С) <input type="checkbox" id="set-dev-offline" onchange="saveSets()"></label>
                 <label class="checkbox-row">Демо-режим поиска в киоске <input type="checkbox" id="set-kiosk-demo" onchange="saveSets()"></label>
             </div>
@@ -566,7 +600,7 @@
         <div class="settings-section">
             <h3>СКЛАДЫ</h3>
             <div id="settings-warehouses"></div>
-            <div class="flex gap-2 mt-2"><input type="text" id="new-wh-name" placeholder="Новый склад" style="margin:0"><button class="btn-outline" style="min-width: 48px;" onclick="addWh()">+</button></div>
+            <div class="flex gap-2 mt-2"><input type="text" id="new-wh-name" placeholder="Новый склад" style="margin:0" onkeydown="if(event.key==='Enter') addWh()"><button class="btn-outline" style="min-width: 48px;" onclick="addWh()">+</button></div>
             <button class="btn-primary w-full mt-3" onclick="saveSets()">Сохранить склады</button>
         </div>
 
@@ -599,10 +633,15 @@
         <div class="settings-section span-2">
             <details class="settings-spoiler">
                 <summary>Интеграция 1С (расширенные настройки)</summary>
-                <label>URL Сервиса</label><input type="text" id="set-url" onchange="saveSets()" placeholder="https://...">
+                <label>URL Сервиса</label><input type="text" id="set-url" onchange="saveSets()" oninput="validateUrlField()" placeholder="https://...">
+                <div id="set-url-hint" class="input-hint hidden">URL должен начинаться с http:// или https://</div>
                 <label>Логин</label><input type="text" id="set-user" onchange="saveSets()">
                 <label>Пароль</label><input type="password" id="set-pass" onchange="saveSets()">
                 <label>API-ключ</label><input type="text" id="set-api-key" onchange="saveSets()">
+                <hr style="margin:10px 0;border:none;border-top:1px solid #eee;">
+                <label>Новый пароль менеджера</label><input type="password" id="set-new-mgr-pass" placeholder="минимум 4 символа">
+                <label>Подтверждение пароля</label><input type="password" id="set-new-mgr-pass-confirm" placeholder="повторите пароль">
+                <button class="btn-outline w-full mt-2" onclick="changeManagerPassword()">🔑 Сменить пароль менеджера</button>
                 <button class="btn-outline w-full mt-2" onclick="test1CConnection()">📡 Проверить связь с 1С</button>
                 <button class="btn-primary w-full mt-2" onclick="manualSync()">🔄 Синхронизировать всю базу с 1С</button>
             </details>
@@ -831,6 +870,7 @@
     let isSearchPending = false;
     let currentProduct = null;
     let isProductDirty = false;
+    let lastSavedItemId = null;
     let inlineEditField = null;
     let activeStockRowIndex = null;
     let isDemoMode = sets.devOfflineMode === true;
@@ -873,6 +913,7 @@
         const normalized = String(value ?? '').trim();
         row.classList.toggle('hidden', !normalized || normalized === '-');
     }
+    function updateSpecVisibility(rowId, value, forceShow = false) { updateSpecRowVisibility(rowId, value, forceShow); }
 
     function updateCountdownUI(leftMs, totalMs) {
         const wrap = document.getElementById('customer-autoclose-wrap');
@@ -954,6 +995,87 @@
             save();
             console.info(`Очистка архива закрытых документов: удалено ${removed}`);
         }
+    }
+
+    function calcDocTotal(d) {
+        if (!d || !Array.isArray(d.items)) return 0;
+        return d.items.reduce((sum, it) => {
+            if (Array.isArray(it.cuts)) return sum + it.cuts.reduce((s, c) => s + toNumber(c.m), 0);
+            return sum + toNumber(it.m);
+        }, 0);
+    }
+
+    function updateTabBadges() {
+        ['receive','move','writeoff','price'].forEach(tab => {
+            const cnt = (db[tab] || []).filter(d => d.status === 'active').length;
+            const el = document.getElementById(`badge-${tab}`);
+            if (!el) return;
+            el.textContent = String(cnt);
+            el.classList.toggle('hidden', cnt === 0);
+        });
+    }
+
+    function renderClosedDocSummary(d) {
+        const box = document.getElementById('closed-doc-summary');
+        if (!box) return;
+        if (!d || d.status !== 'closed') { box.innerHTML = ''; return; }
+        const total = calcDocTotal(d);
+        const closed = d.closedAt ? new Date(d.closedAt).toLocaleDateString() : '-';
+        const created = d.createdAt ? new Date(d.createdAt).toLocaleDateString() : '-';
+        box.innerHTML = `<div class="sum-item"><div class="sum-label">Строк</div><div class="sum-value">${(d.items || []).length}</div></div><div class="sum-item"><div class="sum-label">Общий метраж</div><div class="sum-value">${total.toFixed(2)} м</div></div><div class="sum-item"><div class="sum-label">Создан</div><div class="sum-value">${created}</div></div><div class="sum-item"><div class="sum-label">Закрыт</div><div class="sum-value">${closed}</div></div>`;
+    }
+
+    function playBeep() {
+        try {
+            const Ctx = window.AudioContext || window.webkitAudioContext;
+            if (!Ctx) return;
+            const ac = new Ctx();
+            const osc = ac.createOscillator();
+            const gain = ac.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = 880;
+            gain.gain.value = 0.04;
+            osc.connect(gain);
+            gain.connect(ac.destination);
+            osc.start();
+            osc.stop(ac.currentTime + 0.15);
+        } catch (e) {}
+    }
+
+    function validateUrlField() {
+        const el = document.getElementById('set-url');
+        const hint = document.getElementById('set-url-hint');
+        if (!el) return true;
+        const v = String(el.value || '').trim();
+        const ok = !v || /^https?:\/\//i.test(v);
+        el.classList.toggle('input-error', !ok);
+        if (hint) hint.classList.toggle('hidden', ok);
+        return ok;
+    }
+
+    async function changeManagerPassword() {
+        const p1 = document.getElementById('set-new-mgr-pass')?.value || '';
+        const p2 = document.getElementById('set-new-mgr-pass-confirm')?.value || '';
+        if (p1.length < 4) { showToast('Пароль должен быть не короче 4 символов', 'danger'); return; }
+        if (p1 !== p2) { showToast('Пароли не совпадают', 'danger'); return; }
+        sets.mgrHash = await sha256Hex(p1);
+        sets.mgr = '';
+        save();
+        document.getElementById('set-new-mgr-pass').value = '';
+        document.getElementById('set-new-mgr-pass-confirm').value = '';
+        showToast('Пароль менеджера обновлён', 'success');
+    }
+
+    function renderSettingsInfoPanel() {
+        const box = document.getElementById('settings-info-panel');
+        if (!box) return;
+        const allDocs = ['receive','move','writeoff','price'].reduce((s,t)=>s+(db[t]||[]).length,0);
+        const activeDocs = ['receive','move','writeoff','price'].reduce((s,t)=>s+(db[t]||[]).filter(d=>d.status==='active').length,0);
+        const used = new Blob(Object.values(localStorage)).size;
+        const max = 5 * 1024 * 1024;
+        const pct = Math.min(100, (used / max) * 100);
+        const color = pct > 80 ? '#ef4444' : (pct > 60 ? '#f59e0b' : '#2563eb');
+        box.innerHTML = `<div class="text-sm"><strong>Документы:</strong> всего ${allDocs}, активных ${activeDocs}</div><div class="text-sm mt-1"><strong>LocalStorage:</strong> ${(used/1024).toFixed(1)} KB / ${(max/1024).toFixed(0)} KB</div><div class="storage-bar"><div class="storage-bar-fill" style="width:${pct.toFixed(1)}%; background:${color}"></div></div>`;
     }
 
     function syncAppViewportHeight() {
@@ -1099,6 +1221,7 @@
         purgeOldClosedDocs(15);
         updateDataLists();
         updateKioskA4Status();
+        updateTabBadges();
         if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').catch(err => logError(`sw: ${err.message}`)); }
     };
 
@@ -1973,12 +2096,31 @@
         if (i) i.click();
     }
 
+    function renderReceivePhotoPreview() {
+        const box = document.getElementById('receive-photo-preview');
+        if (!box) return;
+        if (!activeReceiveImages.length) { box.innerHTML = ''; return; }
+        const src = activeReceiveImages[0];
+        box.innerHTML = `<div class="receive-photo-preview-box"><div class="receive-photo-label">Превью фото приёмки</div><img class="receive-photo-img" alt="Фото приёмки" src="${src}"><div class="flex gap-2 mt-2"><button class="btn-outline w-full" type="button" onclick="clearReceivePhoto()">🗑️ Удалить фото</button><button class="btn-outline w-full" type="button" onclick="selectReceivePhoto(true)">🔁 Переснять</button><button class="btn-outline w-full" type="button" onclick="selectReceivePhoto(false)">🖼️ Другой файл</button></div></div>`;
+    }
+
+    function clearReceivePhoto() {
+        activeReceiveImages = [];
+        const c = document.getElementById('f-photo-input-camera');
+        const f = document.getElementById('f-photo-input-file');
+        if (c) c.value = '';
+        if (f) f.value = '';
+        renderReceivePhotoPreview();
+    }
+
     async function applyReceivePhoto(input, fromCamera = false) {
         const file = input?.files?.[0];
         if (!file) return;
         try {
             const data = await processPhotoFile(file, fromCamera);
             activeReceiveImages = [data];
+            renderReceivePhotoPreview();
+            if (input) input.value = '';
             showToast('Фото добавлено');
         } catch (e) {
             showToast('Не удалось загрузить фото', 'danger');
@@ -2031,6 +2173,7 @@
         document.querySelectorAll('#tab-bar button').forEach(b => b.classList.remove('active'));
         document.getElementById('tab-'+id).classList.add('active');
         document.getElementById('screen-list').classList.remove('hidden'); document.getElementById('screen-work').classList.add('hidden');
+        updateTabBadges();
         renderDocList();
     }
 
@@ -2041,14 +2184,21 @@
         const q = document.getElementById('doc-search')?.value?.toLowerCase().trim() || "";
         const cont = document.getElementById('docs-list-container');
         cont.innerHTML = "";
-        const list = db[curTab] || [];
-        list.filter(d => {
+        const list = (db[curTab] || []).filter(d => {
             if (!q) return true;
             const nameHit = (d.name || '').toLowerCase().includes(q);
             const dateHit = new Date(d.createdAt).toLocaleDateString().toLowerCase().includes(q);
             const artHit = (d.items || []).some(i => (i.art || '').toLowerCase().includes(q));
             return nameHit || dateHit || artHit;
-        }).forEach(d => {
+        });
+        const active = list.filter(d => d.status === 'active');
+        const closed = list.filter(d => d.status !== 'active');
+        const renderGroup = (title, arr) => {
+            const div = document.createElement('div');
+            div.className = 'doc-group-divider';
+            div.textContent = `${title} (${arr.length})`;
+            cont.appendChild(div);
+            arr.forEach(d => {
             const card = document.createElement('div');
             card.className = `card doc-card ${d.status}`;
             card.onclick = () => openDoc(d.id);
@@ -2057,13 +2207,28 @@
             const nameEl = document.createElement('span');
             nameEl.textContent = d.name;
             const statusEl = document.createElement('span');
-            statusEl.textContent = d.status==='active' ? '🟡' : '✅';
+            statusEl.className = `doc-status-dot ${d.status==='active' ? 'active' : 'closed'}`;
             head.append(nameEl, statusEl);
             const rowsEl = document.createElement('div');
             rowsEl.textContent = `Записей: ${d.items.length}`;
-            card.append(head, rowsEl);
+            const total = calcDocTotal(d);
+            const meta = document.createElement('div');
+            meta.className = 'doc-meta';
+            const created = d.createdAt ? new Date(d.createdAt).toLocaleDateString() : '-';
+            meta.textContent = curTab === 'price' ? `${d.items.length} поз. · ${created}` : `${total.toFixed(2)} м · ${created}`;
+            card.append(head, rowsEl, meta);
             cont.appendChild(card);
-        });
+            });
+        };
+        if (!list.length) {
+            const empty = document.createElement('div');
+            empty.className = 'text-sec';
+            empty.textContent = q ? 'Ничего не найдено' : 'Нет документов';
+            cont.appendChild(empty);
+            return;
+        }
+        renderGroup('Активные', active);
+        renderGroup('Завершённые', closed);
     }
 
     function openDoc(id) {
@@ -2085,6 +2250,7 @@
         }
         const acts = document.getElementById('closed-actions'); const formCont = document.getElementById('form-container');
         if(d.status === 'active') { formCont.classList.remove('hidden'); acts.classList.add('hidden'); } else { formCont.classList.add('hidden'); acts.classList.remove('hidden'); }
+        renderClosedDocSummary(d);
         renderForm(); renderRows();
     }
 
@@ -2093,9 +2259,10 @@
         if(!d || d.status !== 'active') return;
         let artVal = sets.prefix + String(sets.nextNum).padStart(4,'0');
         if(curTab === 'receive') {
-            cont.innerHTML = `<div class="input-group"><label>APT</label><input type="text" id="f-art" data-art-field value="${artVal}" class="monospace font-bold"></div><div class="input-group"><label>НАИМЕНОВАНИЕ (ДЛЯ ПЕЧАТИ)</label><input type="text" id="f-name-print" value="${sets.printNameDefault || ''}"></div>${sets.showFullName ? '<div class="input-group"><label>ПОЛНОЕ НАИМЕНОВАНИЕ</label><input type="text" id="f-full-name"></div>' : ''}${sets.showWidth ? '<div class="input-group"><label>ШИРИНА</label><input type="text" id="f-width" inputmode="decimal"></div>' : ''}${sets.showDensity ? '<div class="input-group"><label>ПЛОТНОСТЬ</label><input type="text" id="f-density" inputmode="numeric"></div>' : ''}${sets.showBrand ? '<div class="input-group"><label>БРЕНД</label><input type="text" id="f-brand"></div>' : ''}${sets.showComp ? '<div class="input-group"><label>СОСТАВ</label><input type="text" id="f-comp" oninput="formatCompositionInput(this)"></div>' : ''}<input id="f-photo-input-camera" type="file" accept="image/*" capture="environment" class="hidden" onchange="applyReceivePhoto(this, true)"><input id="f-photo-input-file" type="file" accept="image/*" class="hidden" onchange="applyReceivePhoto(this, false)"><div class="flex gap-2"><button class="btn-outline w-full" style="font-size:14px;" onclick="selectReceivePhoto(true)">📷 Камера</button><button class="btn-outline w-full" style="font-size:14px;" onclick="selectReceivePhoto(false)">🖼️ Файл</button></div><div id="receive-cuts"></div><button class="btn-outline w-full mb-2" style="border-style:dashed; font-size:14px;" onclick="addCut()">+ Добавить отрез</button><div class="flex gap-2"><button class="btn-outline" style="flex:1" onclick="printFromForm()">🖨️ Печать</button><button class="btn-success" style="flex:2" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button></div>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+            cont.innerHTML = `<div class="input-group"><label>APT</label><input type="text" id="f-art" data-art-field value="${artVal}" class="monospace font-bold"></div><div class="input-group"><label>НАИМЕНОВАНИЕ (ДЛЯ ПЕЧАТИ)</label><input type="text" id="f-name-print" value="${sets.printNameDefault || ''}"></div>${sets.showFullName ? '<div class="input-group"><label>ПОЛНОЕ НАИМЕНОВАНИЕ</label><input type="text" id="f-full-name"></div>' : ''}${sets.showWidth ? '<div class="input-group"><label>ШИРИНА</label><input type="text" id="f-width" inputmode="decimal"></div>' : ''}${sets.showDensity ? '<div class="input-group"><label>ПЛОТНОСТЬ</label><input type="text" id="f-density" inputmode="numeric"></div>' : ''}${sets.showBrand ? '<div class="input-group"><label>БРЕНД</label><input type="text" id="f-brand"></div>' : ''}${sets.showComp ? '<div class="input-group"><label>СОСТАВ</label><input type="text" id="f-comp" oninput="formatCompositionInput(this)"></div>' : ''}<input id="f-photo-input-camera" type="file" accept="image/*" capture="environment" class="hidden" onchange="applyReceivePhoto(this, true)"><input id="f-photo-input-file" type="file" accept="image/*" class="hidden" onchange="applyReceivePhoto(this, false)"><div class="flex gap-2"><button class="btn-outline w-full" style="font-size:14px;" onclick="selectReceivePhoto(true)">📷 Камера</button><button class="btn-outline w-full" style="font-size:14px;" onclick="selectReceivePhoto(false)">🖼️ Файл</button></div><div id="receive-photo-preview"></div><div id="receive-cuts"></div><button class="btn-outline w-full mb-2" style="border-style:dashed; font-size:14px;" onclick="addCut()">+ Добавить отрез</button><div class="flex gap-2"><button class="btn-outline" style="flex:1" onclick="printFromForm()">🖨️ Печать</button><button class="btn-success" style="flex:2" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button></div>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
             if (!editingItemId) { activeCuts = [{id:1, m:'', wh:sets.warehouses[0] || "", c:''}]; activeReceiveImages = []; }
             renderCuts();
+            renderReceivePhotoPreview();
         } else if(curTab === 'move'){
             cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" onblur="resolveFormArtInput(this)" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this);}"></div><div class="flex gap-2"><div style="flex:1"><label>ОТКУДА (СКЛАД)</label><select id="f-wh-from">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ОТКУДА (ЯЧ)</label><input type="text" id="f-cell-from" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="flex gap-2"><div style="flex:1"><label>КУДА (СКЛАД)</label><select id="f-wh-to">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>КУДА (ЯЧ)</label><input type="text" id="f-cell-to" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div></div><div class="input-group"><label>МЕТРАЖ</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-primary w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
         } else if(curTab === 'writeoff'){
@@ -2166,6 +2333,8 @@
         else if(curTab === 'writeoff'){ item.m = document.getElementById('f-m').value; item.wh = document.getElementById('f-wh').value; item.cell = document.getElementById('f-cell').value; if(!parseFloat(item.m)) { showToast('Введите корректное количество', 'danger'); return; } }
         else if(curTab === 'price'){ item.p = document.getElementById('f-p').value; if(isNaN(parseFloat(item.p))) { showToast('Введите корректную цену', 'danger'); return; } }
         if(editingItemId){ const idx = d.items.findIndex(i => normalizeId(i.id)===normalizeId(editingItemId)); if(idx >= 0) d.items[idx]=item; editingItemId=null; } else d.items.unshift(item);
+        lastSavedItemId = normalizeId(item.id);
+        playBeep();
         save(); renderForm(); renderRows(); showToast("Записано");
         const artField = document.getElementById('f-art');
         if (artField) { artField.value = ""; setTimeout(() => artField.focus(), 30); }
@@ -2188,6 +2357,7 @@
             const fB = document.getElementById('f-brand'); if(fB) fB.value = it.brand || '';
             const fC = document.getElementById('f-comp'); if(fC) fC.value = it.comp || '';
             renderCuts();
+            renderReceivePhotoPreview();
         } else if(curTab === 'move') { document.getElementById('f-m').value = it.m; document.getElementById('f-wh-from').value = it.fromWh; document.getElementById('f-cell-from').value = it.fromCell; document.getElementById('f-wh-to').value = it.toWh; document.getElementById('f-cell-to').value = it.toCell; }
         else if(curTab === 'writeoff') { document.getElementById('f-m').value = it.m; document.getElementById('f-wh').value = it.wh; document.getElementById('f-cell').value = it.cell; }
         else if(curTab==='price') { const fP = document.getElementById('f-p'); if(fP) fP.value = it.p || ''; }
@@ -2199,11 +2369,17 @@
 
     function renderRows() {
         const cont = document.getElementById('rows-container'); const d = db[curTab].find(x=>x.id===curDocId); cont.innerHTML = "";
-        d.items.forEach(it => {
+        d.items.forEach((it, idx) => {
             const div = document.createElement('div');
-            div.className = 'history-item' + (normalizeId(editingItemId)===normalizeId(it.id) ? ' editing' : '');
+            div.className = 'history-item' + (normalizeId(editingItemId)===normalizeId(it.id) ? ' editing' : '') + (normalizeId(lastSavedItemId)===normalizeId(it.id) ? ' just-added' : '');
 
             const left = document.createElement('div');
+            left.className = 'row-left';
+            const rowNum = document.createElement('div');
+            rowNum.className = 'row-num';
+            rowNum.textContent = `#${idx + 1}`;
+            const content = document.createElement('div');
+            content.className = 'row-content';
             const artEl = document.createElement('div');
             artEl.className = 'font-bold';
             artEl.textContent = it.art;
@@ -2212,9 +2388,24 @@
             if(curTab === 'move') { infoEl.className = 'text-sm text-sec'; infoEl.textContent = `${it.fromWh} → ${it.toWh} | ${it.m}м`; }
             else if(curTab === 'writeoff') { infoEl.className = 'text-sm text-sec'; infoEl.textContent = `${it.wh} | ${it.m}м`; }
             else if(curTab === 'price') { infoEl.className = 'text-sm font-bold'; infoEl.style.color = 'var(--price-color)'; infoEl.textContent = `${it.p} €`; }
-            else { infoEl.className = 'text-sm text-sec'; infoEl.textContent = `${it.cuts ? it.cuts.length : 0} отр.`; }
+            else {
+                const cuts = Array.isArray(it.cuts) ? it.cuts : [];
+                const total = cuts.reduce((s, c) => s + toNumber(c.m), 0);
+                infoEl.className = 'text-sm text-sec';
+                infoEl.textContent = `${cuts.length} отр. · ${total.toFixed(2)} м`;
+                const chips = document.createElement('div');
+                chips.className = 'row-cuts-detail';
+                cuts.forEach(c => {
+                    const chip = document.createElement('span');
+                    chip.className = 'cut-chip';
+                    chip.textContent = `${c.wh || '-'} ${c.c || '-'} ${toNumber(c.m).toFixed(2)}м`;
+                    chips.appendChild(chip);
+                });
+                content.append(artEl, infoEl, chips);
+            }
 
-            left.append(artEl, infoEl);
+            if (curTab !== 'receive') content.append(artEl, infoEl);
+            left.append(rowNum, content);
 
             const actions = document.createElement('div');
             actions.className = 'flex gap-2';
@@ -2247,19 +2438,21 @@
             cont.appendChild(div);
         });
         document.getElementById('work-counter').textContent = "Записей: " + d.items.length;
+        if (lastSavedItemId) setTimeout(() => { lastSavedItemId = null; }, 2100);
     }
 
     /* УТИЛИТЫ */
-    function save() { try { localStorage.setItem('tsd_final_sets', JSON.stringify(sets)); localStorage.setItem('tsd_final_receive', JSON.stringify(db.receive)); localStorage.setItem('tsd_final_move', JSON.stringify(db.move)); localStorage.setItem('tsd_final_writeoff', JSON.stringify(db.writeoff)); localStorage.setItem('tsd_final_price', JSON.stringify(db.price)); } catch (e) { if (e && (e.name === 'QuotaExceededError' || e.code === 22)) { showToast('Память устройства переполнена. Очистите старые документы.', 'danger'); logError('QuotaExceededError: localStorage full'); return; } throw e; } updateDataLists(); }
+    function save() { try { localStorage.setItem('tsd_final_sets', JSON.stringify(sets)); localStorage.setItem('tsd_final_receive', JSON.stringify(db.receive)); localStorage.setItem('tsd_final_move', JSON.stringify(db.move)); localStorage.setItem('tsd_final_writeoff', JSON.stringify(db.writeoff)); localStorage.setItem('tsd_final_price', JSON.stringify(db.price)); } catch (e) { if (e && (e.name === 'QuotaExceededError' || e.code === 22)) { showToast('Память устройства переполнена. Очистите старые документы.', 'danger'); logError('QuotaExceededError: localStorage full'); return; } throw e; } updateDataLists(); updateTabBadges(); }
     function updateDataLists() { const arts = new Set(), cells = new Set(); Object.values(db).forEach(list => { if(list) list.forEach(d => d.items.forEach(i => { if(i.art) arts.add(i.art); if(i.cuts) i.cuts.forEach(c => { if(c.c) cells.add(c.c); }); if(i.cell) cells.add(i.cell); if(i.fromCell) cells.add(i.fromCell); if(i.toCell) cells.add(i.toCell); } )) }); document.getElementById('list-arts').innerHTML = Array.from(arts).map(a=>`<option value="${a}">`).join(''); document.getElementById('list-cells').innerHTML = Array.from(cells).map(c=>`<option value="${c}">`).join(''); }
     function openModal(id) { const modal = document.getElementById(id); if(!modal) return; lastFocusedElement = document.activeElement; modalStack.push({ id, focus: lastFocusedElement }); activeModalId = id; modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); setupInputAssistancePolicy(); const focusable = modal.querySelector('input, button, select, textarea'); if (focusable) focusable.focus(); }
     function closeModal(id) { const modal = document.getElementById(id); if(!modal) return; modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); let restore = lastFocusedElement; const idx = modalStack.map(x => x.id).lastIndexOf(id); if (idx >= 0) { const closed = modalStack.splice(idx, 1)[0]; restore = closed?.focus || restore; } const top = modalStack[modalStack.length - 1]; activeModalId = top ? top.id : null; if (!top && restore && typeof restore.focus === 'function') restore.focus(); }
     function showToast(m, t) { const c = document.getElementById('toast-container'); if(c.children.length > 3) c.removeChild(c.firstChild); const d = document.createElement('div'); d.className = `toast`; d.setAttribute('role', 'status'); d.style.background = t === 'danger' ? 'var(--danger)' : 'var(--primary)'; d.textContent = m; c.appendChild(d); setTimeout(()=>d.remove(), 2500); }
     
-    async function openSettings() { document.getElementById('set-show-width').checked = sets.showWidth !== false; document.getElementById('set-show-density').checked = sets.showDensity !== false; document.getElementById('set-show-brand').checked = sets.showBrand !== false; document.getElementById('set-show-comp').checked = sets.showComp !== false; document.getElementById('set-show-fullname').checked = sets.showFullName === true; document.getElementById('set-print-name-default').value = sets.printNameDefault || ''; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-api-key').value = sets.apiKey || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "server"; document.getElementById('set-kiosk-demo').checked = sets.kioskDemoMode !== false; document.getElementById('set-dev-offline').checked = isDemoMode; togglePrintSettingsUI(); renderSettingsWh(); await loadServerPrinters(); openModal('modal-settings'); }
+    async function openSettings() { document.getElementById('set-show-width').checked = sets.showWidth !== false; document.getElementById('set-show-density').checked = sets.showDensity !== false; document.getElementById('set-show-brand').checked = sets.showBrand !== false; document.getElementById('set-show-comp').checked = sets.showComp !== false; document.getElementById('set-show-fullname').checked = sets.showFullName === true; document.getElementById('set-print-name-default').value = sets.printNameDefault || ''; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-api-key').value = sets.apiKey || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "server"; document.getElementById('set-kiosk-demo').checked = sets.kioskDemoMode !== false; document.getElementById('set-dev-offline').checked = isDemoMode; togglePrintSettingsUI(); renderSettingsWh(); renderSettingsInfoPanel(); validateUrlField(); await loadServerPrinters(); openModal('modal-settings'); }
     function togglePrintSettingsUI() { const method = document.getElementById('set-print-method').value; const block = document.getElementById('printnode-block'); const serverBlock = document.getElementById('server-printers-block'); if (block) block.style.display = (method === 'printnode') ? 'block' : 'none'; if (serverBlock) serverBlock.style.display = (method === 'server') ? 'block' : 'none'; }
-    function saveSets() { sets.showWidth = document.getElementById('set-show-width').checked; sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.showFullName = document.getElementById('set-show-fullname').checked; sets.printNameDefault = document.getElementById('set-print-name-default').value; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.apiKey = document.getElementById('set-api-key').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; sets.kioskDemoMode = document.getElementById('set-kiosk-demo').checked; isDemoMode = document.getElementById('set-dev-offline').checked; sets.devOfflineMode = isDemoMode; sets.printerClient = document.getElementById('set-printer-client')?.value || ''; sets.printerWarehouse = document.getElementById('set-printer-warehouse')?.value || ''; sets.printerHanger = document.getElementById('set-printer-hanger')?.value || ''; sets.printerA4 = document.getElementById('set-printer-a4')?.value || ''; save(); saveAppState(); }
-    function renderSettingsWh() { const root = document.getElementById('settings-warehouses'); if (!root) return; root.innerHTML = ''; (sets.warehouses || []).forEach(w => { const row = document.createElement('div'); row.className = 'wh-item'; const label = document.createElement('span'); label.textContent = w; const btn = document.createElement('button'); btn.className = 'btn-icon text-danger'; btn.textContent = '🗑️'; btn.addEventListener('click', () => delWh(w)); row.append(label, btn); root.appendChild(row); }); }
+    function saveSets() { sets.showWidth = document.getElementById('set-show-width').checked; sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.showFullName = document.getElementById('set-show-fullname').checked; sets.printNameDefault = document.getElementById('set-print-name-default').value; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.apiKey = document.getElementById('set-api-key').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; sets.kioskDemoMode = document.getElementById('set-kiosk-demo').checked; isDemoMode = document.getElementById('set-dev-offline').checked; sets.devOfflineMode = isDemoMode; sets.printerClient = document.getElementById('set-printer-client')?.value || ''; sets.printerWarehouse = document.getElementById('set-printer-warehouse')?.value || ''; sets.printerHanger = document.getElementById('set-printer-hanger')?.value || ''; sets.printerA4 = document.getElementById('set-printer-a4')?.value || ''; validateUrlField(); save(); saveAppState(); renderSettingsInfoPanel(); }
+    function renderSettingsWh() { const root = document.getElementById('settings-warehouses'); if (!root) return; root.innerHTML = ''; (sets.warehouses || []).forEach((w, idx) => { const row = document.createElement('div'); row.className = 'wh-item'; const label = document.createElement('span'); label.textContent = w; const actions = document.createElement('div'); actions.className = 'wh-actions'; const up = document.createElement('button'); up.className = 'btn-outline wh-move-btn'; up.textContent = '↑'; up.disabled = idx === 0; up.addEventListener('click', () => moveWh(idx, -1)); const down = document.createElement('button'); down.className = 'btn-outline wh-move-btn'; down.textContent = '↓'; down.disabled = idx === (sets.warehouses.length - 1); down.addEventListener('click', () => moveWh(idx, 1)); const btn = document.createElement('button'); btn.className = 'btn-icon text-danger'; btn.textContent = '🗑️'; btn.addEventListener('click', () => delWh(w)); actions.append(up, down, btn); row.append(label, actions); root.appendChild(row); }); }
+    function moveWh(idx, dir) { const arr = sets.warehouses || []; const to = idx + dir; if (to < 0 || to >= arr.length) return; [arr[idx], arr[to]] = [arr[to], arr[idx]]; renderSettingsWh(); saveSets(); }
     function addWh() {
         const n = document.getElementById('new-wh-name');
         const raw = n?.value || '';
