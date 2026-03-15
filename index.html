@@ -601,6 +601,10 @@
     <div class="modal-content">
         <h2>Лист А4 (до 10 товаров)</h2>
         <p id="a4-preview-status" class="text-sm text-sec mb-2">0/10</p>
+        <div class="flex gap-2 mb-2">
+            <input type="text" id="a4-manual-art" placeholder="Введите артикул и нажмите Enter" onkeydown="if(event.key==='Enter') addA4ItemManual()" autocorrect="off" spellcheck="false" autocapitalize="characters">
+            <button class="btn-outline" type="button" onclick="addA4ItemManual()">➕</button>
+        </div>
         <div id="a4-preview-list" class="a4-preview-list"></div>
         <div class="flex gap-2 mt-3">
             <button class="btn-outline w-full" onclick="clearA4Buffer()">Очистить</button>
@@ -792,13 +796,13 @@
     let editingItemId = null, scanBuf = "", activeCuts = [];
     let activeModalId = null;
     let lastFocusedElement = null;
+    let modalStack = [];
     let isSearchPending = false;
     let currentProduct = null;
     let isProductDirty = false;
     let inlineEditField = null;
     let activeStockRowIndex = null;
-    let isDemoMode = safeLoad('app_demo_mode', true);
-    if (sets.devOfflineMode !== false) isDemoMode = true;
+    let isDemoMode = sets.devOfflineMode === true;
     let lastScanAt = 0;
     let lastScanCode = "";
     const SCAN_COOLDOWN_MS = 1200;
@@ -995,6 +999,7 @@
     }
 
     window.onload = () => {
+        localStorage.removeItem('app_demo_mode');
         syncAppViewportHeight();
         setupInputAssistancePolicy();
         setupKeyboardAvoidance();
@@ -1031,7 +1036,7 @@
         if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').catch(err => logError(`sw: ${err.message}`)); }
     };
 
-    function saveAppState() { localStorage.setItem('app_last_tab', curTab); localStorage.setItem('app_last_doc_id', curDocId); localStorage.setItem('app_is_mgr', isMgr); localStorage.setItem('app_demo_mode', isDemoMode); }
+    function saveAppState() { localStorage.setItem('app_last_tab', curTab); localStorage.setItem('app_last_doc_id', curDocId); localStorage.setItem('app_is_mgr', isMgr); }
 
     function isCustomerManagerModeActive() { return isMgr || tempCustomerManagerMode; }
 
@@ -1708,6 +1713,22 @@
     function openA4PreviewModal() {
         renderA4PreviewModal();
         openModal('modal-a4-preview');
+        const inp = document.getElementById('a4-manual-art');
+        if (inp) setTimeout(() => inp.focus(), 50);
+    }
+
+    async function addA4ItemManual() {
+        const inp = document.getElementById('a4-manual-art');
+        const raw = inp?.value?.trim() || '';
+        if (!raw) return;
+        if (kioskA4Buffer.length >= 10) { showToast('Максимум 10 позиций в листе', 'danger'); return; }
+        const art = await resolveCodeToArt(raw.toUpperCase());
+        if (!art) return;
+        kioskA4Buffer.push(art);
+        kioskA4Buffer = [...new Set(kioskA4Buffer)].slice(0, 10);
+        updateKioskA4Status();
+        if (inp) { inp.value = ''; inp.focus(); }
+        showToast(`Добавлено в A4: ${art}`);
     }
 
     function toggleKioskA4CollectMode() {
@@ -1774,6 +1795,10 @@
     }
 
     async function processPhotoFile(file, cropSquare = false) {
+        const maxBytes = 7 * 1024 * 1024;
+        if (file && file.size > maxBytes) {
+            throw new Error('Фото слишком большое (максимум 7 МБ)');
+        }
         const src = await fileToDataUrl(file);
         if (!cropSquare) return src;
         return new Promise((resolve, reject) => {
@@ -1987,7 +2012,7 @@
     function saveLine() {
         const d = db[curTab].find(x=>x.id===curDocId); const artInp = document.getElementById('f-art'); if(!artInp) return; const art = artInp.value.trim(); if(!art) { showToast('Введите артикул', 'danger'); artInp.focus(); return; }
         let item = { id: editingItemId || Date.now().toString(36), art, ts: new Date().toISOString() };
-        if(curTab === 'receive'){ const v = activeCuts.filter(c => !isNaN(parseFloat(c.m)) && parseFloat(c.m) > 0); if(!v.length) { showToast('Добавьте хотя бы один валидный отрез', 'danger'); return; } item.cuts = JSON.parse(JSON.stringify(v)); item.namePrint = document.getElementById('f-name-print')?.value?.trim() || ''; if(sets.showFullName && document.getElementById('f-full-name')) item.fullName = document.getElementById('f-full-name').value.trim(); if(sets.showWidth && document.getElementById('f-width')) item.w = document.getElementById('f-width').value; if(sets.showDensity && document.getElementById('f-density')) item.dens = document.getElementById('f-density').value; if(sets.showBrand && document.getElementById('f-brand')) item.brand = document.getElementById('f-brand').value; if(sets.showComp && document.getElementById('f-comp')) item.comp = formatCompositionText(document.getElementById('f-comp').value); if (activeReceiveImages.length) item.images = [...activeReceiveImages]; if (!editingItemId) sets.nextNum++; }
+        if(curTab === 'receive'){ const v = activeCuts.filter(c => !isNaN(parseFloat(c.m)) && parseFloat(c.m) > 0); if(!v.length) { showToast('Добавьте хотя бы один валидный отрез', 'danger'); return; } item.cuts = JSON.parse(JSON.stringify(v)); item.namePrint = document.getElementById('f-name-print')?.value?.trim() || ''; if(sets.showFullName && document.getElementById('f-full-name')) item.fullName = document.getElementById('f-full-name').value.trim(); if(sets.showWidth && document.getElementById('f-width')) item.w = document.getElementById('f-width').value; if(sets.showDensity && document.getElementById('f-density')) item.dens = document.getElementById('f-density').value; if(sets.showBrand && document.getElementById('f-brand')) item.brand = document.getElementById('f-brand').value; if(sets.showComp && document.getElementById('f-comp')) item.comp = formatCompositionText(document.getElementById('f-comp').value); if (activeReceiveImages.length) item.images = [...activeReceiveImages]; const autoArt = `${sets.prefix}${String(sets.nextNum).padStart(4,'0')}`; if (!editingItemId && art === autoArt) sets.nextNum++; }
         else if(curTab === 'move'){ item.m = document.getElementById('f-m').value; item.fromWh = document.getElementById('f-wh-from').value; item.fromCell = document.getElementById('f-cell-from').value; item.toWh = document.getElementById('f-wh-to').value; item.toCell = document.getElementById('f-cell-to').value; if(!parseFloat(item.m)) { showToast('Введите корректный метраж', 'danger'); return; } }
         else if(curTab === 'writeoff'){ item.m = document.getElementById('f-m').value; item.wh = document.getElementById('f-wh').value; item.cell = document.getElementById('f-cell').value; if(!parseFloat(item.m)) { showToast('Введите корректное количество', 'danger'); return; } }
         else if(curTab === 'price'){ item.p = document.getElementById('f-p').value; if(isNaN(parseFloat(item.p))) { showToast('Введите корректную цену', 'danger'); return; } }
@@ -1999,7 +2024,12 @@
 
     function editItem(id) {
         const d = db[curTab].find(x=>x.id===curDocId); const it = d.items.find(i=>i.id===id); if(!it) return;
-        editingItemId = normalizeId(id); renderForm();
+        editingItemId = normalizeId(id);
+        if(curTab==='receive') {
+            activeReceiveImages = Array.isArray(it.images) ? [...it.images] : [];
+            activeCuts = JSON.parse(JSON.stringify(it.cuts || []));
+        }
+        renderForm();
         const fA = document.getElementById('f-art'); if(fA) fA.value = it.art;
         if(curTab==='receive'){
             const fNP = document.getElementById('f-name-print'); if(fNP) fNP.value = it.namePrint || '';
@@ -2008,8 +2038,7 @@
             const fD = document.getElementById('f-density'); if(fD) fD.value = it.dens || '';
             const fB = document.getElementById('f-brand'); if(fB) fB.value = it.brand || '';
             const fC = document.getElementById('f-comp'); if(fC) fC.value = it.comp || '';
-            activeReceiveImages = Array.isArray(it.images) ? [...it.images] : [];
-            activeCuts = JSON.parse(JSON.stringify(it.cuts)); renderCuts();
+            renderCuts();
         } else if(curTab === 'move') { document.getElementById('f-m').value = it.m; document.getElementById('f-wh-from').value = it.fromWh; document.getElementById('f-cell-from').value = it.fromCell; document.getElementById('f-wh-to').value = it.toWh; document.getElementById('f-cell-to').value = it.toCell; }
         else if(curTab === 'writeoff') { document.getElementById('f-m').value = it.m; document.getElementById('f-wh').value = it.wh; document.getElementById('f-cell').value = it.cell; }
         else if(curTab==='price') { const fP = document.getElementById('f-p'); if(fP) fP.value = it.p || ''; }
@@ -2074,16 +2103,37 @@
     /* УТИЛИТЫ */
     function save() { try { localStorage.setItem('tsd_final_sets', JSON.stringify(sets)); localStorage.setItem('tsd_final_receive', JSON.stringify(db.receive)); localStorage.setItem('tsd_final_move', JSON.stringify(db.move)); localStorage.setItem('tsd_final_writeoff', JSON.stringify(db.writeoff)); localStorage.setItem('tsd_final_price', JSON.stringify(db.price)); } catch (e) { if (e && (e.name === 'QuotaExceededError' || e.code === 22)) { showToast('Память устройства переполнена. Очистите старые документы.', 'danger'); logError('QuotaExceededError: localStorage full'); return; } throw e; } updateDataLists(); }
     function updateDataLists() { const arts = new Set(), cells = new Set(); Object.values(db).forEach(list => { if(list) list.forEach(d => d.items.forEach(i => { if(i.art) arts.add(i.art); if(i.cuts) i.cuts.forEach(c => { if(c.c) cells.add(c.c); }); if(i.cell) cells.add(i.cell); if(i.fromCell) cells.add(i.fromCell); if(i.toCell) cells.add(i.toCell); } )) }); document.getElementById('list-arts').innerHTML = Array.from(arts).map(a=>`<option value="${a}">`).join(''); document.getElementById('list-cells').innerHTML = Array.from(cells).map(c=>`<option value="${c}">`).join(''); }
-    function openModal(id) { const modal = document.getElementById(id); if(!modal) return; lastFocusedElement = document.activeElement; activeModalId = id; modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); setupInputAssistancePolicy(); const focusable = modal.querySelector('input, button, select, textarea'); if (focusable) focusable.focus(); }
-    function closeModal(id) { const modal = document.getElementById(id); if(!modal) return; modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); if (activeModalId === id) activeModalId = null; if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') lastFocusedElement.focus(); }
+    function openModal(id) { const modal = document.getElementById(id); if(!modal) return; lastFocusedElement = document.activeElement; modalStack.push({ id, focus: lastFocusedElement }); activeModalId = id; modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); setupInputAssistancePolicy(); const focusable = modal.querySelector('input, button, select, textarea'); if (focusable) focusable.focus(); }
+    function closeModal(id) { const modal = document.getElementById(id); if(!modal) return; modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); let restore = lastFocusedElement; const idx = modalStack.map(x => x.id).lastIndexOf(id); if (idx >= 0) { const closed = modalStack.splice(idx, 1)[0]; restore = closed?.focus || restore; } const top = modalStack[modalStack.length - 1]; activeModalId = top ? top.id : null; if (!top && restore && typeof restore.focus === 'function') restore.focus(); }
     function showToast(m, t) { const c = document.getElementById('toast-container'); if(c.children.length > 3) c.removeChild(c.firstChild); const d = document.createElement('div'); d.className = `toast`; d.setAttribute('role', 'status'); d.style.background = t === 'danger' ? 'var(--danger)' : 'var(--primary)'; d.textContent = m; c.appendChild(d); setTimeout(()=>d.remove(), 2500); }
     
     async function openSettings() { document.getElementById('set-show-width').checked = sets.showWidth !== false; document.getElementById('set-show-density').checked = sets.showDensity !== false; document.getElementById('set-show-brand').checked = sets.showBrand !== false; document.getElementById('set-show-comp').checked = sets.showComp !== false; document.getElementById('set-show-fullname').checked = sets.showFullName === true; document.getElementById('set-print-name-default').value = sets.printNameDefault || ''; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-api-key').value = sets.apiKey || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "server"; document.getElementById('set-kiosk-demo').checked = sets.kioskDemoMode !== false; document.getElementById('set-dev-offline').checked = isDemoMode; togglePrintSettingsUI(); renderSettingsWh(); await loadServerPrinters(); openModal('modal-settings'); }
     function togglePrintSettingsUI() { const method = document.getElementById('set-print-method').value; const block = document.getElementById('printnode-block'); const serverBlock = document.getElementById('server-printers-block'); if (block) block.style.display = (method === 'printnode') ? 'block' : 'none'; if (serverBlock) serverBlock.style.display = (method === 'server') ? 'block' : 'none'; }
     function saveSets() { sets.showWidth = document.getElementById('set-show-width').checked; sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.showFullName = document.getElementById('set-show-fullname').checked; sets.printNameDefault = document.getElementById('set-print-name-default').value; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.apiKey = document.getElementById('set-api-key').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; sets.kioskDemoMode = document.getElementById('set-kiosk-demo').checked; isDemoMode = document.getElementById('set-dev-offline').checked; sets.devOfflineMode = isDemoMode; sets.printerClient = document.getElementById('set-printer-client')?.value || ''; sets.printerWarehouse = document.getElementById('set-printer-warehouse')?.value || ''; sets.printerHanger = document.getElementById('set-printer-hanger')?.value || ''; sets.printerA4 = document.getElementById('set-printer-a4')?.value || ''; save(); saveAppState(); }
     function renderSettingsWh() { const root = document.getElementById('settings-warehouses'); if (!root) return; root.innerHTML = ''; (sets.warehouses || []).forEach(w => { const row = document.createElement('div'); row.className = 'wh-item'; const label = document.createElement('span'); label.textContent = w; const btn = document.createElement('button'); btn.className = 'btn-icon text-danger'; btn.textContent = '🗑️'; btn.addEventListener('click', () => delWh(w)); row.append(label, btn); root.appendChild(row); }); }
-    function addWh() { const n = document.getElementById('new-wh-name'); if(n.value){sets.warehouses.push(n.value); n.value=''; renderSettingsWh(); saveSets();}}
-    function delWh(w) { sets.warehouses = sets.warehouses.filter(x=>x!==w); renderSettingsWh(); saveSets();}
+    function addWh() {
+        const n = document.getElementById('new-wh-name');
+        const raw = n?.value || '';
+        const name = raw.trim();
+        if (!name) { showToast('Введите название склада', 'danger'); return; }
+        const exists = (sets.warehouses || []).some(x => String(x).toLowerCase() === name.toLowerCase());
+        if (exists) { showToast('Такой склад уже существует', 'danger'); return; }
+        sets.warehouses.push(name);
+        n.value='';
+        renderSettingsWh();
+        saveSets();
+    }
+    function delWh(w) {
+        const used = Object.values(db).some(list => (list || []).some(doc => (doc.items || []).some(i => {
+            if (i.wh === w || i.fromWh === w || i.toWh === w) return true;
+            if (Array.isArray(i.cuts)) return i.cuts.some(c => c.wh === w);
+            return false;
+        })));
+        if (used) { showToast('Склад используется в документах и не может быть удалён', 'danger'); return; }
+        sets.warehouses = sets.warehouses.filter(x=>x!==w);
+        renderSettingsWh();
+        saveSets();
+    }
     function closeSettings() { saveSets(); closeModal('modal-settings'); }
     function exitWork() { curDocId = null; saveAppState(); switchTab(curTab); }
 
@@ -2163,7 +2213,17 @@
     function openManualSearch() { openModal('modal-search'); setTimeout(() => document.getElementById('manual-search-input').focus(), 300); }
     function openManagerProductSearch() { openManualSearch(); }
     function doManualSearch() { if (isSearchPending) return; const v = document.getElementById('manual-search-input').value.trim(); if(v){ closeModal('modal-search'); search1C(v, { type: 'barcode' }); } }
-    function exportData() { const blob = new Blob([JSON.stringify({db, sets})], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='backup.json'; a.click(); }
+    function exportData() {
+        const blob = new Blob([JSON.stringify({db, sets})], {type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'backup.json';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+    }
     function importData(event) { const file = event.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(e){ try{ const d = JSON.parse(e.target.result); if(d.db && d.sets){ db = d.db; sets = d.sets; save(); location.reload(); } }catch(err){showToast('Ошибка файла','danger');} }; reader.readAsText(file); }
 </script>
 </body>
