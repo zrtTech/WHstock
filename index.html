@@ -324,6 +324,10 @@
         .a4-preview-item { display:flex; justify-content:space-between; gap:8px; padding:6px 4px; border-bottom:1px solid #eee; font-size:14px; }
         .a4-preview-item:last-child { border-bottom:none; }
 
+        .photo-preview-box { border: 1px dashed #cfd8e3; border-radius: 10px; padding: 8px; margin-top: 8px; background: #fafcff; }
+        .photo-preview-box img { width: 100%; max-height: 180px; object-fit: contain; border-radius: 8px; background: #f2f2f2; }
+        .scan-video { width: 100%; border-radius: 12px; background: #000; max-height: 320px; }
+
         .doc-action-btn { min-height: 60px; font-size: 17px; font-weight: 800; border: 2px solid #d7e6f7; background: #f4f9ff; }
         .doc-action-btn:hover { background: #e8f3ff; }
         .cut-row { display: grid; grid-template-columns: 1.4fr 1.1fr 1fr auto; gap: 6px; align-items: center; margin-bottom: 8px; }
@@ -349,7 +353,7 @@
                 <button id="btn-a4-collect-toggle" class="btn-outline" style="color:white;border-color:rgba(255,255,255,0.5);" onclick="toggleKioskA4CollectMode()">📋 Собрать лист этикеток</button>
                 <button id="btn-a4-print" class="btn-outline" style="color:white;border-color:rgba(255,255,255,0.5);" onclick="openA4PreviewModal()">🖨️ Напечатать лист</button>
             </div>
-            <div id="kiosk-a4-status" class="text-sm" style="margin-top:8px; opacity:.85;">A4 буфер: 0/10</div>
+            <div id="kiosk-a4-status" class="text-sm" style="margin-top:8px; opacity:.85;">A4 буфер: 0/10</div><div class="text-sm" style="opacity:.75">A4 — печать 10 товарных позиций на одном листе офиса</div>
         </div>
         <input type="text" id="kiosk-scanner-input" style="position: absolute; opacity: 0; pointer-events: none;">
     </div>
@@ -448,7 +452,7 @@
                             <div class="flex gap-2">
                                 <button class="btn-outline w-full doc-action-btn" onclick="reopenDoc()">🔄 Правка документа</button>
                                 <button class="btn-outline w-full doc-action-btn" onclick="shareDoc()">📤 Поделиться документом</button>
-                                <button class="btn-outline w-full doc-action-btn" onclick="printA4FromClosedDoc()">🖨️ Лист A4</button>
+                                <button id="btn-closed-a4" class="btn-outline w-full doc-action-btn hidden" onclick="printA4FromClosedDoc()">🖨️ Лист A4</button>
                             </div>
                         </div>
                         <div id="form-container" class="card" style="border: 2px solid #eee; position: relative;"></div>
@@ -568,6 +572,18 @@
 
 
 
+
+<div id="modal-camera-scan" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal-content">
+        <h2>Сканирование камерой</h2>
+        <video id="camera-scan-video" class="scan-video" autoplay playsinline muted></video>
+        <p id="camera-scan-status" class="text-sm text-sec mt-2">Наведите камеру на штрихкод</p>
+        <div class="flex gap-2 mt-3">
+            <button class="btn-outline w-full" onclick="closeCameraScanModal()">Отмена</button>
+        </div>
+    </div>
+</div>
+
 <div id="modal-a4-preview" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="modal-content">
         <h2>Лист А4 (до 10 товаров)</h2>
@@ -639,7 +655,7 @@
         <div class="input-group"><label>Бренд</label><input type="text" id="pe-brand"></div>
         <div class="input-group"><label>Плотность (г/м²)</label><input type="text" id="pe-density" inputmode="numeric"></div>
         <div class="input-group"><label>Количество</label><input type="text" id="pe-qty" inputmode="decimal"></div>
-        <div class="input-group"><label>Фото товара</label><input type="file" id="pe-photo-camera" accept="image/*" capture="environment" class="hidden" onchange="applyProductPhoto(this, true)"><input type="file" id="pe-photo-file" accept="image/*" class="hidden" onchange="applyProductPhoto(this, false)"><div class="flex gap-2"><button class="btn-outline w-full" type="button" onclick="document.getElementById('pe-photo-camera').click()">📷 Камера</button><button class="btn-outline w-full" type="button" onclick="document.getElementById('pe-photo-file').click()">🖼️ Файл</button></div></div>
+        <div class="input-group"><label>Фото товара</label><input type="file" id="pe-photo-camera" accept="image/*" capture="environment" class="hidden" onchange="applyProductPhoto(this, true)"><input type="file" id="pe-photo-file" accept="image/*" class="hidden" onchange="applyProductPhoto(this, false)"><div class="flex gap-2"><button class="btn-outline w-full" type="button" onclick="document.getElementById('pe-photo-camera').click()">📷 Камера</button><button class="btn-outline w-full" type="button" onclick="document.getElementById('pe-photo-file').click()">🖼️ Файл</button></div><div id="pe-photo-preview" class="photo-preview-box hidden"><img id="pe-photo-preview-img" alt="Предпросмотр фото товара"><div class="flex gap-2 mt-2"><button class="btn-outline w-full" type="button" onclick="clearProductPhoto()">🗑️ Удалить фото</button><button class="btn-outline w-full" type="button" onclick="document.getElementById('pe-photo-camera').click()">🔁 Переснять</button></div></div></div>
         <p class="manager-field-note">Склад/ячейку/метраж меняйте нажатием на строку нужного склада в таблице остатков.</p>
         <div class="flex gap-2 mt-3">
             <button class="btn-outline w-full" onclick="closeModal('modal-product-edit')">Отмена</button>
