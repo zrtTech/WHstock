@@ -484,6 +484,7 @@
             <h3>ДИАГНОСТИКА</h3>
             <div class="light-block">
                 <button class="btn-outline w-full mb-2" onclick="openLogsModal()">📋 Посмотреть логи ошибок</button>
+                <label class="checkbox-row">Режим разработки (без 1С) <input type="checkbox" id="set-dev-offline" onchange="saveSets()"></label>
                 <label class="checkbox-row">Демо-режим поиска в киоске <input type="checkbox" id="set-kiosk-demo" onchange="saveSets()"></label>
             </div>
         </div>
@@ -763,7 +764,7 @@
     }
 
     /* ДАННЫЕ */
-    const defSets = { url:"http://83.237.242.90:3000", user:"", pass:"", apiKey:"zX9#mK4$pL7@nQ2&wR8!vT3^hY6*jB5", mgr:"1234", warehouses:["Магазин","Склад","Розница"], prefix:"R26", nextNum:1, showWidth:true, showDensity:true, showBrand:true, showComp:true, showFullName:false, printNameDefault:"", printMethod: "server", pnKey:"", pnPrinter:"", printerClient:"", printerWarehouse:"", printerHanger:"", printerA4:"", mgrHash:"", kioskDemoMode:true };
+    const defSets = { url:"http://83.237.242.90:3000", user:"", pass:"", apiKey:"zX9#mK4$pL7@nQ2&wR8!vT3^hY6*jB5", mgr:"1234", warehouses:["Магазин","Склад","Розница"], prefix:"R26", nextNum:1, showWidth:true, showDensity:true, showBrand:true, showComp:true, showFullName:false, printNameDefault:"", printMethod: "server", pnKey:"", pnPrinter:"", printerClient:"", printerWarehouse:"", printerHanger:"", printerA4:"", mgrHash:"", kioskDemoMode:true, devOfflineMode:true };
     let sets = { ...defSets, ...safeLoad('tsd_final_sets', defSets) };
     let db = {
         receive: safeLoad('tsd_final_receive', []),
@@ -785,6 +786,7 @@
     let inlineEditField = null;
     let activeStockRowIndex = null;
     let isDemoMode = safeLoad('app_demo_mode', true);
+    if (sets.devOfflineMode !== false) isDemoMode = true;
     let lastScanAt = 0;
     let lastScanCode = "";
     const SCAN_COOLDOWN_MS = 1200;
@@ -1421,7 +1423,12 @@
     async function pushProductChangesTo1C() {
         if (!currentProduct) return;
         if (!isProductDirty) { showToast('Нет несохранённых изменений'); return; }
-        if (isDemoMode) { showToast('Демо-режим: синхронизация отключена', 'danger'); return; }
+        if (isDemoMode) {
+            isProductDirty = false;
+            updateProductSyncButton();
+            showToast('DEV: изменения товара сохранены локально', 'success');
+            return;
+        }
         const payload = {
             articul: currentProduct.articul,
             priceRub: toNumber(currentProduct.priceRub || currentProduct.price || 0),
@@ -1506,6 +1513,15 @@
 
     async function fetchServerPrinters(force = false) {
         if (serverPrinters.length && !force) return serverPrinters;
+        if (isDemoMode) {
+            serverPrinters = [
+                { name: 'DEV-CLIENT', purpose: 'client' },
+                { name: 'DEV-WAREHOUSE', purpose: 'warehouse' },
+                { name: 'DEV-HANGER', purpose: 'hanger' },
+                { name: 'DEV-A4', purpose: 'a4' }
+            ];
+            return serverPrinters;
+        }
         if (!sets.url) return [];
         try {
             const res = await apiFetch(`${sets.url}/printers`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
@@ -1538,6 +1554,7 @@
     }
 
     async function sendServerPrintLabel(labelType = 'client') {
+        if (isDemoMode) return;
         const payload = getCurrentProductSnapshot();
         payload.labelType = labelType;
         payload.printerName = labelType === 'warehouse' ? (sets.printerWarehouse || '') : (sets.printerClient || '');
@@ -1572,6 +1589,7 @@
 
     async function printHangerLabel() {
         closeModal('modal-print-actions');
+        if (isDemoMode) { showToast('DEV: печать хангера имитирована', 'success'); return; }
         const p = getCurrentProductSnapshot();
         if (!sets.url) { showToast('URL не настроен', 'danger'); return; }
         try {
@@ -1641,6 +1659,13 @@
 
     async function printA4Buffer(closeAfter = false) {
         if (!kioskA4Buffer.length) { showToast('Буфер A4 пуст', 'danger'); return; }
+        if (isDemoMode) {
+            showToast('DEV: лист A4 сформирован (без отправки в 1С)', 'success');
+            kioskA4Buffer = [];
+            updateKioskA4Status();
+            if (closeAfter) closeModal('modal-a4-preview');
+            return;
+        }
         if (!sets.url) { showToast('URL не настроен', 'danger'); return; }
         try {
             const res = await apiFetch(`${sets.url}/print-a4`, {
@@ -1748,7 +1773,7 @@
     function loginDemo() { isDemoMode = true; if (loginMode === 'customer') enterCustomerManagerMode(); else loginSuccess(); closeModal('modal-login'); showToast('Демо-режим включён'); }
     function openLogin(mode = 'full') { loginMode = mode; document.getElementById('login-pass').value = ''; openModal('modal-login'); setTimeout(() => document.getElementById('login-pass').focus(), 300); }
     function loginSuccess() { isMgr = true; saveAppState(); document.getElementById('login-pass').value = ''; document.getElementById('screen-kiosk').classList.add('hidden'); document.getElementById('manager-view').classList.remove('hidden'); switchTab('receive'); }
-    function logout() { isMgr = false; tempCustomerManagerMode = false; isDemoMode = false; curDocId = null; currentProduct = null; document.getElementById('login-pass').value = ''; closeModal('modal-login'); closeModal('modal-product-edit'); closeCustomerView(); saveAppState(); document.getElementById('screen-work').classList.add('hidden'); document.getElementById('screen-list').classList.remove('hidden'); document.getElementById('manager-view').classList.add('hidden'); document.getElementById('screen-kiosk').classList.remove('hidden'); }
+    function logout() { isMgr = false; tempCustomerManagerMode = false; curDocId = null; currentProduct = null; document.getElementById('login-pass').value = ''; closeModal('modal-login'); closeModal('modal-product-edit'); closeCustomerView(); saveAppState(); document.getElementById('screen-work').classList.add('hidden'); document.getElementById('screen-list').classList.remove('hidden'); document.getElementById('manager-view').classList.add('hidden'); document.getElementById('screen-kiosk').classList.remove('hidden'); }
     
     function switchTab(id) {
         curTab = id; curDocId = null; editingItemId = null; saveAppState();
@@ -1985,9 +2010,9 @@
     function closeModal(id) { const modal = document.getElementById(id); if(!modal) return; modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); if (activeModalId === id) activeModalId = null; if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') lastFocusedElement.focus(); }
     function showToast(m, t) { const c = document.getElementById('toast-container'); if(c.children.length > 3) c.removeChild(c.firstChild); const d = document.createElement('div'); d.className = `toast`; d.setAttribute('role', 'status'); d.style.background = t === 'danger' ? 'var(--danger)' : 'var(--primary)'; d.textContent = m; c.appendChild(d); setTimeout(()=>d.remove(), 2500); }
     
-    async function openSettings() { document.getElementById('set-show-width').checked = sets.showWidth !== false; document.getElementById('set-show-density').checked = sets.showDensity !== false; document.getElementById('set-show-brand').checked = sets.showBrand !== false; document.getElementById('set-show-comp').checked = sets.showComp !== false; document.getElementById('set-show-fullname').checked = sets.showFullName === true; document.getElementById('set-print-name-default').value = sets.printNameDefault || ''; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-api-key').value = sets.apiKey || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "server"; document.getElementById('set-kiosk-demo').checked = sets.kioskDemoMode !== false; togglePrintSettingsUI(); renderSettingsWh(); await loadServerPrinters(); openModal('modal-settings'); }
+    async function openSettings() { document.getElementById('set-show-width').checked = sets.showWidth !== false; document.getElementById('set-show-density').checked = sets.showDensity !== false; document.getElementById('set-show-brand').checked = sets.showBrand !== false; document.getElementById('set-show-comp').checked = sets.showComp !== false; document.getElementById('set-show-fullname').checked = sets.showFullName === true; document.getElementById('set-print-name-default').value = sets.printNameDefault || ''; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-api-key').value = sets.apiKey || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "server"; document.getElementById('set-kiosk-demo').checked = sets.kioskDemoMode !== false; document.getElementById('set-dev-offline').checked = isDemoMode; togglePrintSettingsUI(); renderSettingsWh(); await loadServerPrinters(); openModal('modal-settings'); }
     function togglePrintSettingsUI() { const method = document.getElementById('set-print-method').value; const block = document.getElementById('printnode-block'); const serverBlock = document.getElementById('server-printers-block'); if (block) block.style.display = (method === 'printnode') ? 'block' : 'none'; if (serverBlock) serverBlock.style.display = (method === 'server') ? 'block' : 'none'; }
-    function saveSets() { sets.showWidth = document.getElementById('set-show-width').checked; sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.showFullName = document.getElementById('set-show-fullname').checked; sets.printNameDefault = document.getElementById('set-print-name-default').value; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.apiKey = document.getElementById('set-api-key').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; sets.kioskDemoMode = document.getElementById('set-kiosk-demo').checked; sets.printerClient = document.getElementById('set-printer-client')?.value || ''; sets.printerWarehouse = document.getElementById('set-printer-warehouse')?.value || ''; sets.printerHanger = document.getElementById('set-printer-hanger')?.value || ''; sets.printerA4 = document.getElementById('set-printer-a4')?.value || ''; save(); }
+    function saveSets() { sets.showWidth = document.getElementById('set-show-width').checked; sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.showFullName = document.getElementById('set-show-fullname').checked; sets.printNameDefault = document.getElementById('set-print-name-default').value; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.apiKey = document.getElementById('set-api-key').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; sets.kioskDemoMode = document.getElementById('set-kiosk-demo').checked; isDemoMode = document.getElementById('set-dev-offline').checked; sets.devOfflineMode = isDemoMode; sets.printerClient = document.getElementById('set-printer-client')?.value || ''; sets.printerWarehouse = document.getElementById('set-printer-warehouse')?.value || ''; sets.printerHanger = document.getElementById('set-printer-hanger')?.value || ''; sets.printerA4 = document.getElementById('set-printer-a4')?.value || ''; save(); saveAppState(); }
     function renderSettingsWh() { const root = document.getElementById('settings-warehouses'); if (!root) return; root.innerHTML = ''; (sets.warehouses || []).forEach(w => { const row = document.createElement('div'); row.className = 'wh-item'; const label = document.createElement('span'); label.textContent = w; const btn = document.createElement('button'); btn.className = 'btn-icon text-danger'; btn.textContent = '🗑️'; btn.addEventListener('click', () => delWh(w)); row.append(label, btn); root.appendChild(row); }); }
     function addWh() { const n = document.getElementById('new-wh-name'); if(n.value){sets.warehouses.push(n.value); n.value=''; renderSettingsWh(); saveSets();}}
     function delWh(w) { sets.warehouses = sets.warehouses.filter(x=>x!==w); renderSettingsWh(); saveSets();}
@@ -2031,7 +2056,7 @@
 
     async function manualSync() {
         if (!sets.url) { showToast("URL не настроен", "danger"); return; }
-        if (isDemoMode) { showToast('Демо-режим: синхронизация отключена', 'danger'); return; }
+        if (isDemoMode) { showToast('DEV: синхронизация выполнена локально', 'success'); return; }
         showToast("Синхронизация...");
         try {
             const res = await apiFetch(`${sets.url}/trigger-sync`, {
@@ -2052,13 +2077,14 @@
 
     async function syncWith1C() {
         const d = db[curTab].find(x=>x.id===curDocId); if(!sets.url) { showToast("URL 1С не настроен", "danger"); return; }
-        if (isDemoMode) { showToast('Демо-режим: синхронизация отключена', 'danger'); return; }
+        if (isDemoMode) { showToast('DEV: документ помечен как отправленный', 'success'); return; }
         showToast("Отправка в 1С...");
         try { const res = await apiFetch(`${sets.url}/post-document`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Basic '+btoa(sets.user+":"+(sets.pass||"")),'x-api-key': sets.apiKey || ''}, body:JSON.stringify({type:curTab.toUpperCase(), data:d}) }); if(res.ok) showToast("Успешно проведено!"); else showToast("1С вернула ошибку", "danger"); } catch(e) { showToast("Сервер 1С недоступен", "danger"); logError(`Синхронизация 1С: ${e.message}`); }
     }
 
     async function test1CConnection() {
         const url = document.getElementById('set-url').value; const user = document.getElementById('set-user').value; const pass = document.getElementById('set-pass').value;
+        if (isDemoMode) { showToast('DEV-режим: связь с 1С не требуется', 'success'); return; }
         if (!url) { showToast("Сначала введите URL", "danger"); return; }
         showToast("Проверка связи...");
         try { const res = await apiFetch(`${url}/product?id=ping`, { headers: { 'Authorization': 'Basic ' + btoa(user + ":" + pass) } }); if (res.ok || res.status === 404) { showToast("Связь с 1С установлена!", "success"); } else { showToast(`Ошибка: ${res.status}`, "danger"); } } catch (e) { showToast("Ошибка соединения", "danger"); logError(`Тест 1С: ${e.message}`); }
