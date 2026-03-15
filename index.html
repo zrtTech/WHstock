@@ -327,6 +327,13 @@
         .photo-preview-box { border: 1px dashed #cfd8e3; border-radius: 10px; padding: 8px; margin-top: 8px; background: #fafcff; }
         .photo-preview-box img { width: 100%; max-height: 180px; object-fit: contain; border-radius: 8px; background: #f2f2f2; }
         .scan-video { width: 100%; border-radius: 12px; background: #000; max-height: 320px; }
+        .search-loading { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:10px; font-weight:700; }
+        .search-loading::before { content:""; width:16px; height:16px; border:2px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; animation: spin 0.8s linear infinite; }
+        .autoclose-wrap { margin-top: 10px; }
+        .autoclose-track { height: 6px; background: #e8eef7; border-radius: 999px; overflow: hidden; }
+        .autoclose-bar { height: 100%; width: 100%; background: linear-gradient(90deg, #2f80ed, #56ccf2); transition: width .1s linear; }
+        .autoclose-text { font-size: 12px; color: var(--text-sec); margin-top: 6px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         .doc-action-btn { min-height: 60px; font-size: 17px; font-weight: 800; border: 2px solid #d7e6f7; background: #f4f9ff; }
         .doc-action-btn:hover { background: #e8f3ff; }
@@ -348,6 +355,7 @@
         <div class="kiosk-inner">
             <div class="text-center mb-6" style="font-size: 22px; font-weight: 800; animation: pulse 2s infinite;">ПОДНЕСИТЕ ШТРИХКОД</div>
             <button class="btn-main btn-search-wide w-full mb-4" onclick="openManualSearch()">🔎 Поиск товара по артикулу</button>
+            <div id="search-loading" class="search-loading text-sm hidden" aria-live="polite">Поиск товара...</div>
             <div class="kiosk-tools">
                 <button class="btn-outline" style="color:white;border-color:rgba(255,255,255,0.5);" onclick="enterKioskFullscreen()">⛶ Полноэкранный режим</button>
                 <button id="btn-a4-collect-toggle" class="btn-outline" style="color:white;border-color:rgba(255,255,255,0.5);" onclick="toggleKioskA4CollectMode()">📋 Собрать лист этикеток</button>
@@ -377,11 +385,11 @@
             <div class="customer-main-right">
                 <div class="card customer-specs">
                     <div class="customer-spec-grid">
-                        <div class="customer-spec-row"><strong>Артикул:</strong> <span id="c-art" class="editable-value" data-edit-field="articul" data-edit-label="Артикул">-</span></div>
-                        <div class="customer-spec-row"><strong>Ширина:</strong> <span id="c-width" class="editable-value" data-edit-field="width" data-edit-label="Ширина">-</span></div>
-                        <div class="customer-spec-row"><strong>Состав:</strong> <span id="c-comp" class="editable-value" data-edit-field="composition" data-edit-label="Состав">-</span></div>
-                        <div class="customer-spec-row"><strong>Бренд:</strong> <span id="c-brand" class="editable-value" data-edit-field="brand" data-edit-label="Бренд">-</span></div>
-                        <div class="customer-spec-row"><strong>Плотность:</strong> <span id="c-density" class="editable-value" data-edit-field="density" data-edit-label="Плотность">-</span></div>
+                        <div id="c-row-art" class="customer-spec-row"><strong>Артикул:</strong> <span id="c-art" class="editable-value" data-edit-field="articul" data-edit-label="Артикул">-</span></div>
+                        <div id="c-row-width" class="customer-spec-row"><strong>Ширина:</strong> <span id="c-width" class="editable-value" data-edit-field="width" data-edit-label="Ширина">-</span></div>
+                        <div id="c-row-comp" class="customer-spec-row"><strong>Состав:</strong> <span id="c-comp" class="editable-value" data-edit-field="composition" data-edit-label="Состав">-</span></div>
+                        <div id="c-row-brand" class="customer-spec-row"><strong>Бренд:</strong> <span id="c-brand" class="editable-value" data-edit-field="brand" data-edit-label="Бренд">-</span></div>
+                        <div id="c-row-density" class="customer-spec-row"><strong>Плотность:</strong> <span id="c-density" class="editable-value" data-edit-field="density" data-edit-label="Плотность">-</span></div>
                     </div>
                     <table id="c-stock-table" class="stock-table"></table>
                     <div id="c-stock-summary" class="stock-summary">Общий метраж: -</div>
@@ -407,6 +415,10 @@
         <div class="flex gap-2 mt-4">
             <button class="btn-outline w-full" style="height: 64px;" onclick="openPrintActionsModal()">🖨️ Печать</button>
             <button class="btn-primary w-full" style="height: 64px; font-size: 20px;" onclick="closeCustomerView()">Закрыть</button>
+        </div>
+        <div id="customer-autoclose-wrap" class="autoclose-wrap hidden">
+            <div class="autoclose-track"><div id="customer-autoclose-bar" class="autoclose-bar"></div></div>
+            <div id="customer-autoclose-text" class="autoclose-text">Автозакрытие через 10 сек</div>
         </div>
     </div>
 
@@ -796,6 +808,8 @@
     let tempCustomerManagerMode = false;
     let loginMode = "full";
     let customerAutoCloseTimer = null;
+    let customerAutoCloseInterval = null;
+    let customerAutoCloseDeadline = 0;
     let customerScanOverlayTimer = null;
     let scanBufResetTimer = null;
     let serverPrinters = [];
@@ -806,8 +820,48 @@
         isSearchPending = locked;
         const scannerInp = document.getElementById('kiosk-scanner-input');
         const manualInp = document.getElementById('manual-search-input');
+        const loading = document.getElementById('search-loading');
         if (scannerInp) scannerInp.disabled = locked;
         if (manualInp) manualInp.disabled = locked;
+        if (loading) loading.classList.toggle('hidden', !locked);
+    }
+
+    function updateSpecRowVisibility(rowId, value) {
+        const row = document.getElementById(rowId);
+        if (!row) return;
+        const normalized = String(value ?? '').trim();
+        row.classList.toggle('hidden', !normalized || normalized === '-');
+    }
+
+    function clearCustomerAutoClose() {
+        if (customerAutoCloseTimer) clearTimeout(customerAutoCloseTimer);
+        if (customerAutoCloseInterval) clearInterval(customerAutoCloseInterval);
+        customerAutoCloseTimer = null;
+        customerAutoCloseInterval = null;
+        customerAutoCloseDeadline = 0;
+        const wrap = document.getElementById('customer-autoclose-wrap');
+        if (wrap) wrap.classList.add('hidden');
+    }
+
+    function startCustomerAutoClose(seconds = 10) {
+        clearCustomerAutoClose();
+        if (isCustomerManagerModeActive()) return;
+        const wrap = document.getElementById('customer-autoclose-wrap');
+        const bar = document.getElementById('customer-autoclose-bar');
+        const text = document.getElementById('customer-autoclose-text');
+        const totalMs = Math.max(1000, Number(seconds || 10) * 1000);
+        customerAutoCloseDeadline = Date.now() + totalMs;
+        if (wrap) wrap.classList.remove('hidden');
+        customerAutoCloseTimer = setTimeout(() => closeCustomerView(), totalMs);
+        const tick = () => {
+            const left = Math.max(0, customerAutoCloseDeadline - Date.now());
+            const pct = (left / totalMs) * 100;
+            if (bar) bar.style.width = `${pct}%`;
+            if (text) text.textContent = `Автозакрытие через ${Math.ceil(left / 1000)} сек`;
+            if (left <= 0 && customerAutoCloseInterval) clearInterval(customerAutoCloseInterval);
+        };
+        tick();
+        customerAutoCloseInterval = setInterval(tick, 100);
     }
 
     function purgeOldClosedDocs(days = 15) {
@@ -962,6 +1016,14 @@
                 if (e.target === m) closeModal(m.id);
             });
         });
+        const customerView = document.getElementById('customer-view');
+        if (customerView) {
+            customerView.addEventListener('pointerdown', () => {
+                if (customerView.classList.contains('hidden')) return;
+                if (isCustomerManagerModeActive()) return;
+                startCustomerAutoClose(10);
+            });
+        }
         if (isMgr) { document.getElementById('screen-kiosk').classList.add('hidden'); document.getElementById('manager-view').classList.remove('hidden'); switchTab(curTab); if (curDocId) openDoc(curDocId); }
         purgeOldClosedDocs(15);
         updateDataLists();
@@ -1117,7 +1179,8 @@
         const root = document.getElementById('customer-scan-overlay');
         if (!root) return;
         document.getElementById('customer-overlay-title').textContent = p.name || 'Товар';
-        document.getElementById('customer-overlay-price').textContent = `${toNumber(p.priceRub || p.price || 0).toFixed(2)} ₽`;
+        const overlayPrice = toNumber(p.priceRub || p.price || 0);
+        document.getElementById('customer-overlay-price').textContent = overlayPrice <= 0 ? 'Цена не указана' : `${overlayPrice.toFixed(2)} ₽`;
         document.getElementById('customer-overlay-art').textContent = `Арт: ${p.articul || '-'}`;
         root.classList.remove('hidden');
         if (customerScanOverlayTimer) clearTimeout(customerScanOverlayTimer);
@@ -1273,7 +1336,8 @@
         const allImages = p.images || p.photos || p.gallery || [];
         const images = Array.isArray(allImages) ? allImages : [];
         document.getElementById('c-name').textContent = p.name || 'Товар';
-        document.getElementById('c-price').textContent = `${toNumber(p.priceRub || p.price || 0).toFixed(2)} ₽`;
+        const price = toNumber(p.priceRub || p.price || 0);
+        document.getElementById('c-price').textContent = price <= 0 ? 'Цена не указана' : `${price.toFixed(2)} ₽`;
         const customerCanSeeInternalUnits = isCustomerManagerModeActive();
         const uePriceEl = document.getElementById('c-price-ue');
         if (uePriceEl) {
@@ -1285,6 +1349,11 @@
         document.getElementById('c-comp').textContent = p.composition || '-';
         document.getElementById('c-brand').textContent = p.brand || '-';
         document.getElementById('c-density').textContent = p.density || p.dens || '-';
+        updateSpecRowVisibility('c-row-art', p.articul || '-');
+        updateSpecRowVisibility('c-row-width', p.width || '-');
+        updateSpecRowVisibility('c-row-comp', p.composition || '-');
+        updateSpecRowVisibility('c-row-brand', p.brand || '-');
+        updateSpecRowVisibility('c-row-density', p.density || p.dens || '-');
         renderCustomerGallery(images);
         renderStockTable(rows);
         const canManage = isCustomerManagerModeActive();
@@ -1298,10 +1367,9 @@
         document.getElementById('btn-kiosk-manager-mode')?.classList.toggle('hidden', isCustomerManagerModeActive());
         document.getElementById('btn-exit-customer-manager')?.classList.toggle('hidden', !tempCustomerManagerMode);
         document.getElementById('customer-view').classList.remove('hidden');
-        if (customerAutoCloseTimer) clearTimeout(customerAutoCloseTimer);
-        if (!isCustomerManagerModeActive()) customerAutoCloseTimer = setTimeout(() => closeCustomerView(), 10000);
+        startCustomerAutoClose(10);
     }
-    function closeCustomerView() { customerGalleryExpanded = false; tempCustomerManagerMode = false; if (customerAutoCloseTimer) clearTimeout(customerAutoCloseTimer); customerAutoCloseTimer = null; closeCustomerScanOverlay(); document.getElementById('customer-view').classList.add('hidden'); }
+    function closeCustomerView() { customerGalleryExpanded = false; tempCustomerManagerMode = false; clearCustomerAutoClose(); closeCustomerScanOverlay(); document.getElementById('customer-view').classList.add('hidden'); }
 
     function openInlineEditModal(el) {
         if (!isCustomerManagerModeActive() || !currentProduct) return;
@@ -1764,7 +1832,7 @@
         if (!d || !d.items.length) return;
         let text = `ДОКУМЕНТ: ${d.name}\nТИП: ${document.getElementById('list-title').textContent}\nДАТА: ${new Date(d.createdAt).toLocaleDateString()}\n--------------------------\n`;
         d.items.forEach((it, idx) => { text += `${idx + 1}. Арт: ${it.art}\n`; if (it.cuts) { const total = it.cuts.reduce((s, c) => s + (parseFloat(c.m) || 0), 0); text += `   Метраж: ${total.toFixed(2)} м (${it.cuts.length} отр.)\n`; } else if (it.m) { text += `   Метраж: ${it.m} м\n`; if (it.fromWh) text += `   ${it.fromWh} -> ${it.toWh}\n`; } else if (it.p) { text += `   Цена: ${it.p} €\n`; } });
-        if (navigator.share) { try { await navigator.share({ title: d.name, text: text }); } catch (err) { console.log('Share canceled'); } }
+        if (navigator.share) { try { await navigator.share({ title: d.name, text: text }); } catch (err) { /* canceled by user */ } }
         else { const el = document.createElement('textarea'); el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); showToast("Текст скопирован в буфер"); }
     }
 
