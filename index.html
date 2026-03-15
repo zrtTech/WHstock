@@ -767,8 +767,8 @@
     <div class="modal-content">
         <h2 id="sr-title">Редактирование склада</h2>
         <div class="input-group"><label>Склад</label><select id="sr-wh"></select></div>
-        <div class="input-group"><label>Ячейка</label><input type="text" id="sr-cell" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters" oninput="this.value=this.value.toUpperCase()"></div>
-        <div class="input-group"><label>Количество (метров)</label><input type="text" id="sr-meters" inputmode="decimal"></div>
+        <div class="input-group"><label>Ячейка</label><input type="text" id="sr-cell" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters" oninput="this.value=this.value.toUpperCase()" onfocus="this.select()"></div>
+        <div class="input-group"><label>Количество (метров)</label><input type="text" id="sr-meters" inputmode="decimal" onfocus="this.select()"></div>
         <div class="flex gap-2 mt-3">
             <button class="btn-outline w-full" onclick="closeModal('modal-stock-row-edit')">Отмена</button>
             <button class="btn-danger w-full" onclick="removeStockRow()">Удалить</button>
