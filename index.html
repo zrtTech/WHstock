@@ -566,6 +566,8 @@
         .writeoff-stock-preview { border: 1px dashed #cfd8e3; border-radius: 10px; padding: 8px; margin-bottom: 8px; font-size: 13px; background: #fafcff; }
         .writeoff-stock-preview .row { display: grid; grid-template-columns: 1.2fr .9fr .9fr; gap: 6px; padding: 4px 0; border-bottom: 1px solid #eef3f8; }
         .writeoff-stock-preview .row:last-child { border-bottom: none; }
+        .writeoff-stock-preview .row.row-clickable { cursor: pointer; border-radius: 8px; padding: 6px; margin: 0 -4px; }
+        .writeoff-stock-preview .row.row-clickable:hover { background: #eef5ff; }
         .a4-preview-list { max-height: 260px; overflow-y: auto; border:1px solid var(--border); border-radius: 8px; padding: 8px; background:#fafafa; }
         .a4-preview-item { display:flex; justify-content:space-between; gap:8px; padding:6px 4px; border-bottom:1px solid #eee; font-size:14px; }
         .a4-preview-item:last-child { border-bottom:none; }
@@ -1287,6 +1289,7 @@ body {
             <div id="settings-warehouses"></div>
             <div class="flex gap-2 mt-2"><input type="text" id="new-wh-name" placeholder="Новый склад" style="margin:0" onkeydown="if(event.key==='Enter') addWh()"><button class="btn-outline" style="min-width: 48px;" onclick="addWh()">+</button></div>
             <button class="btn-primary w-full mt-3" onclick="saveSets()">Сохранить склады</button>
+            <label class="checkbox-row mt-2">Разрешить создание новых ячеек вручную <input type="checkbox" id="set-allow-new-cells" onchange="saveSets()"></label>
         </div>
 
 
@@ -1535,7 +1538,7 @@ body {
     }
 
     /* ДАННЫЕ */
-    const defSets = { url:"http://83.237.242.90:3000", user:"", pass:"", apiKey:"zX9#mK4$pL7@nQ2&wR8!vT3^hY6*jB5", mgr:"1234", warehouses:["Магазин","Склад","Розница"], prefix:"R26", nextNum:1, showWidth:true, showDensity:true, showBrand:true, showComp:true, showFullName:false, printNameDefault:"", printMethod: "server", pnKey:"", pnPrinter:"", printerClient:"", printerWarehouse:"", printerHanger:"", printerA4:"", mgrHash:"", kioskDemoMode:true, devOfflineMode:true };
+    const defSets = { url:"http://83.237.242.90:3000", user:"", pass:"", apiKey:"zX9#mK4$pL7@nQ2&wR8!vT3^hY6*jB5", mgr:"1234", warehouses:["Магазин","Склад","Розница"], prefix:"R26", nextNum:1, showWidth:true, showDensity:true, showBrand:true, showComp:true, showFullName:false, printNameDefault:"", printMethod: "server", pnKey:"", pnPrinter:"", printerClient:"", printerWarehouse:"", printerHanger:"", printerA4:"", mgrHash:"", kioskDemoMode:true, devOfflineMode:true, allowNewCells:false };
     let sets = { ...defSets, ...safeLoad('tsd_final_sets', defSets) };
     let db = {
         receive: safeLoad('tsd_final_receive', []),
@@ -1559,6 +1562,10 @@ body {
     let priceLookupResult = null;
     let inlineEditField = null;
     let activeStockRowIndex = null;
+    let writeoffStockRowsCache = [];
+    let moveStockRowsCache = [];
+    let writeoffPrefillSource = null;
+    let movePrefillSource = null;
     let isDemoMode = sets.devOfflineMode === true;
     let lastScanAt = 0;
     let lastScanCode = "";
@@ -2102,10 +2109,11 @@ body {
         }
 
         const rows = buildStockRows(product || {});
-        if (!rows.length) { box.innerHTML = '<div class="text-sec">Остатки не найдены</div>'; return; }
+        if (!rows.length) { writeoffStockRowsCache = []; box.innerHTML = '<div class="text-sec">Остатки не найдены</div>'; return; }
         const total = rows.reduce((s, r) => s + toNumber(r.meters ?? r.m), 0);
+        writeoffStockRowsCache = rows;
         box.innerHTML = `<div class="text-sm mb-2"><strong>Остатки по складам:</strong> ${total.toFixed(2)} м</div>` +
-            rows.map(r => `<div class="row"><div>${r.warehouse || r.wh || '-'}</div><div>${toNumber(r.meters ?? r.m).toFixed(2)} м</div><div>${r.cell || r.shelf || '-'}</div></div>`).join('');
+            rows.map((r, i) => `<div class="row row-clickable" onclick="selectWriteoffStockRow(${i})"><div>${r.warehouse || r.wh || '-'}</div><div>${toNumber(r.meters ?? r.m).toFixed(2)} м</div><div>${r.cell || r.shelf || '-'}</div></div>`).join('');
     }
 
     async function loadMoveStockPreview() {
@@ -2135,10 +2143,11 @@ body {
         }
 
         const rows = buildStockRows(product || {});
-        if (!rows.length) { box.innerHTML = '<div class="text-sec">Остатки не найдены</div>'; return; }
+        if (!rows.length) { moveStockRowsCache = []; box.innerHTML = '<div class="text-sec">Остатки не найдены</div>'; return; }
         const total = rows.reduce((s, r) => s + toNumber(r.meters ?? r.m), 0);
+        moveStockRowsCache = rows;
         box.innerHTML = `<div class="text-sm mb-2"><strong>Данные хранения:</strong> ${total.toFixed(2)} м</div>` +
-            rows.map(r => `<div class="row"><div>${r.warehouse || r.wh || '-'}</div><div>${toNumber(r.meters ?? r.m).toFixed(2)} м</div><div>${r.cell || r.shelf || '-'}</div></div>`).join('');
+            rows.map((r, i) => `<div class="row row-clickable" onclick="selectMoveStockRow(${i})"><div>${r.warehouse || r.wh || '-'}</div><div>${toNumber(r.meters ?? r.m).toFixed(2)} м</div><div>${r.cell || r.shelf || '-'}</div></div>`).join('');
     }
 
     async function loadPriceItemPreview() {
@@ -2287,6 +2296,56 @@ body {
             return [{ warehouse: 'Основной склад', cell: p.cell || '-', meters: toNumber(p.stock) }];
         }
         return [];
+    }
+
+    function normalizeCellValue(v) { return String(v || '').trim().toUpperCase(); }
+    function normalizeWhValue(v) { return String(v || '').trim(); }
+
+    function isKnownCell(cellValue) {
+        const cell = normalizeCellValue(cellValue);
+        if (!cell || sets.allowNewCells) return true;
+        const known = new Set();
+        document.querySelectorAll('#list-cells option').forEach(o => { const v = normalizeCellValue(o.value); if (v) known.add(v); });
+        [...writeoffStockRowsCache, ...moveStockRowsCache].forEach(r => {
+            const c = normalizeCellValue(r.cell || r.shelf || '');
+            if (c && c !== '-') known.add(c);
+        });
+        return known.has(cell);
+    }
+
+    function getAvailableMeters(rows, warehouse, cell) {
+        const wh = normalizeWhValue(warehouse);
+        const c = normalizeCellValue(cell);
+        const matched = rows.filter(r => normalizeWhValue(r.warehouse || r.wh) === wh && (!c || normalizeCellValue(r.cell || r.shelf) === c));
+        return matched.reduce((sum, r) => sum + toNumber(r.meters ?? r.m), 0);
+    }
+
+    function selectWriteoffStockRow(idx) {
+        const row = writeoffStockRowsCache[idx];
+        if (!row) return;
+        const wh = row.warehouse || row.wh || '';
+        const cell = normalizeCellValue(row.cell || row.shelf || '');
+        const whSel = document.getElementById('f-wh');
+        const cellInp = document.getElementById('f-cell');
+        if (whSel && wh && [...whSel.options].some(o => o.value === wh)) whSel.value = wh;
+        if (cellInp) cellInp.value = cell === '-' ? '' : cell;
+        writeoffPrefillSource = { wh: whSel?.value || wh, cell: cellInp?.value || '' };
+        const qtyInp = document.getElementById('f-m');
+        if (qtyInp) qtyInp.focus();
+    }
+
+    function selectMoveStockRow(idx) {
+        const row = moveStockRowsCache[idx];
+        if (!row) return;
+        const wh = row.warehouse || row.wh || '';
+        const cell = normalizeCellValue(row.cell || row.shelf || '');
+        const whSel = document.getElementById('f-wh-from');
+        const cellInp = document.getElementById('f-cell-from');
+        if (whSel && wh && [...whSel.options].some(o => o.value === wh)) whSel.value = wh;
+        if (cellInp) cellInp.value = cell === '-' ? '' : cell;
+        movePrefillSource = { wh: whSel?.value || wh, cell: cellInp?.value || '' };
+        const qtyInp = document.getElementById('f-m');
+        if (qtyInp) qtyInp.focus();
     }
 
     function renderCustomerGallery(images) {
@@ -3066,9 +3125,21 @@ body {
         } else if(curTab === 'move'){
             cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" onblur="resolveFormArtInput(this); loadMoveStockPreview();" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this); loadMoveStockPreview();}"></div><div id="move-stock-preview" class="writeoff-stock-preview">Введите артикул или отсканируйте штрихкод, чтобы увидеть остатки</div><div class="flex gap-2"><div style="flex:1"><label>ОТКУДА (СКЛАД)</label><select id="f-wh-from">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ОТКУДА (ЯЧ)</label><input type="text" id="f-cell-from" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="flex gap-2"><div style="flex:1"><label>КУДА (СКЛАД)</label><select id="f-wh-to">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>КУДА (ЯЧ)</label><input type="text" id="f-cell-to" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div></div><div class="input-group"><label>МЕТРАЖ</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-primary w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
             loadMoveStockPreview();
+            if (movePrefillSource) {
+                const whFrom = document.getElementById('f-wh-from');
+                const cellFrom = document.getElementById('f-cell-from');
+                if (whFrom && [...whFrom.options].some(o => o.value === movePrefillSource.wh)) whFrom.value = movePrefillSource.wh;
+                if (cellFrom) cellFrom.value = movePrefillSource.cell || '';
+            }
         } else if(curTab === 'writeoff'){
             cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" onblur="resolveFormArtInput(this); loadWriteoffStockPreview();" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this); loadWriteoffStockPreview();}"></div><div id="writeoff-stock-preview" class="writeoff-stock-preview">Введите артикул, чтобы увидеть остатки по складам</div><div class="flex gap-2"><div style="flex:1"><label>СКЛАД</label><select id="f-wh">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ЯЧЕЙКА</label><input type="text" id="f-cell" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div></div><div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-danger w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
             loadWriteoffStockPreview();
+            if (writeoffPrefillSource) {
+                const wh = document.getElementById('f-wh');
+                const cell = document.getElementById('f-cell');
+                if (wh && [...wh.options].some(o => o.value === writeoffPrefillSource.wh)) wh.value = writeoffPrefillSource.wh;
+                if (cell) cell.value = writeoffPrefillSource.cell || '';
+            }
         } else if(curTab === 'price'){
             cont.innerHTML = `<label>Артикул</label><div class="flex gap-2"><input type="text" id="f-art" data-art-field list="list-arts" oninput="clearPriceLookupState()" onblur="resolveFormArtInput(this); loadPriceItemPreview();" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this); loadPriceItemPreview();}"><button class="btn-outline" type="button" onclick="loadPriceItemPreview()">🔎 Найти</button></div><div id="price-item-preview" class="text-sm text-sec" style="margin:6px 0 6px;">Нажмите «Найти товар», чтобы подтянуть данные из 1С</div><label>Текущая цена (из 1С)</label><input type="text" id="f-p-current" readonly><label>Новая цена (у.е.)</label><input type="text" id="f-p" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"><button class="btn-primary w-full" style="background:var(--price-color)" id="btn-save-line" onclick="saveLine()">Провести изменение цены</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
             if (!editingItemId) clearPriceLookupState();
@@ -3130,9 +3201,53 @@ body {
     function saveLine() {
         const d = db[curTab].find(x=>x.id===curDocId); const artInp = document.getElementById('f-art'); if(!artInp) return; const art = artInp.value.trim(); if(!art) { showToast('Введите артикул', 'danger'); artInp.focus(); return; }
         let item = { id: editingItemId || Date.now().toString(36), art, ts: new Date().toISOString() };
-        if(curTab === 'receive'){ const v = activeCuts.filter(c => !isNaN(parseFloat(c.m)) && parseFloat(c.m) > 0); if(!v.length) { showToast('Добавьте хотя бы один валидный отрез', 'danger'); return; } item.cuts = JSON.parse(JSON.stringify(v)); item.namePrint = document.getElementById('f-name-print')?.value?.trim() || ''; if(sets.showFullName && document.getElementById('f-full-name')) item.fullName = document.getElementById('f-full-name').value.trim(); if(sets.showWidth && document.getElementById('f-width')) item.w = document.getElementById('f-width').value; if(sets.showDensity && document.getElementById('f-density')) item.dens = document.getElementById('f-density').value; if(sets.showBrand && document.getElementById('f-brand')) item.brand = document.getElementById('f-brand').value; if(sets.showComp && document.getElementById('f-comp')) item.comp = formatCompositionText(document.getElementById('f-comp').value); if (activeReceiveImages.length) item.images = [...activeReceiveImages]; const autoArt = `${sets.prefix}${String(sets.nextNum).padStart(4,'0')}`; if (!editingItemId && art === autoArt) sets.nextNum++; }
-        else if(curTab === 'move'){ item.m = document.getElementById('f-m').value; item.fromWh = document.getElementById('f-wh-from').value; item.fromCell = document.getElementById('f-cell-from').value; item.toWh = document.getElementById('f-wh-to').value; item.toCell = document.getElementById('f-cell-to').value; if(!parseFloat(item.m)) { showToast('Введите корректный метраж', 'danger'); return; } }
-        else if(curTab === 'writeoff'){ item.m = document.getElementById('f-m').value; item.wh = document.getElementById('f-wh').value; item.cell = document.getElementById('f-cell').value; if(!parseFloat(item.m)) { showToast('Введите корректное количество', 'danger'); return; } }
+        if(curTab === 'receive'){
+            const v = activeCuts.filter(c => !isNaN(parseFloat(c.m)) && parseFloat(c.m) > 0);
+            if(!v.length) { showToast('Добавьте хотя бы один валидный отрез', 'danger'); return; }
+            for (const cut of v) {
+                const cell = normalizeCellValue(cut.c);
+                if (cell && !isKnownCell(cell)) { showToast(`Ячейка ${cell} не найдена в базе`, 'danger'); return; }
+                cut.c = cell;
+            }
+            item.cuts = JSON.parse(JSON.stringify(v)); item.namePrint = document.getElementById('f-name-print')?.value?.trim() || '';
+            if(sets.showFullName && document.getElementById('f-full-name')) item.fullName = document.getElementById('f-full-name').value.trim();
+            if(sets.showWidth && document.getElementById('f-width')) item.w = document.getElementById('f-width').value;
+            if(sets.showDensity && document.getElementById('f-density')) item.dens = document.getElementById('f-density').value;
+            if(sets.showBrand && document.getElementById('f-brand')) item.brand = document.getElementById('f-brand').value;
+            if(sets.showComp && document.getElementById('f-comp')) item.comp = formatCompositionText(document.getElementById('f-comp').value);
+            if (activeReceiveImages.length) item.images = [...activeReceiveImages];
+            const autoArt = `${sets.prefix}${String(sets.nextNum).padStart(4,'0')}`; if (!editingItemId && art === autoArt) sets.nextNum++;
+        }
+        else if(curTab === 'move'){
+            item.m = document.getElementById('f-m').value;
+            item.fromWh = document.getElementById('f-wh-from').value;
+            item.fromCell = normalizeCellValue(document.getElementById('f-cell-from').value);
+            item.toWh = document.getElementById('f-wh-to').value;
+            item.toCell = normalizeCellValue(document.getElementById('f-cell-to').value);
+            const qty = toNumber(item.m);
+            if(!(qty > 0)) { showToast('Введите корректный метраж', 'danger'); return; }
+            if (!item.fromCell || !item.toCell) { showToast('Укажите ячейки ОТКУДА и КУДА', 'danger'); return; }
+            if(!isKnownCell(item.fromCell) || !isKnownCell(item.toCell)) { showToast('Одна из ячеек не найдена в базе', 'danger'); return; }
+            const available = getAvailableMeters(moveStockRowsCache, item.fromWh, item.fromCell);
+            if (available <= 0) { showToast('Нет остатков в выбранной ячейке', 'danger'); return; }
+            if (qty > available + 1e-9) { showToast(`Недостаточно остатка: доступно ${available.toFixed(2)} м`, 'danger'); return; }
+            item.m = qty.toString();
+            movePrefillSource = { wh: item.fromWh, cell: item.fromCell };
+        }
+        else if(curTab === 'writeoff'){
+            item.m = document.getElementById('f-m').value;
+            item.wh = document.getElementById('f-wh').value;
+            item.cell = normalizeCellValue(document.getElementById('f-cell').value);
+            const qty = toNumber(item.m);
+            if(!(qty > 0)) { showToast('Введите корректное количество', 'danger'); return; }
+            if (!item.cell) { showToast('Укажите ячейку списания', 'danger'); return; }
+            if(!isKnownCell(item.cell)) { showToast(`Ячейка ${item.cell} не найдена в базе`, 'danger'); return; }
+            const available = getAvailableMeters(writeoffStockRowsCache, item.wh, item.cell);
+            if (available <= 0) { showToast('Нет остатков в выбранной ячейке', 'danger'); return; }
+            if (qty > available + 1e-9) { showToast(`Недостаточно остатка: доступно ${available.toFixed(2)} м`, 'danger'); return; }
+            item.m = qty.toString();
+            writeoffPrefillSource = { wh: item.wh, cell: item.cell };
+        }
         else if(curTab === 'price'){
             const newPrice = document.getElementById('f-p').value;
             if(isNaN(parseFloat(newPrice))) { showToast('Введите корректную цену', 'danger'); return; }
@@ -3259,9 +3374,9 @@ body {
     function closeModal(id) { const modal = document.getElementById(id); if(!modal) return; modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); let restore = lastFocusedElement; const idx = modalStack.map(x => x.id).lastIndexOf(id); if (idx >= 0) { const closed = modalStack.splice(idx, 1)[0]; restore = closed?.focus || restore; } const top = modalStack[modalStack.length - 1]; activeModalId = top ? top.id : null; if (!top && restore && typeof restore.focus === 'function') restore.focus(); }
     function showToast(m, t) { const c = document.getElementById('toast-container'); if(c.children.length > 3) c.removeChild(c.firstChild); const d = document.createElement('div'); d.className = `toast`; d.setAttribute('role', 'status'); d.style.background = t === 'danger' ? 'var(--danger)' : 'var(--primary)'; d.textContent = m; c.appendChild(d); setTimeout(()=>d.remove(), 2500); }
 
-    async function openSettings() { document.getElementById('set-show-width').checked = sets.showWidth !== false; document.getElementById('set-show-density').checked = sets.showDensity !== false; document.getElementById('set-show-brand').checked = sets.showBrand !== false; document.getElementById('set-show-comp').checked = sets.showComp !== false; document.getElementById('set-show-fullname').checked = sets.showFullName === true; document.getElementById('set-print-name-default').value = sets.printNameDefault || ''; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-api-key').value = sets.apiKey || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "server"; document.getElementById('set-kiosk-demo').checked = sets.kioskDemoMode !== false; document.getElementById('set-dev-offline').checked = isDemoMode; togglePrintSettingsUI(); renderSettingsWh(); renderSettingsInfoPanel(); validateUrlField(); await loadServerPrinters(); openModal('modal-settings'); }
+    async function openSettings() { document.getElementById('set-show-width').checked = sets.showWidth !== false; document.getElementById('set-show-density').checked = sets.showDensity !== false; document.getElementById('set-show-brand').checked = sets.showBrand !== false; document.getElementById('set-show-comp').checked = sets.showComp !== false; document.getElementById('set-show-fullname').checked = sets.showFullName === true; document.getElementById('set-print-name-default').value = sets.printNameDefault || ''; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-api-key').value = sets.apiKey || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "server"; document.getElementById('set-kiosk-demo').checked = sets.kioskDemoMode !== false; document.getElementById('set-dev-offline').checked = isDemoMode; document.getElementById('set-allow-new-cells').checked = sets.allowNewCells === true; togglePrintSettingsUI(); renderSettingsWh(); renderSettingsInfoPanel(); validateUrlField(); await loadServerPrinters(); openModal('modal-settings'); }
     function togglePrintSettingsUI() { const method = document.getElementById('set-print-method').value; const block = document.getElementById('printnode-block'); const serverBlock = document.getElementById('server-printers-block'); if (block) block.style.display = (method === 'printnode') ? 'block' : 'none'; if (serverBlock) serverBlock.style.display = (method === 'server') ? 'block' : 'none'; }
-    function saveSets() { sets.showWidth = document.getElementById('set-show-width').checked; sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.showFullName = document.getElementById('set-show-fullname').checked; sets.printNameDefault = document.getElementById('set-print-name-default').value; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.apiKey = document.getElementById('set-api-key').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; sets.kioskDemoMode = document.getElementById('set-kiosk-demo').checked; isDemoMode = document.getElementById('set-dev-offline').checked; sets.devOfflineMode = isDemoMode; sets.printerClient = document.getElementById('set-printer-client')?.value || ''; sets.printerWarehouse = document.getElementById('set-printer-warehouse')?.value || ''; sets.printerHanger = document.getElementById('set-printer-hanger')?.value || ''; sets.printerA4 = document.getElementById('set-printer-a4')?.value || ''; validateUrlField(); save(); saveAppState(); renderSettingsInfoPanel(); }
+    function saveSets() { sets.showWidth = document.getElementById('set-show-width').checked; sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.showFullName = document.getElementById('set-show-fullname').checked; sets.printNameDefault = document.getElementById('set-print-name-default').value; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.apiKey = document.getElementById('set-api-key').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; sets.kioskDemoMode = document.getElementById('set-kiosk-demo').checked; sets.allowNewCells = document.getElementById('set-allow-new-cells').checked; isDemoMode = document.getElementById('set-dev-offline').checked; sets.devOfflineMode = isDemoMode; sets.printerClient = document.getElementById('set-printer-client')?.value || ''; sets.printerWarehouse = document.getElementById('set-printer-warehouse')?.value || ''; sets.printerHanger = document.getElementById('set-printer-hanger')?.value || ''; sets.printerA4 = document.getElementById('set-printer-a4')?.value || ''; validateUrlField(); save(); saveAppState(); renderSettingsInfoPanel(); }
     function renderSettingsWh() { const root = document.getElementById('settings-warehouses'); if (!root) return; root.innerHTML = ''; (sets.warehouses || []).forEach((w, idx) => { const row = document.createElement('div'); row.className = 'wh-item'; const label = document.createElement('span'); label.textContent = w; const actions = document.createElement('div'); actions.className = 'wh-actions'; const up = document.createElement('button'); up.className = 'btn-outline wh-move-btn'; up.textContent = '↑'; up.disabled = idx === 0; up.addEventListener('click', () => moveWh(idx, -1)); const down = document.createElement('button'); down.className = 'btn-outline wh-move-btn'; down.textContent = '↓'; down.disabled = idx === (sets.warehouses.length - 1); down.addEventListener('click', () => moveWh(idx, 1)); const btn = document.createElement('button'); btn.className = 'btn-icon text-danger'; btn.textContent = '🗑️'; btn.addEventListener('click', () => delWh(w)); actions.append(up, down, btn); row.append(label, actions); root.appendChild(row); }); }
     function moveWh(idx, dir) { const arr = sets.warehouses || []; const to = idx + dir; if (to < 0 || to >= arr.length) return; [arr[idx], arr[to]] = [arr[to], arr[idx]]; renderSettingsWh(); saveSets(); }
     function addWh() {
