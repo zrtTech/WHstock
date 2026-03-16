@@ -598,8 +598,9 @@
         .writeoff-stock-preview { border: 1px dashed #cfd8e3; border-radius: 10px; padding: 8px; margin-bottom: 8px; font-size: 13px; background: #fafcff; }
         .writeoff-stock-preview .row { display: grid; grid-template-columns: 1.2fr .9fr .9fr; gap: 6px; padding: 4px 0; border-bottom: 1px solid #eef3f8; }
         .writeoff-stock-preview .row:last-child { border-bottom: none; }
-        .writeoff-stock-preview .row.row-clickable { cursor: pointer; border-radius: 8px; padding: 6px; margin: 0 -4px; }
+        .writeoff-stock-preview .row.row-clickable { cursor: pointer; border-radius: 8px; padding: 6px; margin: 0 -4px; transition: background .15s, color .15s; }
         .writeoff-stock-preview .row.row-clickable:hover { background: #eef5ff; }
+        .writeoff-stock-preview .row.row-clickable:active { background: var(--primary); color: #fff; }
         /* ── Редактор ZPL-шаблонов ── */
         .zpl-tabs { display:flex; gap:4px; margin-bottom:8px; flex-wrap:wrap; }
         .zpl-tab { padding:5px 12px; border-radius:8px; font-size:12px; font-weight:700;
@@ -1970,6 +1971,7 @@ body {
     let activeStockRowIndex = null;
     let writeoffStockRowsCache = [];
     let moveStockRowsCache = [];
+    let _selectedStockRowIdx = { writeoff: -1, move: -1, stockin: -1 };
     let writeoffPrefillSource = null;
     let movePrefillSource = null;
     let stockinStockRowsCache = [];
@@ -2771,6 +2773,9 @@ body {
             box.innerHTML = '';
             box.appendChild(hint);
             window[cacheKey] = [];
+            if (cacheKey === 'writeoffStockRowsCache') writeoffStockRowsCache = [];
+            else if (cacheKey === 'moveStockRowsCache')    moveStockRowsCache    = [];
+            else if (cacheKey === 'stockinStockRowsCache') stockinStockRowsCache = [];
             return;
         }
 
@@ -2790,9 +2795,12 @@ body {
         const rows = buildStockRows(product || {});
         collectCellsFromRows(rows);  /* накапливаем ячейки из 1С */
 
-        /* Кэш обновляем ДО отрисовки, чтобы selectXxxStockRow не получил
-           пустой массив при быстром клике на строку */
+        /* Кэш: window[cacheKey] для динамического обращения,
+           + явное присваивание let-переменных для selectXxxStockRow */
         window[cacheKey] = rows;
+        if (cacheKey === 'writeoffStockRowsCache') writeoffStockRowsCache = rows;
+        else if (cacheKey === 'moveStockRowsCache')    moveStockRowsCache    = rows;
+        else if (cacheKey === 'stockinStockRowsCache') stockinStockRowsCache = rows;
 
         if (!rows.length) {
             box.innerHTML = '<div class="text-sec">Остатки не найдены</div>';
@@ -2816,7 +2824,8 @@ body {
         rows.forEach((r, i) => {
             const row = document.createElement('div');
             row.className = 'row row-clickable';
-            row.setAttribute('onclick', `${rowClickFn}(${i})`);
+            row.setAttribute('onmousedown', `event.preventDefault(); ${rowClickFn}(${i});`);
+            /* event.preventDefault() — не даём фокусу уйти с art-поля до срабатывания клика */
 
             const whCell   = document.createElement('div');
             const mCell    = document.createElement('div');
@@ -2834,6 +2843,13 @@ body {
 
         box.innerHTML = '';
         box.appendChild(frag);
+
+        /* Восстанавливаем подсветку если строка уже была выбрана */
+        const tabKey = cacheKey === 'writeoffStockRowsCache' ? 'writeoff'
+                     : cacheKey === 'moveStockRowsCache'     ? 'move'
+                     : 'stockin';
+        const savedIdx = _selectedStockRowIdx[tabKey];
+        if (savedIdx >= 0) highlightStockRow(boxId, savedIdx);
     }
 
     /* ─── Тонкие обёртки — все внешние вызовы остаются без изменений ── */
@@ -3101,48 +3117,76 @@ body {
         return matched.reduce((sum, r) => sum + toNumber(r.meters ?? r.m), 0);
     }
 
+    /* Подсвечивает кликнутую строку в превью остатков */
+    function highlightStockRow(previewId, idx) {
+        const box = document.getElementById(previewId);
+        if (!box) return;
+        box.querySelectorAll('.row-clickable').forEach((r, i) => {
+            r.style.background = i === idx ? 'var(--primary)' : '';
+            r.style.color      = i === idx ? '#fff' : '';
+            r.style.borderRadius = i === idx ? '8px' : '';
+        });
+    }
+
     function selectWriteoffStockRow(idx) {
         const row = writeoffStockRowsCache[idx];
         if (!row) return;
-        const wh = row.warehouse || row.wh || '';
+        const wh   = String(row.warehouse || row.wh   || '').trim();
         const cell = normalizeCellValue(row.cell || row.shelf || '');
+        /* Выбираем склад — ищем совпадение без учёта регистра и пробелов */
         const whSel = document.getElementById('f-wh-doc');
+        if (whSel && wh) {
+            const match = [...whSel.options].find(o => o.value.trim().toLowerCase() === wh.toLowerCase());
+            if (match) whSel.value = match.value;
+        }
         const cellInp = document.getElementById('f-cell');
-        if (whSel && wh && [...whSel.options].some(o => o.value === wh)) whSel.value = wh;
         if (cellInp) cellInp.value = cell === '-' ? '' : cell;
-        if (whSel && (whSel.value || wh)) setDocWarehouse(whSel.value || wh);
+        if (whSel?.value) setDocWarehouse(whSel.value);
         writeoffPrefillSource = { wh: whSel?.value || wh, cell: cellInp?.value || '' };
+        /* Снимаем подсветку с остальных, выделяем кликнутую строку */
+        _selectedStockRowIdx.writeoff = idx;
+        highlightStockRow('writeoff-stock-preview', idx);
         const qtyInp = document.getElementById('f-m');
-        if (qtyInp) qtyInp.focus();
+        if (qtyInp) { fieldClear('f-cell'); fieldClear('f-m'); qtyInp.focus(); }
     }
 
     function selectMoveStockRow(idx) {
         const row = moveStockRowsCache[idx];
         if (!row) return;
-        const wh = row.warehouse || row.wh || '';
+        const wh   = String(row.warehouse || row.wh   || '').trim();
         const cell = normalizeCellValue(row.cell || row.shelf || '');
-        const whSel = document.getElementById('f-wh-from');
+        const whSel  = document.getElementById('f-wh-from');
         const cellInp = document.getElementById('f-cell-from');
-        if (whSel && wh && [...whSel.options].some(o => o.value === wh)) whSel.value = wh;
+        if (whSel && wh) {
+            const match = [...whSel.options].find(o => o.value.trim().toLowerCase() === wh.toLowerCase());
+            if (match) whSel.value = match.value;
+        }
         if (cellInp) cellInp.value = cell === '-' ? '' : cell;
         movePrefillSource = { wh: whSel?.value || wh, cell: cellInp?.value || '' };
+        _selectedStockRowIdx.move = idx;
+        highlightStockRow('move-stock-preview', idx);
         const qtyInp = document.getElementById('f-m');
-        if (qtyInp) qtyInp.focus();
+        if (qtyInp) { fieldClear('f-cell-from'); fieldClear('f-m'); qtyInp.focus(); }
     }
 
     function selectStockinStockRow(idx) {
         const rows = stockinStockRowsCache || [];
         const row = rows[idx];
         if (!row) return;
-        const wh = row.warehouse || row.wh || '';
+        const wh   = String(row.warehouse || row.wh   || '').trim();
         const cell = normalizeCellValue(row.cell || row.shelf || '');
-        const whSel = document.getElementById('f-wh-doc');
+        const whSel  = document.getElementById('f-wh-doc');
         const cellInp = document.getElementById('f-cell');
-        if (whSel && wh && [...whSel.options].some(o => o.value === wh)) whSel.value = wh;
+        if (whSel && wh) {
+            const match = [...whSel.options].find(o => o.value.trim().toLowerCase() === wh.toLowerCase());
+            if (match) whSel.value = match.value;
+        }
         if (cellInp) cellInp.value = cell === '-' ? '' : cell;
-        setDocWarehouse(whSel?.value || wh);
+        if (whSel?.value) setDocWarehouse(whSel.value);
+        _selectedStockRowIdx.stockin = idx;
+        highlightStockRow('stockin-stock-preview', idx);
         const qtyInp = document.getElementById('f-m');
-        if (qtyInp) qtyInp.focus();
+        if (qtyInp) { fieldClear('f-cell'); fieldClear('f-m'); qtyInp.focus(); }
     }
 
     function renderCustomerGallery(images) {
@@ -4658,7 +4702,7 @@ body {
             renderCuts();
             renderReceivePhotoPreview();
         } else if(curTab === 'move'){
-            cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" onblur="resolveFormArtInput(this); loadMoveStockPreview();" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this); loadMoveStockPreview();}"></div><div id="move-stock-preview" class="writeoff-stock-preview">Введите артикул или отсканируйте штрихкод, чтобы увидеть остатки</div><div class="flex gap-2"><div style="flex:1"><label>ОТКУДА (СКЛАД)</label><select id="f-wh-from"></select></div><div style="flex:1"><label>ОТКУДА (ЯЧ)</label><input type="text" id="f-cell-from" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="flex gap-2"><div style="flex:1"><label>КУДА (СКЛАД)</label><select id="f-wh-to"></select></div><div style="flex:1"><label>КУДА (ЯЧ)</label><input type="text" id="f-cell-to" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div></div><div class="input-group"><label>МЕТРАЖ</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-primary w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+            cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" placeholder="Артикул → Enter для поиска" onblur="resolveFormArtInput(this); loadMoveStockPreview();" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this); loadMoveStockPreview();}"></div><div id="move-stock-preview" class="writeoff-stock-preview">Введите артикул или отсканируйте штрихкод, чтобы увидеть остатки</div><div class="flex gap-2"><div style="flex:1"><label>ОТКУДА (СКЛАД)</label><select id="f-wh-from"></select></div><div style="flex:1"><label>ОТКУДА (ЯЧ)</label><input type="text" id="f-cell-from" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="flex gap-2"><div style="flex:1"><label>КУДА (СКЛАД)</label><select id="f-wh-to"></select></div><div style="flex:1"><label>КУДА (ЯЧ)</label><input type="text" id="f-cell-to" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div></div><div class="input-group"><label>МЕТРАЖ</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-primary w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
             fillWarehouseSelect('f-wh-from', sets.warehouses);
             fillWarehouseSelect('f-wh-to',   sets.warehouses);
             loadMoveStockPreview();
@@ -4670,7 +4714,7 @@ body {
             }
         } else if(curTab === 'writeoff'){
             const docWh = d.docWarehouse || sets.warehouses[0] || '';
-            cont.innerHTML = `<div class="input-group"><label>СКЛАД ДОКУМЕНТА</label><select id="f-wh-doc" onchange="setDocWarehouse(this.value)"></select></div><div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" onblur="resolveFormArtInput(this); loadWriteoffStockPreview();" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this); loadWriteoffStockPreview();}"></div><div id="writeoff-stock-preview" class="writeoff-stock-preview">Введите артикул, чтобы увидеть остатки по складам</div><div class="input-group"><label>ЯЧЕЙКА</label><input type="text" id="f-cell" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div><div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-danger w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+            cont.innerHTML = `<div class="input-group"><label>СКЛАД ДОКУМЕНТА</label><select id="f-wh-doc" onchange="setDocWarehouse(this.value)"></select></div><div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" placeholder="Артикул → Enter для поиска" onblur="resolveFormArtInput(this); loadWriteoffStockPreview();" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this); loadWriteoffStockPreview();}"></div><div id="writeoff-stock-preview" class="writeoff-stock-preview">Введите артикул, чтобы увидеть остатки по складам</div><div class="input-group"><label>ЯЧЕЙКА</label><input type="text" id="f-cell" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div><div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-danger w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
             fillWarehouseSelect('f-wh-doc', sets.warehouses, d.docWarehouse || sets.warehouses[0] || '');
             loadWriteoffStockPreview();
             if (writeoffPrefillSource) {
@@ -4679,7 +4723,7 @@ body {
             }
         } else if(curTab === 'stockin'){
             const docWh = d.docWarehouse || sets.warehouses[0] || '';
-            cont.innerHTML = `<div class="input-group"><label>СКЛАД ДОКУМЕНТА</label><select id="f-wh-doc" onchange="setDocWarehouse(this.value)"></select></div><div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" onblur="resolveFormArtInput(this); loadStockinStockPreview();" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this); loadStockinStockPreview();}"></div><div id="stockin-stock-preview" class="writeoff-stock-preview">Введите артикул, чтобы увидеть остатки по складам</div><div class="input-group"><label>ЯЧЕЙКА</label><input type="text" id="f-cell" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div><div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-success w-full" id="btn-save-line" onclick="saveLine()">ОПРИХОДОВАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+            cont.innerHTML = `<div class="input-group"><label>СКЛАД ДОКУМЕНТА</label><select id="f-wh-doc" onchange="setDocWarehouse(this.value)"></select></div><div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" placeholder="Артикул → Enter для поиска" onblur="resolveFormArtInput(this); loadStockinStockPreview();" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this); loadStockinStockPreview();}"></div><div id="stockin-stock-preview" class="writeoff-stock-preview">Введите артикул, чтобы увидеть остатки по складам</div><div class="input-group"><label>ЯЧЕЙКА</label><input type="text" id="f-cell" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div><div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-success w-full" id="btn-save-line" onclick="saveLine()">ОПРИХОДОВАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
             fillWarehouseSelect('f-wh-doc', sets.warehouses, d.docWarehouse || sets.warehouses[0] || '');
             loadStockinStockPreview();
         } else if(curTab === 'price'){
@@ -4687,6 +4731,7 @@ body {
             if (!editingItemId) clearPriceLookupState();
         }
         clearAllFieldErrors();
+        _selectedStockRowIdx = { writeoff: -1, move: -1, stockin: -1 };
         setupInputAssistancePolicy();
     }
 
@@ -4856,12 +4901,18 @@ body {
             item.m    = document.getElementById('f-m').value;
             if (!d.docWarehouse && item.wh) d.docWarehouse = item.wh;
             const qty = toNumber(item.m);
-            if (!(qty > 0))     { fieldError('f-m',    'Укажите количество > 0'); return; }
-            if (!item.cell)     { fieldError('f-cell', 'Укажите ячейку списания'); return; }
-            if (!isKnownCell(item.cell)) { fieldError('f-cell', `Ячейка ${item.cell} не найдена`); return; }
-            const available = getAvailableMeters(writeoffStockRowsCache, item.wh, item.cell);
-            if (available <= 0) { fieldError('f-cell', 'Нет остатков в этой ячейке'); return; }
-            if (qty > available + 1e-9) { fieldError('f-m', `Максимум: ${available.toFixed(2)} м`); return; }
+            if (!(qty > 0)) { fieldError('f-m', 'Укажите количество > 0'); return; }
+            /* Ячейка необязательна — можно списать по складу без указания ячейки */
+            if (item.cell && !isKnownCell(item.cell)) {
+                fieldError('f-cell', `Ячейка ${item.cell} не найдена`);
+                return;
+            }
+            /* Проверка остатков только если ячейка указана */
+            if (item.cell) {
+                const available = getAvailableMeters(writeoffStockRowsCache, item.wh, item.cell);
+                if (available <= 0) { fieldError('f-cell', 'Нет остатков в этой ячейке'); return; }
+                if (qty > available + 1e-9) { fieldError('f-m', `Максимум: ${available.toFixed(2)} м`); return; }
+            }
             item.m = qty.toString();
             writeoffPrefillSource = { wh: item.wh, cell: item.cell };
 
@@ -4870,9 +4921,12 @@ body {
             item.cell = normalizeCellValue(document.getElementById('f-cell').value);
             item.m    = document.getElementById('f-m').value;
             const qty = toNumber(item.m);
-            if (!(qty > 0))  { fieldError('f-m',    'Укажите количество > 0'); return; }
-            if (!item.cell)  { fieldError('f-cell', 'Укажите ячейку оприходования'); return; }
-            if (!isKnownCell(item.cell)) { fieldError('f-cell', `Ячейка ${item.cell} не найдена`); return; }
+            if (!(qty > 0)) { fieldError('f-m', 'Укажите количество > 0'); return; }
+            /* Ячейка необязательна — товар может поступить просто на склад */
+            if (item.cell && !isKnownCell(item.cell)) {
+                fieldError('f-cell', `Ячейка ${item.cell} не найдена`);
+                return;
+            }
             item.m = qty.toString();
             d.docWarehouse = item.wh;
 
