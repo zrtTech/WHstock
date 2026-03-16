@@ -1576,6 +1576,8 @@ body {
     let customerCountdownRemaining = 0;
     let customerCountdownPaused = false;
     const CUSTOMER_AUTOCLOSE_SECONDS = 15;
+    let suppressRouteSync = false;
+    let scannerFocusInterval = null;
     let customerScanOverlayTimer = null;
     let scanBufResetTimer = null;
     let serverPrinters = [];
@@ -1895,6 +1897,9 @@ body {
                 if (e.target === m) closeModal(m.id);
             });
         });
+        window.addEventListener('hashchange', applyRouteFromHash);
+        window.addEventListener('popstate', applyRouteFromHash);
+        document.addEventListener('pointerdown', ensureScannerFocus, { passive: true });
         const customerView = document.getElementById('customer-view');
         if (customerView) {
             customerView.addEventListener('pointerdown', () => {
@@ -1903,15 +1908,85 @@ body {
                 resetCustomerCountdown();
             });
         }
-        if (isMgr) { document.getElementById('screen-kiosk').classList.add('hidden'); document.getElementById('manager-view').classList.remove('hidden'); switchTab(curTab); if (curDocId) openDoc(curDocId); }
+        if (isMgr) {
+            document.getElementById('screen-kiosk').classList.add('hidden');
+            document.getElementById('manager-view').classList.remove('hidden');
+            const hasRoute = !!window.location.hash && window.location.hash !== '#kiosk';
+            if (!hasRoute) {
+                suppressRouteSync = true;
+                switchTab(curTab || 'receive');
+                if (curDocId) openDoc(curDocId);
+                suppressRouteSync = false;
+                syncRouteHash(true);
+            } else {
+                applyRouteFromHash();
+            }
+        } else {
+            history.replaceState(null, '', '#kiosk');
+        }
         purgeOldClosedDocs(15);
         updateDataLists();
         updateKioskA4Status();
         updateTabBadges();
         if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').catch(err => logError(`sw: ${err.message}`)); }
+        ensureScannerFocus();
+        if (scannerFocusInterval) clearInterval(scannerFocusInterval);
+        scannerFocusInterval = setInterval(ensureScannerFocus, 1200);
     };
 
     function saveAppState() { localStorage.setItem('app_last_tab', curTab); localStorage.setItem('app_last_doc_id', curDocId); localStorage.setItem('app_is_mgr', isMgr); }
+
+    function buildRouteHash(tab, docId = null) {
+        const safeTab = tab || curTab || 'receive';
+        return docId ? `#${safeTab}/doc/${docId}` : `#${safeTab}`;
+    }
+
+    function parseRouteHash() {
+        const raw = (window.location.hash || '').replace(/^#/, '');
+        if (!raw || raw === 'kiosk') return { tab: curTab || 'receive', docId: null };
+        const [tabPart, maybeDoc, ...rest] = raw.split('/');
+        const validTabs = new Set(['receive', 'move', 'writeoff', 'price']);
+        const tab = validTabs.has(tabPart) ? tabPart : (curTab || 'receive');
+        if (maybeDoc === 'doc' && rest[0]) return { tab, docId: rest[0] };
+        return { tab, docId: null };
+    }
+
+    function syncRouteHash(replace = false) {
+        if (suppressRouteSync || !isMgr) return;
+        const nextHash = buildRouteHash(curTab, curDocId);
+        if (window.location.hash === nextHash) return;
+        if (replace) history.replaceState(null, '', nextHash);
+        else history.pushState(null, '', nextHash);
+    }
+
+    function applyRouteFromHash() {
+        if (!isMgr) return;
+        if (activeModalId) { closeModal(activeModalId); return; }
+        const route = parseRouteHash();
+        suppressRouteSync = true;
+        if (route.tab && route.tab !== curTab) switchTab(route.tab);
+        if (route.docId) {
+            if (curDocId !== route.docId || document.getElementById('screen-work').classList.contains('hidden')) openDoc(route.docId);
+        } else {
+            curDocId = null;
+            saveAppState();
+            document.getElementById('screen-work').classList.add('hidden');
+            document.getElementById('screen-list').classList.remove('hidden');
+            document.getElementById('tab-bar')?.classList.remove('hidden');
+            renderDocList();
+        }
+        suppressRouteSync = false;
+    }
+
+    function ensureScannerFocus() {
+        const scannerInp = document.getElementById('kiosk-scanner-input');
+        if (!scannerInp || activeModalId) return;
+        const activeTag = document.activeElement?.tagName;
+        if ((activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') && document.activeElement?.id !== 'kiosk-scanner-input') return;
+        const kioskVisible = !document.getElementById('screen-kiosk')?.classList.contains('hidden');
+        const workVisible = !document.getElementById('screen-work')?.classList.contains('hidden');
+        if (kioskVisible || workVisible) scannerInp.focus({ preventScroll: true });
+    }
 
     function isCustomerManagerModeActive() { return isMgr || tempCustomerManagerMode; }
 
@@ -2842,7 +2917,7 @@ body {
     function loginDemo() { isDemoMode = true; if (loginMode === 'customer') enterCustomerManagerMode(); else loginSuccess(); closeModal('modal-login'); showToast('Демо-режим включён'); }
     function openLogin(mode = 'full') { loginMode = mode; document.getElementById('login-pass').value = ''; openModal('modal-login'); setTimeout(() => document.getElementById('login-pass').focus(), 300); }
     function loginSuccess() { isMgr = true; saveAppState(); document.getElementById('login-pass').value = ''; document.getElementById('screen-kiosk').classList.add('hidden'); document.getElementById('manager-view').classList.remove('hidden'); switchTab('receive'); }
-    function logout() { isMgr = false; tempCustomerManagerMode = false; curDocId = null; currentProduct = null; document.getElementById('login-pass').value = ''; closeModal('modal-login'); closeModal('modal-product-edit'); closeCustomerView(); saveAppState(); document.getElementById('screen-work').classList.add('hidden'); document.getElementById('screen-list').classList.remove('hidden'); document.getElementById('manager-view').classList.add('hidden'); document.getElementById('screen-kiosk').classList.remove('hidden'); }
+    function logout() { isMgr = false; tempCustomerManagerMode = false; curDocId = null; currentProduct = null; document.getElementById('login-pass').value = ''; closeModal('modal-login'); closeModal('modal-product-edit'); closeCustomerView(); saveAppState(); document.getElementById('screen-work').classList.add('hidden'); document.getElementById('screen-list').classList.remove('hidden'); document.getElementById('tab-bar')?.classList.remove('hidden'); document.getElementById('manager-view').classList.add('hidden'); document.getElementById('screen-kiosk').classList.remove('hidden'); history.replaceState(null, '', '#kiosk'); ensureScannerFocus(); }
 
     function switchTab(id) {
         curTab = id; curDocId = null; editingItemId = null; saveAppState();
@@ -2858,8 +2933,10 @@ body {
         document.querySelectorAll('#tab-bar button').forEach(b => b.classList.remove('active'));
         document.getElementById('tab-'+id).classList.add('active');
         document.getElementById('screen-list').classList.remove('hidden'); document.getElementById('screen-work').classList.add('hidden');
+        document.getElementById('tab-bar')?.classList.remove('hidden');
         updateTabBadges();
         renderDocList();
+        syncRouteHash();
     }
 
     function openCreateDocModal() { openModal('modal-create-doc'); document.getElementById('input-new-doc-name').value = "Документ " + new Date().toLocaleDateString(); setTimeout(()=>document.getElementById('input-new-doc-name').focus(), 300); }
@@ -2921,6 +2998,7 @@ body {
         const d = db[curTab].find(x=>x.id===id);
         if(!d) { switchTab(curTab); return; }
         document.getElementById('screen-list').classList.add('hidden'); document.getElementById('screen-work').classList.remove('hidden');
+        document.getElementById('tab-bar')?.classList.add('hidden');
         document.getElementById('work-title').textContent = d.name;
         document.getElementById('work-status').textContent = d.status==='active'?'ОТКРЫТ':'ЗАВЕРШЕН';
         const completeBtn = document.getElementById('btn-complete-doc');
@@ -2937,6 +3015,7 @@ body {
         if(d.status === 'active') { formCont.classList.remove('hidden'); acts.classList.add('hidden'); } else { formCont.classList.add('hidden'); acts.classList.remove('hidden'); }
         renderClosedDocSummary(d);
         renderForm(); renderRows();
+        syncRouteHash();
     }
 
     function renderForm() {
