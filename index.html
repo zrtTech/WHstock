@@ -2105,6 +2105,39 @@ body {
             rows.map(r => `<div class="row"><div>${r.warehouse || r.wh || '-'}</div><div>${toNumber(r.meters ?? r.m).toFixed(2)} м</div><div>${r.cell || r.shelf || '-'}</div></div>`).join('');
     }
 
+    async function loadMoveStockPreview() {
+        const box = document.getElementById('move-stock-preview');
+        const art = document.getElementById('f-art')?.value?.trim();
+        if (!box) return;
+        if (!art) { box.innerHTML = '<div class="text-sec">Введите артикул или отсканируйте штрихкод, чтобы увидеть остатки</div>'; return; }
+
+        let product = null;
+        if (!sets.url || isDemoMode || isKioskClientDemoMode()) {
+            product = {
+                stockRows: [
+                    { warehouse: 'Магазин', cell: 'A1', meters: 2.5 },
+                    { warehouse: 'Склад', cell: 'B-14', meters: 7.0 },
+                    { warehouse: 'Розница', cell: 'C3', meters: 1.5 }
+                ]
+            };
+        } else {
+            try {
+                let res = await apiFetch(`${sets.url}/product?id=${encodeURIComponent(art)}&type=barcode`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
+                if (!res.ok) res = await apiFetch(`${sets.url}/product?id=${encodeURIComponent(art)}&type=articul`, { headers: { 'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')), 'x-api-key': sets.apiKey || '' } });
+                if (res.ok) product = await res.json();
+            } catch (e) {
+                box.innerHTML = '<div class="text-danger">Ошибка поиска остатков</div>';
+                return;
+            }
+        }
+
+        const rows = buildStockRows(product || {});
+        if (!rows.length) { box.innerHTML = '<div class="text-sec">Остатки не найдены</div>'; return; }
+        const total = rows.reduce((s, r) => s + toNumber(r.meters ?? r.m), 0);
+        box.innerHTML = `<div class="text-sm mb-2"><strong>Данные хранения:</strong> ${total.toFixed(2)} м</div>` +
+            rows.map(r => `<div class="row"><div>${r.warehouse || r.wh || '-'}</div><div>${toNumber(r.meters ?? r.m).toFixed(2)} м</div><div>${r.cell || r.shelf || '-'}</div></div>`).join('');
+    }
+
     async function loadPriceItemPreview() {
         const box = document.getElementById('price-item-preview');
         const art = document.getElementById('f-art')?.value?.trim();
@@ -3028,7 +3061,8 @@ body {
             renderCuts();
             renderReceivePhotoPreview();
         } else if(curTab === 'move'){
-            cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" onblur="resolveFormArtInput(this)" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this);}"></div><div class="flex gap-2"><div style="flex:1"><label>ОТКУДА (СКЛАД)</label><select id="f-wh-from">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ОТКУДА (ЯЧ)</label><input type="text" id="f-cell-from" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="flex gap-2"><div style="flex:1"><label>КУДА (СКЛАД)</label><select id="f-wh-to">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>КУДА (ЯЧ)</label><input type="text" id="f-cell-to" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div></div><div class="input-group"><label>МЕТРАЖ</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-primary w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+            cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" onblur="resolveFormArtInput(this); loadMoveStockPreview();" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this); loadMoveStockPreview();}"></div><div id="move-stock-preview" class="writeoff-stock-preview">Введите артикул или отсканируйте штрихкод, чтобы увидеть остатки</div><div class="flex gap-2"><div style="flex:1"><label>ОТКУДА (СКЛАД)</label><select id="f-wh-from">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ОТКУДА (ЯЧ)</label><input type="text" id="f-cell-from" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="flex gap-2"><div style="flex:1"><label>КУДА (СКЛАД)</label><select id="f-wh-to">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>КУДА (ЯЧ)</label><input type="text" id="f-cell-to" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div></div><div class="input-group"><label>МЕТРАЖ</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-primary w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+            loadMoveStockPreview();
         } else if(curTab === 'writeoff'){
             cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" onblur="resolveFormArtInput(this); loadWriteoffStockPreview();" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this); loadWriteoffStockPreview();}"></div><div id="writeoff-stock-preview" class="writeoff-stock-preview">Введите артикул, чтобы увидеть остатки по складам</div><div class="flex gap-2"><div style="flex:1"><label>СКЛАД</label><select id="f-wh">${sets.warehouses.map(w=>`<option>${w}</option>`)}</select></div><div style="flex:1"><label>ЯЧЕЙКА</label><input type="text" id="f-cell" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div></div><div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-danger w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
             loadWriteoffStockPreview();
