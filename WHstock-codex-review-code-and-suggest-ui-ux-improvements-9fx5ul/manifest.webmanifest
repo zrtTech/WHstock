@@ -1,0 +1,8 @@
+{
+  "name": "Складской Терминал 1С",
+  "short_name": "Склад",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#F5F7FA",
+  "theme_color": "#1976D2"
+}
