@@ -2183,7 +2183,7 @@ body {
         const btn = document.getElementById('c-photo-toggle');
         box.innerHTML = '';
         customerGalleryImages = Array.isArray(images) ? images : [];
-        if (btn) btn.textContent = `📷 Фото товара${customerGalleryImages.length ? ` (${customerGalleryImages.length})` : ''}`;
+        if (btn) btn.textContent = '📷 Фото товара';
         if (!customerGalleryExpanded) { box.classList.remove('open'); return; }
         box.classList.add('open');
         if (!Array.isArray(images) || !images.length) {
@@ -2193,8 +2193,8 @@ body {
             box.appendChild(fallback);
             return;
         }
-        customerGalleryIndex = Math.max(0, Math.min(customerGalleryIndex, images.length - 1));
-        const src = images[customerGalleryIndex];
+        customerGalleryIndex = 0;
+        const src = images[0];
         const frame = document.createElement('div');
         frame.className = 'customer-gallery-frame';
         const slide = document.createElement('div');
@@ -2205,37 +2205,7 @@ body {
         img.alt = 'Фото товара';
         slide.appendChild(img);
         frame.appendChild(slide);
-        if (images.length > 1) {
-            const prev = document.createElement('button');
-            prev.type = 'button';
-            prev.className = 'gallery-nav-btn prev';
-            prev.textContent = '‹';
-            prev.setAttribute('aria-label', 'Предыдущее фото');
-            prev.onclick = () => navigateGallery(-1);
-
-            const next = document.createElement('button');
-            next.type = 'button';
-            next.className = 'gallery-nav-btn next';
-            next.textContent = '›';
-            next.setAttribute('aria-label', 'Следующее фото');
-            next.onclick = () => navigateGallery(1);
-            frame.append(prev, next);
-        }
         box.appendChild(frame);
-
-        if (images.length > 1) {
-            const dots = document.createElement('div');
-            dots.className = 'gallery-dots';
-            images.forEach((_, idx) => {
-                const dot = document.createElement('button');
-                dot.type = 'button';
-                dot.className = `gallery-dot${idx === customerGalleryIndex ? ' active' : ''}`;
-                dot.setAttribute('aria-label', `Открыть фото ${idx + 1}`);
-                dot.onclick = () => { customerGalleryIndex = idx; renderCustomerGallery(customerGalleryImages); };
-                dots.appendChild(dot);
-            });
-            box.appendChild(dots);
-        }
     }
 
     function navigateGallery(dir = 1) {
