@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-title" content="Склад">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%231976D2'/%3E%3Cpath d='M256 120L120 188v136l136 68 136-68V188L256 120z' fill='%23fff'/%3E%3C/svg%3E">
     <link rel="manifest" href="manifest.webmanifest">
 
@@ -45,7 +45,7 @@
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         html, body { width: 100%; height: 100%; overflow: hidden; }
-        body { font-family: "Inter", -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: radial-gradient(1200px 500px at -10% -10%, #e8eefb 0%, transparent 56%), var(--bg); color: var(--text); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+        body { font-family: "DM Sans", -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: radial-gradient(1200px 500px at -10% -10%, #e8eefb 0%, transparent 56%), var(--bg); color: var(--text); line-height: 1.5; -webkit-font-smoothing: antialiased; }
         .hidden { display: none !important; }
         .flex { display: flex; }
         .items-center { align-items: center; }
@@ -54,7 +54,7 @@
         .p-4 { padding: 16px; }
         .w-full { width: 100%; }
         .font-bold { font-weight: bold; }
-        .monospace { font-family: "SF Mono", "Courier New", monospace; }
+        .monospace { font-family: "JetBrains Mono", "SF Mono", "Courier New", monospace; }
         .text-sm { font-size: 13px; }
         .text-primary { color: var(--primary); }
         .gap-2 { gap: 8px; }
@@ -587,7 +587,7 @@
         .cut-row { display: grid; grid-template-columns: 1.4fr 1.1fr 1fr auto; gap: 6px; align-items: center; margin-bottom: 8px; }
 
         /* ЛОГИ */
-        #log-area { font-family: monospace; font-size: 11px; background: #222; color: #0f0; padding: 10px; border-radius: 8px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; margin-bottom: 10px; }
+        #log-area { font-family: "JetBrains Mono", monospace; font-size: 11px; background: #222; color: #0f0; padding: 10px; border-radius: 8px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; margin-bottom: 10px; }
 
 
         /* ===== Premium dashboard visual redesign (UI-only overrides) ===== */
@@ -644,6 +644,28 @@
             font-size: 11px;
             letter-spacing: .04em;
             margin-bottom: 6px;
+        }
+
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%235b6676' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 38px;
+        }
+
+        .skeleton {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(90deg, rgba(148,163,184,.16) 0%, rgba(148,163,184,.28) 48%, rgba(148,163,184,.16) 100%);
+            background-size: 220% 100%;
+            animation: skeletonPulse 1.3s linear infinite;
+            border-radius: var(--radius-sm);
+        }
+        @keyframes skeletonPulse {
+            from { background-position: 220% 0; }
+            to { background-position: -20% 0; }
         }
 
         .card {
@@ -1074,7 +1096,7 @@ body {
                 </svg>
                 <span>Поиск товара по артикулу</span>
             </button>
-            <div id="search-loading" class="search-loading text-sm hidden" aria-live="polite">Поиск товара...</div>
+            <div id="search-loading" class="search-loading text-sm hidden skeleton" aria-live="polite">Поиск товара...</div>
             <div class="kiosk-tools">
                 <button class="btn-outline kiosk-tool-btn" onclick="enterKioskFullscreen()">⛶ Полный экран</button>
                 <button id="btn-a4-collect-toggle" class="btn-outline kiosk-tool-btn" onclick="toggleKioskA4CollectMode()">📋 Собрать лист</button>
