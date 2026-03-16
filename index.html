@@ -600,6 +600,30 @@
         .writeoff-stock-preview .row:last-child { border-bottom: none; }
         .writeoff-stock-preview .row.row-clickable { cursor: pointer; border-radius: 8px; padding: 6px; margin: 0 -4px; }
         .writeoff-stock-preview .row.row-clickable:hover { background: #eef5ff; }
+        /* ── Редактор ZPL-шаблонов ── */
+        .zpl-tabs { display:flex; gap:4px; margin-bottom:8px; flex-wrap:wrap; }
+        .zpl-tab { padding:5px 12px; border-radius:8px; font-size:12px; font-weight:700;
+            border:1.5px solid var(--border); background:var(--surface-muted);
+            color:var(--text-sec); cursor:pointer; min-height:32px; transition:.15s; }
+        .zpl-tab.active { border-color:var(--primary); background:#eef3ff; color:var(--primary); }
+        .zpl-editor { font-family:var(--font-mono,monospace); font-size:12px; resize:vertical;
+            width:100%; border-radius:8px; border:1px solid var(--border);
+            padding:10px; background:var(--surface-muted); min-height:120px; line-height:1.6; }
+        .zpl-vars { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+        .zpl-var-chip { font-size:11px; font-weight:700; background:#f0f4ff;
+            border:1px solid #c5d5f7; color:#2563eb; border-radius:6px;
+            padding:3px 8px; cursor:pointer; user-select:none; }
+        .zpl-var-chip:hover { background:#dde8ff; }
+        .printer-row { display:grid; grid-template-columns:1fr 120px 70px auto; gap:8px;
+            align-items:center; padding:8px 0; border-bottom:1px solid var(--border); }
+        .printer-row:last-child { border-bottom:none; }
+        .printer-badge { font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px;
+            background:#eef3ff; color:var(--primary); }
+        .zpl-preview { font-family:var(--font-mono,monospace); font-size:11px;
+            background:#f8f9fa; border:1px solid var(--border); border-radius:8px;
+            padding:10px; white-space:pre-wrap; word-break:break-all;
+            max-height:100px; overflow-y:auto; color:var(--text-sec); margin-top:8px; }
+
         /* ── Outbox / Sync статусы ── */
         .sync-badge {
             display:inline-flex; align-items:center; justify-content:center;
@@ -1445,16 +1469,68 @@ body {
         </div>
 
         <div class="settings-section span-2" id="server-printers-block">
-            <h3>ПРИНТЕРЫ (СЕРВЕРНЫЕ)</h3>
+            <h3>ПРИНТЕРЫ</h3>
             <div class="light-block">
-                <div class="flex gap-2 mb-2">
-                    <button class="btn-outline" style="flex:1" onclick="loadServerPrinters(true)">🔄 Обновить список принтеров</button>
+                <!-- Список принтеров с сервера -->
+                <div class="flex justify-between items-center mb-2">
+                    <p id="server-printers-status" class="text-sm" style="color:var(--text-sec)">Список не загружен</p>
+                    <button class="btn-outline" style="font-size:13px;min-height:34px;padding:0 12px" onclick="loadServerPrinters(true)">🔄 Обновить</button>
                 </div>
-                <p id="server-printers-status" class="text-sm" style="color: var(--text-sec); margin-bottom: 8px;">Список принтеров не загружен</p>
+                <!-- Ручное добавление принтера -->
+                <div id="custom-printers-list"></div>
+                <div class="flex gap-2 mt-2" id="add-printer-row">
+                    <input type="text" id="new-printer-name" placeholder="Имя принтера (как в сервере)" style="flex:2">
+                    <input type="text" id="new-printer-ip"   placeholder="IP" style="flex:1">
+                    <input type="text" id="new-printer-port" placeholder="Порт" value="9100" style="width:70px">
+                    <select id="new-printer-type" style="flex:1">
+                        <option value="client">Клиент</option>
+                        <option value="warehouse">Склад</option>
+                        <option value="hanger">Хангер</option>
+                        <option value="a4">A4</option>
+                    </select>
+                    <button class="btn-primary" style="min-width:44px" onclick="addCustomPrinter()">+</button>
+                </div>
+                <hr style="margin:12px 0;border:none;border-top:1px solid #eee;">
+                <!-- Назначение принтеров по типу -->
                 <div class="input-group"><label>Принтер клиентской этикетки</label><select id="set-printer-client" onchange="saveSets()"></select></div>
                 <div class="input-group"><label>Принтер складской этикетки</label><select id="set-printer-warehouse" onchange="saveSets()"></select></div>
                 <div class="input-group"><label>Принтер хангеров</label><select id="set-printer-hanger" onchange="saveSets()"></select></div>
                 <div class="input-group"><label>Принтер A4</label><select id="set-printer-a4" onchange="saveSets()"></select></div>
+                <!-- Тест-печать -->
+                <div class="flex gap-2 mt-3">
+                    <button class="btn-outline w-full" style="font-size:13px" onclick="testPrint('client')">🖨 Тест: клиент</button>
+                    <button class="btn-outline w-full" style="font-size:13px" onclick="testPrint('warehouse')">🖨 Тест: склад</button>
+                    <button class="btn-outline w-full" style="font-size:13px" onclick="testPrint('hanger')">🖨 Тест: хангер</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Редактор шаблонов этикеток -->
+        <div class="settings-section span-2" id="label-templates-block">
+            <h3>ШАБЛОНЫ ЭТИКЕТОК (ZPL)</h3>
+            <div class="light-block">
+                <p class="text-sm" style="color:var(--text-sec);margin-bottom:10px">
+                    ZPL-команды для принтеров Zebra. Используйте переменные — они заменяются реальными данными товара.
+                </p>
+                <!-- Вкладки типов этикеток -->
+                <div class="zpl-tabs">
+                    <button class="zpl-tab active" id="ztab-client"    onclick="switchZplTab('client')">Клиентская</button>
+                    <button class="zpl-tab"        id="ztab-warehouse" onclick="switchZplTab('warehouse')">Складская</button>
+                    <!-- Хангер исключён: PDF генерирует 1С, не ZPL в приложении -->
+                </div>
+                <!-- Переменные-подсказки -->
+                <div class="zpl-vars" id="zpl-vars-list"></div>
+                <!-- Редактор -->
+                <textarea class="zpl-editor" id="zpl-template-editor"
+                    oninput="onZplTemplateInput()"
+                    placeholder="^XA&#10;^FO30,30^A0N,34,34^FD{{ARTICUL}}^FS&#10;^XZ"></textarea>
+                <!-- Предпросмотр с подставленными значениями -->
+                <div style="font-size:12px;color:var(--text-sec);margin-top:8px;margin-bottom:4px">Предпросмотр (тестовые данные):</div>
+                <div class="zpl-preview" id="zpl-preview-output"></div>
+                <div class="flex gap-2 mt-3">
+                    <button class="btn-outline w-full" onclick="resetZplTemplate()">↺ Сбросить по умолчанию</button>
+                    <button class="btn-primary w-full"  onclick="saveZplTemplate()">💾 Сохранить шаблон</button>
+                </div>
             </div>
         </div>
 
@@ -3591,7 +3667,26 @@ body {
     const printService = {
 
         /* ── ZPL-шаблон клиентской/складской этикетки ── */
-        _buildZpl(p) {
+        _buildZpl(p, labelType) {
+            /* Пользовательский шаблон из настроек */
+            const customTpl = (sets.zplTemplates || {})[labelType || 'client'];
+            if (customTpl) {
+                const sv2 = sanitizeZplValue;
+                const stockLines = (p.stockRows || [])
+                    .map(r => `${r.warehouse||''}/${r.cell||''}/${toNumber(r.meters??r.m).toFixed(1)}м`)
+                    .join('  ');
+                return customTpl
+                    .replaceAll('{{ARTICUL}}',     sv2(p.articul || '-'))
+                    .replaceAll('{{NAME}}',        sv2(p.name || p.namePrint || '-'))
+                    .replaceAll('{{BRAND}}',       sv2(p.brand || '-'))
+                    .replaceAll('{{COMPOSITION}}', sv2(p.composition || '-'))
+                    .replaceAll('{{WIDTH}}',       sv2(p.width || '-'))
+                    .replaceAll('{{DENSITY}}',     sv2(p.density || '-'))
+                    .replaceAll('{{PRICE}}',       sv2(toNumber(p.priceRub||0).toFixed(2) + ' ₽'))
+                    .replaceAll('{{EAN13}}',       sv2(p.ean13 || p.articul || '-'))
+                    .replaceAll('{{DATE}}',        new Date().toLocaleDateString('ru-RU'))
+                    .replaceAll('{{STOCK_LINES}}', sv2(stockLines || '-'));
+            }
             const sv = sanitizeZplValue;
             const price = toNumber(p.priceRub || 0).toFixed(2) + ' \u20BD';
             return `^XA^CI28` +
@@ -3617,9 +3712,8 @@ body {
                 date:        new Date().toISOString(),
                 ...job.payload
             };
-            const endpoint = job.type === 'hanger' ? '/print-hanger'
-                           : job.type === 'a4'     ? '/print-a4'
-                           : '/print-label';
+            /* Хангер НЕ идёт через printService — у него своя функция printHangerLabel() */
+            const endpoint = job.type === 'a4' ? '/print-a4' : '/print-label';
             const res = await apiFetch(`${sets.url}${endpoint}`, {
                 method: 'POST',
                 headers: api1CHeaders({ 'Content-Type': 'application/json' }),
@@ -3634,7 +3728,7 @@ body {
             if (!sets.pnKey || !sets.pnPrinter) {
                 throw Object.assign(new Error('PrintNode не настроен'), { code: 'not_configured' });
             }
-            const zpl     = this._buildZpl(job.payload);
+            const zpl     = this._buildZpl(job.payload, job.type);
             const encoded = this._zplToBase64(zpl);
             const res = await apiFetch('https://api.printnode.com/printjobs', {
                 method: 'POST',
@@ -3655,7 +3749,7 @@ body {
 
         /* ── Метод: RawBT (Android) ── */
         _sendRawBT(job) {
-            const zpl     = this._buildZpl(job.payload);
+            const zpl     = this._buildZpl(job.payload, job.type);
             const encoded = this._zplToBase64(zpl);
             window.location.href = `intent://base64,${encoded}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`;
             return { ok: true, method: 'rawbt' };
@@ -3808,6 +3902,253 @@ body {
         return serverPrinters;
     }
 
+    /* ════════════════════════════════════════════════════════════════
+       УПРАВЛЕНИЕ ПРИНТЕРАМИ И ZPL-ШАБЛОНАМИ
+    ════════════════════════════════════════════════════════════════ */
+
+    /* Переменные ZPL с подсказками */
+    const ZPL_VARS = [
+        { key: '{{ARTICUL}}',     hint: 'Артикул' },
+        { key: '{{NAME}}',        hint: 'Наименование' },
+        { key: '{{BRAND}}',       hint: 'Бренд' },
+        { key: '{{COMPOSITION}}', hint: 'Состав' },
+        { key: '{{WIDTH}}',       hint: 'Ширина' },
+        { key: '{{DENSITY}}',     hint: 'Плотность' },
+        { key: '{{PRICE}}',       hint: 'Цена' },
+        { key: '{{EAN13}}',       hint: 'Штрихкод EAN-13' },
+        { key: '{{DATE}}',        hint: 'Дата' },
+        { key: '{{STOCK_LINES}}', hint: 'Строки остатков' },
+    ];
+
+    /* Тестовые данные для предпросмотра */
+    const ZPL_TEST_DATA = {
+        ARTICUL:      'ART-001',
+        NAME:         'Ткань лён натуральный',
+        BRAND:        'BrandName',
+        COMPOSITION:  '100%LN',
+        WIDTH:        '150',
+        DENSITY:      '220',
+        PRICE:        '1290.00 ₽',
+        EAN13:        '4600000000001',
+        DATE:         new Date().toLocaleDateString('ru-RU'),
+        STOCK_LINES:  'Магазин/A1/12.5м',
+    };
+
+    /* Дефолтные ZPL-шаблоны */
+    const ZPL_DEFAULTS = {
+        client: `^XA^CI28
+^FO30,30^A0N,34,34^FD{{ARTICUL}}^FS
+^FO30,70^A0N,26,26^FD{{BRAND}}^FS
+^FO30,105^A0N,24,24^FD{{COMPOSITION}}^FS
+^FO30,135^A0N,24,24^FDШир: {{WIDTH}} Пл: {{DENSITY}}^FS
+^FO30,168^A0N,30,30^FD{{PRICE}}^FS
+^FO30,205^A0N,20,20^FD{{DATE}}^FS
+^FO60,230^BY2^BCN,70,Y,N,N^FD{{EAN13}}^FS
+^XZ`,
+        warehouse: `^XA^CI28
+^FO30,30^A0N,30,30^FD{{ARTICUL}}^FS
+^FO30,68^A0N,22,22^FD{{STOCK_LINES}}^FS
+^FO60,110^BY2^BCN,60,Y,N,N^FD{{ARTICUL}}^FS
+^XZ`
+        /* hanger — не ZPL. 1С генерирует PDF с QR-кодом самостоятельно */
+    };
+
+    let _zplCurrentTab = 'client';
+
+    /* Переключение вкладки шаблона */
+    function switchZplTab(type) {
+        _zplCurrentTab = type;
+        ['client','warehouse'].forEach(t => {
+            document.getElementById(`ztab-${t}`)?.classList.toggle('active', t === type);
+        });
+        /* Загружаем шаблон из настроек или дефолт */
+        const tpl = (sets.zplTemplates || {})[type] || ZPL_DEFAULTS[type] || '';
+        const editor = document.getElementById('zpl-template-editor');
+        if (editor) { editor.value = tpl; updateZplPreview(tpl); }
+    }
+
+    /* Рендер чипов переменных */
+    function renderZplVars() {
+        const list = document.getElementById('zpl-vars-list');
+        if (!list) return;
+        list.innerHTML = '';
+        ZPL_VARS.forEach(v => {
+            const chip = document.createElement('span');
+            chip.className = 'zpl-var-chip';
+            chip.textContent = v.key;
+            chip.title = v.hint;
+            chip.onclick = () => insertZplVar(v.key);
+            list.appendChild(chip);
+        });
+    }
+
+    /* Вставка переменной в позицию курсора */
+    function insertZplVar(varKey) {
+        const ed = document.getElementById('zpl-template-editor');
+        if (!ed) return;
+        const start = ed.selectionStart, end = ed.selectionEnd;
+        ed.value = ed.value.slice(0, start) + varKey + ed.value.slice(end);
+        ed.selectionStart = ed.selectionEnd = start + varKey.length;
+        ed.focus();
+        updateZplPreview(ed.value);
+    }
+
+    function onZplTemplateInput() {
+        const ed = document.getElementById('zpl-template-editor');
+        if (ed) updateZplPreview(ed.value);
+    }
+
+    /* Предпросмотр — подставляем тестовые данные */
+    function updateZplPreview(tpl) {
+        const out = document.getElementById('zpl-preview-output');
+        if (!out) return;
+        let result = tpl;
+        Object.entries(ZPL_TEST_DATA).forEach(([k, v]) => {
+            result = result.replaceAll(`{{${k}}}`, v);
+        });
+        out.textContent = result;
+    }
+
+    /* Сохранение шаблона */
+    function saveZplTemplate() {
+        const ed = document.getElementById('zpl-template-editor');
+        if (!ed) return;
+        if (!sets.zplTemplates) sets.zplTemplates = {};
+        sets.zplTemplates[_zplCurrentTab] = ed.value;
+        save();
+        showToast(`Шаблон «${_zplCurrentTab}» сохранён`, 'success');
+    }
+
+    /* Сброс шаблона к дефолту */
+    function resetZplTemplate() {
+        const ed = document.getElementById('zpl-template-editor');
+        if (!ed) return;
+        const def = ZPL_DEFAULTS[_zplCurrentTab] || '';
+        ed.value = def;
+        updateZplPreview(def);
+        if (!sets.zplTemplates) sets.zplTemplates = {};
+        delete sets.zplTemplates[_zplCurrentTab];
+        save();
+        showToast('Шаблон сброшен к значению по умолчанию');
+    }
+
+    /* Открытие редактора шаблонов из настроек */
+    function openLabelTemplates() {
+        renderZplVars();
+        switchZplTab('client');
+    }
+
+    /* ── Кастомные принтеры (хранятся в sets.customPrinters) ── */
+    function renderCustomPrinters() {
+        const list = document.getElementById('custom-printers-list');
+        if (!list) return;
+        const printers = Array.isArray(sets.customPrinters) ? sets.customPrinters : [];
+        list.innerHTML = '';
+        if (!printers.length) {
+            const hint = document.createElement('p');
+            hint.className = 'text-sm';
+            hint.style.color = 'var(--text-sec)';
+            hint.textContent = 'Принтеры не добавлены. Добавьте принтер вручную или загрузите с сервера.';
+            list.appendChild(hint);
+            return;
+        }
+        printers.forEach((p, idx) => {
+            const row = document.createElement('div');
+            row.className = 'printer-row';
+
+            const nameEl = document.createElement('div');
+            nameEl.style.fontWeight = '700';
+            nameEl.textContent = p.name;
+
+            const ipEl = document.createElement('div');
+            ipEl.style.cssText = 'font-size:12px;color:var(--text-sec);font-family:var(--font-mono,monospace)';
+            ipEl.textContent = p.ip ? `${p.ip}:${p.port || 9100}` : '—';
+
+            const badge = document.createElement('span');
+            badge.className = 'printer-badge';
+            badge.textContent = { client:'Клиент', warehouse:'Склад', hanger:'Хангер', a4:'A4' }[p.type] || p.type;
+
+            const del = document.createElement('button');
+            del.className = 'btn-icon text-danger';
+            del.textContent = '🗑';
+            del.title = 'Удалить принтер';
+            del.onclick = () => removeCustomPrinter(idx);
+
+            row.append(nameEl, ipEl, badge, del);
+            list.appendChild(row);
+        });
+    }
+
+    function addCustomPrinter() {
+        const name = document.getElementById('new-printer-name')?.value?.trim();
+        const ip   = document.getElementById('new-printer-ip')?.value?.trim();
+        const port = document.getElementById('new-printer-port')?.value?.trim() || '9100';
+        const type = document.getElementById('new-printer-type')?.value || 'client';
+        if (!name) { showToast('Введите имя принтера', 'danger'); return; }
+        if (!sets.customPrinters) sets.customPrinters = [];
+        /* Проверка дубля по имени */
+        if (sets.customPrinters.some(p => p.name === name)) {
+            showToast(`Принтер «${name}» уже добавлен`, 'warning'); return;
+        }
+        sets.customPrinters.push({ name, ip, port, type });
+        save();
+        renderCustomPrinters();
+        /* Добавляем в serverPrinters чтобы появился в select */
+        if (!serverPrinters.some(p => p.name === name)) {
+            serverPrinters.push({ name, type, ip, port: Number(port) });
+        }
+        /* Обновляем select-ы */
+        renderPrinterSelect('set-printer-client',    sets.printerClient);
+        renderPrinterSelect('set-printer-warehouse', sets.printerWarehouse);
+        renderPrinterSelect('set-printer-hanger',    sets.printerHanger);
+        renderPrinterSelect('set-printer-a4',        sets.printerA4);
+        /* Очищаем форму */
+        ['new-printer-name','new-printer-ip'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.value = '';
+        });
+        showToast(`Принтер «${name}» добавлен`, 'success');
+    }
+
+    function removeCustomPrinter(idx) {
+        if (!Array.isArray(sets.customPrinters)) return;
+        const removed = sets.customPrinters.splice(idx, 1)[0];
+        save();
+        renderCustomPrinters();
+        /* Убираем из serverPrinters */
+        serverPrinters = serverPrinters.filter(p => p.name !== removed?.name);
+        renderPrinterSelect('set-printer-client',    sets.printerClient);
+        renderPrinterSelect('set-printer-warehouse', sets.printerWarehouse);
+        renderPrinterSelect('set-printer-hanger',    sets.printerHanger);
+        renderPrinterSelect('set-printer-a4',        sets.printerA4);
+        showToast('Принтер удалён');
+    }
+
+    /* ── Тест-печать ── */
+    async function testPrint(type) {
+        /* Хангер — отдельный маршрут через 1С (PDF+QR), не ZPL */
+        if (type === 'hanger') {
+            showToast('Тест хангера: используйте кнопку «Ценник-хангер» в карточке товара', 'warning');
+            return;
+        }
+        const testPayload = {
+            articul:     'TEST-001',
+            name:        'Тестовый товар',
+            brand:       'TestBrand',
+            composition: '100%LN',
+            width:       '150',
+            density:     '220',
+            priceRub:    999,
+            ean13:       '4600000000001',
+            stockRows:   [{ warehouse: 'Склад', cell: 'A1', meters: 5 }]
+        };
+        const printerName = type === 'client' ? sets.printerClient : sets.printerWarehouse;
+        if (!printerName) {
+            showToast(`Назначьте принтер для типа «${type}» выше`, 'warning'); return;
+        }
+        showToast(`Отправка тестовой этикетки на ${printerName}...`);
+        printService.send({ type, printerName, payload: testPayload });
+    }
+
     function renderPrinterSelect(id, selected) {
         const el = document.getElementById(id);
         if (!el) return;
@@ -3868,12 +4209,29 @@ body {
 
     async function printHangerLabel() {
         closeModal('modal-print-actions');
+        /* Хангер: 1С генерирует PDF с QR-кодом — не используем ZPL из приложения.
+           Отправляем только идентификаторы товара, всё остальное делает 1С. */
+        if (isDemoMode) { showToast('DEV: печать хангера имитирована', 'success'); return; }
+        if (!sets.url) { showToast('URL сервера не настроен', 'danger'); return; }
         const p = getCurrentProductSnapshot();
-        printService.send({
-            type: 'hanger',
-            printerName: sets.printerHanger || '',
-            payload: p
-        });
+        try {
+            const res = await apiFetch(`${sets.url}/print-hanger`, {
+                method: 'POST',
+                headers: api1CHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({
+                    articul:     p.articul     || '',
+                    uid:         p.uid         || '',
+                    printerName: sets.printerHanger || ''
+                })
+            });
+            if (!res.ok) throw Object.assign(new Error(`HTTP ${res.status}`), { status: res.status });
+            showToast('Хангер отправлен на печать', 'success');
+        } catch (e) {
+            showApiError({ endpoint: '/print-hanger',
+                status: e.status || 'net',
+                retryFn: () => printHangerLabel() });
+            logError(`print hanger: ${e.message}`);
+        }
     }
 
     function updateKioskA4Status() {
