@@ -4206,18 +4206,26 @@ body {
     }
 
     async function printLabelForItem(it) {
+        /* Нарезки приёмки: {id, m, wh, c} → конвертируем в {warehouse, cell, meters} */
+        const stockRows = (it.cuts || []).map(c => ({
+            warehouse: c.wh  || c.warehouse || '',
+            cell:      c.c   || c.cell      || '',
+            meters:    toNumber(c.m ?? c.meters ?? 0)
+        })).filter(r => r.meters > 0);
+
         printService.send({
             type: 'warehouse',
             printerName: sets.printerWarehouse || '',
             payload: {
-                articul:     it.art     || '-',
-                brand:       it.brand   || '',
-                composition: it.comp    || '',
-                width:       it.w       || '',
-                density:     it.dens    || '',
+                articul:     it.art      || '-',
+                brand:       it.brand    || '',
+                composition: it.comp     || '',
+                width:       it.w        || '',
+                density:     it.dens     || '',
                 priceRub:    toNumber(it.priceRub || it.pRub || 0),
-                ean13:       it.ean13   || '',
-                stockRows:   it.cuts    || []
+                ean13:       it.ean13    || '',
+                charName:    it.charName || '',
+                stockRows
             }
         });
     }
@@ -6205,7 +6213,10 @@ body {
     async function syncWith1C() { return queueAndSync(); }
 
     async function test1CConnection() {
-        const url = document.getElementById('set-url').value; const user = document.getElementById('set-user').value; const pass = document.getElementById('set-pass').value;
+        const url    = document.getElementById('set-url').value;
+        const user   = document.getElementById('set-user').value;
+        const pass   = document.getElementById('set-pass').value;
+        const apiKey = document.getElementById('set-api-key').value;
         if (isDemoMode) {
             updateConnStatus('ok', 'DEV-режим: связь с 1С не требуется');
             showToast('DEV-режим: связь с 1С не требуется', 'success'); return;
@@ -6214,19 +6225,23 @@ body {
         updateConnStatus('unknown', 'Проверяем связь...');
         showToast("Проверка связи...");
         try {
-            const res = await apiFetch(`${url}/product?id=ping`,
-                { headers: { 'Authorization': 'Basic ' + btoa(user + ':' + pass) } });
-            if (res.ok || res.status === 404) {
-                updateConnStatus('ok', `✓ Связь с 1С установлена · ${url}`);
-                showToast('Связь с 1С установлена!', 'success');
+            /* Сохраняем введённые данные сразу — чтобы api1CHeaders() их подхватил */
+            sets.url    = url;
+            sets.user   = user;
+            sets.pass   = pass;
+            sets.apiKey = apiKey;
+            const res = await apiFetch(`${url}/health`, { headers: api1CHeaders() });
+            if (res.ok) {
+                updateConnStatus('ok', `✓ Сервер доступен · ${url}`);
+                showToast('Связь с сервером установлена!', 'success');
             } else {
                 updateConnStatus('error', `Ошибка HTTP ${res.status} · проверьте URL и данные`);
-                showApiError({ endpoint: '/product', status: res.status, msg: 'Проверьте URL и учётные данные' });
+                showApiError({ endpoint: '/health', status: res.status, msg: 'Проверьте URL и учётные данные' });
             }
         } catch (e) {
-            updateConnStatus('error', 'Сервер 1С недоступен · проверьте сеть и URL');
-            showApiError({ endpoint: '/product', status: 'net', msg: 'Нет ответа от сервера 1С' });
-            logError(`Тест 1С: ${e.message}`);
+            updateConnStatus('error', 'Сервер недоступен · проверьте сеть и URL');
+            showApiError({ endpoint: '/health', status: 'net', msg: 'Нет ответа от сервера' });
+            logError(`Тест связи: ${e.message}`);
         }
     }
 
