@@ -631,6 +631,18 @@
             padding:10px; white-space:pre-wrap; word-break:break-all;
             max-height:100px; overflow-y:auto; color:var(--text-sec); margin-top:8px; }
 
+        /* ── Тип документа — бейдж на экране работы ── */
+        .doc-type-badge {
+            display:inline-flex; align-items:center; gap:5px;
+            font-size:12px; font-weight:800; padding:3px 10px;
+            border-radius:6px; letter-spacing:.3px;
+        }
+        .doc-type-badge.receive  { background:#e8f5e9; color:#1b5e20; }
+        .doc-type-badge.move     { background:#e3f2fd; color:#0d47a1; }
+        .doc-type-badge.writeoff { background:#fce4ec; color:#880e4f; }
+        .doc-type-badge.stockin  { background:#f3e5f5; color:#4a148c; }
+        .doc-type-badge.price    { background:#fff8e1; color:#e65100; }
+
         /* ── Карточка документа — статус 1С ── */
         .doc-sync-badge {
             display:inline-flex; align-items:center; gap:3px;
@@ -1349,6 +1361,9 @@ body {
                         <button class="btn-icon text-success" id="btn-complete-doc" onclick="completeDoc()">✅ Готово</button>
                     </div>
                 </div>
+                <div class="flex items-center gap-2 mb-1">
+                    <span id="work-type-badge" class="doc-type-badge"></span>
+                </div>
                 <h2 id="work-title">Документ</h2>
                 <div class="flex justify-between items-center mt-1">
                     <span id="work-status" class="monospace text-sm font-bold">АКТИВЕН</span>
@@ -1642,10 +1657,16 @@ body {
 
 <div id="modal-logs" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modal-logs-title">
     <div class="modal-content">
-        <h2 id="modal-logs-title">Журнал ошибок</h2>
+        <div class="flex justify-between items-center mb-2">
+            <h2 id="modal-logs-title" style="margin:0">Журнал ошибок</h2>
+            <select id="log-date-filter" onchange="openLogsModal()" style="font-size:12px;padding:4px 8px;min-height:32px;width:auto"></select>
+        </div>
         <div id="log-area">Нет ошибок</div>
-        <button class="btn-outline w-full mb-2" onclick="shareLogFile()">📤 Поделиться файлом лога</button>
-        <button class="btn-outline w-full mb-2" onclick="clearLogs()">Очистить</button>
+        <div class="flex gap-2 mt-2 mb-2">
+            <button class="btn-outline w-full" onclick="copyLogs()">📋 Копировать</button>
+            <button class="btn-outline w-full" onclick="downloadLogs()">💾 Скачать файл</button>
+            <button class="btn-outline w-full text-danger" onclick="clearLogs()">🗑 Очистить</button>
+        </div>
         <button class="btn-primary w-full" onclick="closeModal('modal-logs')">Закрыть</button>
     </div>
 </div>
@@ -1753,34 +1774,109 @@ body {
     };
 
     function logError(text) {
+        const now  = new Date();
+        const date = now.toLocaleDateString('ru-RU');            /* 17.03.2026 */
+        const time = now.toLocaleTimeString('ru-RU');            /* 14:05:36  */
         let logs = safeLoad('app_error_logs', []);
-        logs.unshift(`[${new Date().toLocaleTimeString()}] ${text}`);
-        if(logs.length > 50) logs.pop();
+        /* Каждая запись: { date, time, text } */
+        logs.unshift({ date, time, text: String(text) });
+        if (logs.length > 200) logs = logs.slice(0, 200);
         localStorage.setItem('app_error_logs', JSON.stringify(logs));
-        console.error(text);
+        console.error(`[${time}] ${text}`);
     }
 
     function openLogsModal() {
-        const logs = safeLoad('app_error_logs', []);
-        document.getElementById('log-area').textContent = logs.length ? logs.join('\n---\n') : "Нет записей об ошибках";
+        const raw  = safeLoad('app_error_logs', []);
+        const area = document.getElementById('log-area');
+        const sel  = document.getElementById('log-date-filter');
+
+        /* Нормализуем старый формат (строки) и новый (объекты) */
+        const logs = raw.map(e => typeof e === 'string'
+            ? { date: '—', time: '', text: e }
+            : e);
+
+        /* Уникальные даты для фильтра */
+        const dates = [...new Set(logs.map(e => e.date))];
+        const today = new Date().toLocaleDateString('ru-RU');
+
+        if (sel) {
+            const prevVal = sel.value;
+            sel.innerHTML = '';
+            dates.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d;
+                opt.textContent = d === today ? `Сегодня (${d})` : d;
+                sel.appendChild(opt);
+            });
+            /* Выбираем сегодня по умолчанию, иначе первую дату */
+            sel.value = dates.includes(prevVal) ? prevVal
+                      : dates.includes(today) ? today
+                      : dates[0] || '';
+        }
+
+        const filterDate = sel?.value || '';
+        const filtered = logs.filter(e => !filterDate || e.date === filterDate);
+
+        if (!area) { openModal('modal-logs'); return; }
+        if (!filtered.length) {
+            area.textContent = 'Нет записей за эту дату';
+        } else {
+            area.textContent = filtered
+                .map(e => `[${e.time}] ${e.text}`)
+                .join('\n---\n');
+        }
         openModal('modal-logs');
     }
 
-    async function shareLogFile() {
-        const logs = safeLoad('app_error_logs', []);
-        if (!logs.length) { showToast("Логи пусты", "danger"); return; }
-        const text = logs.join('\n---\n');
-        const fileName = `logs_${new Date().getTime()}.txt`;
-        const file = new File([text], fileName, { type: 'text/plain' });
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            try { await navigator.share({ files: [file], title: 'Логи приложения', text: 'Файл отладки складского терминала' }); } catch (err) { logError(`Ошибка шеринга файла: ${err.message}`); }
-        } else {
-            if (navigator.share) { await navigator.share({ title: 'Логи терминала', text: text }); }
-            else { const el = document.createElement('textarea'); el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); showToast("Текст логов скопирован"); }
+    /* Копировать текст текущего фильтра в буфер обмена */
+    async function copyLogs() {
+        const text = document.getElementById('log-area')?.textContent || '';
+        if (!text || text === 'Нет записей за эту дату') {
+            showToast('Нет записей для копирования', 'warning'); return;
+        }
+        try {
+            await navigator.clipboard.writeText(text);
+            showToast('Скопировано в буфер обмена', 'success');
+        } catch {
+            /* fallback для старых браузеров */
+            const ta = document.createElement('textarea');
+            ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+            document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast('Скопировано', 'success');
         }
     }
 
-    function clearLogs() { localStorage.removeItem('app_error_logs'); document.getElementById('log-area').textContent = "Журнал очищен"; }
+    /* Скачать файл с логами выбранной даты */
+    function downloadLogs() {
+        const raw  = safeLoad('app_error_logs', []);
+        const logs = raw.map(e => typeof e === 'string' ? { date: '—', time: '', text: e } : e);
+        const sel  = document.getElementById('log-date-filter');
+        const filterDate = sel?.value || '';
+        const filtered = logs.filter(e => !filterDate || e.date === filterDate);
+        if (!filtered.length) { showToast('Нет записей для скачивания', 'warning'); return; }
+        const text = filtered.map(e => `[${e.date} ${e.time}] ${e.text}`).join('\n---\n');
+        const date = filterDate.replace(/\./g, '-') || 'all';
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href = url; a.download = `logs_${date}.txt`;
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+        showToast(`Файл logs_${date}.txt скачан`, 'success');
+    }
+
+    /* shareLogFile оставляем для совместимости — теперь делегирует в downloadLogs */
+    function shareLogFile() { downloadLogs(); }
+
+    function clearLogs() {
+        localStorage.removeItem('app_error_logs');
+        const area = document.getElementById('log-area');
+        if (area) area.textContent = 'Журнал очищен';
+        const sel = document.getElementById('log-date-filter');
+        if (sel) sel.innerHTML = '';
+    }
 
     /* ════════════════════════════════════════════════════════════════
        INDEXED DB — хранилище складских документов
@@ -4654,12 +4750,68 @@ body {
 
     /* ШЕРИНГ */
     async function shareDoc() {
-        const d = db[curTab].find(x => x.id === curDocId);
-        if (!d || !d.items.length) return;
-        let text = `ДОКУМЕНТ: ${d.name}\nТИП: ${document.getElementById('list-title').textContent}\nДАТА: ${new Date(d.createdAt).toLocaleDateString()}\n--------------------------\n`;
-        d.items.forEach((it, idx) => { text += `${idx + 1}. Арт: ${it.art}\n`; if (it.cuts) { const total = it.cuts.reduce((s, c) => s + (parseFloat(c.m) || 0), 0); text += `   Метраж: ${total.toFixed(2)} м (${it.cuts.length} отр.)\n`; } else if (it.m) { text += `   Метраж: ${it.m} м\n`; if (it.fromWh) text += `   ${it.fromWh} -> ${it.toWh}\n`; } else if (it.p) { text += `   Цена: ${it.p} €\n`; } });
-        if (navigator.share) { try { await navigator.share({ title: d.name, text: text }); } catch (err) { /* canceled by user */ } }
-        else { const el = document.createElement('textarea'); el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); showToast("Текст скопирован в буфер"); }
+        const d = db[curTab]?.find(x => x.id === curDocId);
+        if (!d) { showToast('Документ не найден', 'danger'); return; }
+
+        /* Формируем текстовое представление документа */
+        const typeNames = { receive:'Приёмка', move:'Перемещение', writeoff:'Списание', stockin:'Оприходование', price:'Цены' };
+        const typeName  = typeNames[curTab] || curTab;
+        const created   = d.createdAt ? new Date(d.createdAt).toLocaleDateString('ru-RU') : '—';
+        const closed    = d.closedAt  ? new Date(d.closedAt).toLocaleDateString('ru-RU')  : '—';
+
+        let text = `${typeName.toUpperCase()}: ${d.name}\n`;
+        text    += `Дата создания: ${created}`;
+        if (d.closedAt) text += `  /  Закрыт: ${closed}`;
+        text    += `\nСтатус: ${d.status === 'active' ? 'Открыт' : 'Завершён'}`;
+        if (d.syncStatus === 'sent') text += `  /  Проведён в 1С`;
+        text    += `\n${'─'.repeat(32)}\n`;
+
+        d.items.forEach((it, idx) => {
+            text += `${idx + 1}. ${it.art}`;
+            if (it.namePrint) text += ` — ${it.namePrint}`;
+            text += '\n';
+            if (it.cuts && it.cuts.length) {
+                const total = it.cuts.reduce((s, c) => s + (parseFloat(c.m) || 0), 0);
+                text += `   ${total.toFixed(2)} м (${it.cuts.length} отр.)`;
+                it.cuts.forEach(c => { text += `  · ${c.wh || ''}${c.c ? '/'+c.c : ''} ${c.m}м`; });
+                text += '\n';
+            } else if (it.m) {
+                if (it.fromWh) text += `   ${it.fromWh}${it.fromCell?'/'+it.fromCell:''} → ${it.toWh || ''}${it.toCell?'/'+it.toCell:''}  ${it.m} м\n`;
+                else           text += `   ${it.wh || ''}${it.cell?'/'+it.cell:''}  ${it.m} м\n`;
+            } else if (it.priceRub) {
+                text += `   Цена: ${it.priceRub} ₽\n`;
+            }
+        });
+
+        /* 1. Пробуем Web Share API */
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: d.name, text });
+                return;
+            } catch (e) {
+                if (e.name === 'AbortError') return; /* пользователь отменил — ничего не делаем */
+                /* Иначе — падаем дальше на clipboard */
+            }
+        }
+
+        /* 2. Копируем в буфер обмена */
+        try {
+            await navigator.clipboard.writeText(text);
+            showToast('Документ скопирован в буфер обмена', 'success');
+            return;
+        } catch { /* fallback */ }
+
+        /* 3. Скачиваем как .txt */
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = `${d.name.replace(/\s+/g,'_')}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+        showToast('Документ сохранён как файл', 'success');
     }
 
     /* МЕНЕДЖЕР */
@@ -4803,6 +4955,21 @@ body {
         document.getElementById('tab-bar')?.classList.add('hidden');
         document.getElementById('work-title').textContent = d.name;
         document.getElementById('work-status').textContent = d.status==='active'?'ОТКРЫТ':'ЗАВЕРШЕН';
+        /* Бейдж типа документа */
+        const _typeBadge = document.getElementById('work-type-badge');
+        if (_typeBadge) {
+            const _typeMap = {
+                receive:  { label: '📦 Приёмка',      hint: 'Приход товара на склад' },
+                move:     { label: '🔄 Перемещение',   hint: 'Перемещение между складами' },
+                writeoff: { label: '📋 Списание',      hint: 'Списание товара со склада' },
+                stockin:  { label: '📥 Оприходование', hint: 'Оприходование остатков' },
+                price:    { label: '🏷️ Цены',          hint: 'Обновление цен' },
+            };
+            const _t = _typeMap[curTab] || { label: curTab, hint: '' };
+            _typeBadge.textContent = _t.label;
+            _typeBadge.title       = _t.hint;
+            _typeBadge.className   = `doc-type-badge ${curTab}`;
+        }
         const completeBtn = document.getElementById('btn-complete-doc');
         if (completeBtn) {
             if (d.status === 'active') {
@@ -5037,14 +5204,20 @@ body {
             item.toCell   = normalizeCellValue(document.getElementById('f-cell-to').value);
             item.m        = document.getElementById('f-m').value;
             const qty = toNumber(item.m);
-            if (!(qty > 0))        { fieldError('f-m',         'Укажите метраж > 0'); return; }
-            if (!item.fromCell)    { fieldError('f-cell-from', 'Укажите ячейку ОТКУДА'); return; }
-            if (!item.toCell)      { fieldError('f-cell-to',   'Укажите ячейку КУДА'); return; }
-            if (!isKnownCell(item.fromCell)) { fieldError('f-cell-from', `Ячейка ${item.fromCell} не найдена`); return; }
-            if (!isKnownCell(item.toCell))   { fieldError('f-cell-to',   `Ячейка ${item.toCell} не найдена`); return; }
-            const available = getAvailableMeters(moveStockRowsCache, item.fromWh, item.fromCell);
-            if (available <= 0)    { fieldError('f-cell-from', 'Нет остатков в этой ячейке'); return; }
-            if (qty > available + 1e-9) { fieldError('f-m', `Максимум: ${available.toFixed(2)} м`); return; }
+            if (!(qty > 0)) { fieldError('f-m', 'Укажите метраж > 0'); return; }
+            /* Ячейки необязательны — можно переместить просто между складами */
+            if (item.fromCell && !isKnownCell(item.fromCell)) {
+                fieldError('f-cell-from', `Ячейка ${item.fromCell} не найдена`); return;
+            }
+            if (item.toCell && !isKnownCell(item.toCell)) {
+                fieldError('f-cell-to', `Ячейка ${item.toCell} не найдена`); return;
+            }
+            /* Проверка остатков только если ячейка ОТКУДА указана */
+            if (item.fromCell) {
+                const available = getAvailableMeters(moveStockRowsCache, item.fromWh, item.fromCell);
+                if (available <= 0) { fieldError('f-cell-from', 'Нет остатков в этой ячейке'); return; }
+                if (qty > available + 1e-9) { fieldError('f-m', `Максимум: ${available.toFixed(2)} м`); return; }
+            }
             item.m = qty.toString();
             movePrefillSource = { wh: item.fromWh, cell: item.fromCell };
 
