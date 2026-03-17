@@ -643,6 +643,90 @@
         .doc-type-badge.stockin  { background:#f3e5f5; color:#4a148c; }
         .doc-type-badge.price    { background:#fff8e1; color:#e65100; }
 
+        /* ── Строка журнала — кнопки действий ── */
+        .row-actions-bar {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        .row-action-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--surface);
+            color: var(--text-sec);
+            font-size: 12px;
+            font-weight: 700;
+            padding: 0 10px;
+            min-height: 36px;
+            min-width: 72px;
+            cursor: pointer;
+            transition: background .15s, border-color .15s, color .15s;
+            white-space: nowrap;
+        }
+        .row-action-btn:active { transform: scale(0.96); }
+        .row-action-btn.print  { border-color: hsl(230 80% 56% / 0.25); }
+        .row-action-btn.print:hover  { background: hsl(230 80% 56% / 0.06); color: var(--primary); border-color: var(--primary); }
+        .row-action-btn.edit   { border-color: hsl(38 95% 55% / 0.3); }
+        .row-action-btn.edit:hover   { background: hsl(38 95% 55% / 0.06); color: var(--warning); border-color: var(--warning); }
+        .row-action-btn.del    { border-color: hsl(0 75% 55% / 0.2); }
+        .row-action-btn.del:hover    { background: hsl(0 75% 55% / 0.06); color: var(--danger); border-color: var(--danger); }
+        .row-action-ico { font-size: 15px; line-height: 1; }
+
+        /* ── Настройки — вкладки ── */
+        .settings-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0;
+        }
+        .settings-tab-btn {
+            padding: 8px 14px;
+            border-radius: 10px 10px 0 0;
+            font-size: 12px;
+            font-weight: 700;
+            border: 1.5px solid var(--border);
+            border-bottom: none;
+            background: var(--surface-muted);
+            color: var(--text-sec);
+            cursor: pointer;
+            min-height: 38px;
+            transition: .15s;
+            margin-bottom: -2px;
+        }
+        .settings-tab-btn.active {
+            background: var(--surface);
+            color: var(--primary);
+            border-color: var(--primary);
+            border-bottom: 2px solid var(--surface);
+        }
+        .settings-tab-pane { display: none; }
+        .settings-tab-pane.active { display: block; }
+
+        /* ── Настройки — статусная строка подключения ── */
+        .conn-status-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .conn-status-bar.ok      { background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
+        .conn-status-bar.error   { background: #ffebee; color: #b71c1c; border: 1px solid #ef9a9a; }
+        .conn-status-bar.unknown { background: var(--surface-muted); color: var(--text-sec); border: 1px solid var(--border); }
+        .conn-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+        .conn-dot.ok    { background: #43a047; }
+        .conn-dot.error { background: var(--danger); }
+        .conn-dot.unknown { background: #bbb; }
+
         /* ── Карточка документа — статус 1С ── */
         .doc-sync-badge {
             display:inline-flex; align-items:center; gap:3px;
@@ -1410,128 +1494,101 @@ body {
     <div class="modal-content">
         <div class="flex justify-between items-center mb-6"><h2 id="modal-settings-title">Настройки</h2><button class="btn-icon" aria-label="Закрыть настройки" onclick="closeSettings()">✕</button></div>
         <div id="settings-info-panel" class="settings-info-panel"></div>
-        <div class="settings-grid">
+        <!-- Статус подключения -->
+        <div id="conn-status-bar" class="conn-status-bar unknown">
+            <span class="conn-dot unknown" id="conn-dot"></span>
+            <span id="conn-status-text">Статус подключения к 1С не проверен</span>
+            <button class="btn-outline" style="margin-left:auto;font-size:12px;min-height:32px;padding:0 10px" onclick="test1CConnection()">Проверить</button>
+        </div>
 
-        <!-- ══ ГРУППА 1: ИНТЕГРАЦИЯ С 1С ══ -->
-        <div class="settings-section span-2">
-            <h3>ИНТЕГРАЦИЯ С 1С</h3>
-            <div class="light-block">
-                <div class="flex gap-2 mb-3" style="flex-wrap:wrap">
+        <!-- Вкладки настроек -->
+        <div class="settings-tabs">
+            <button class="settings-tab-btn active" onclick="switchSettingsTab('tab-1c', this)">🔗 1С и склады</button>
+            <button class="settings-tab-btn" onclick="switchSettingsTab('tab-print', this)">🖨️ Печать</button>
+            <button class="settings-tab-btn" onclick="switchSettingsTab('tab-form', this)">📋 Формы</button>
+            <button class="settings-tab-btn" onclick="switchSettingsTab('tab-security', this)">🔒 Доступ</button>
+            <button class="settings-tab-btn" onclick="switchSettingsTab('tab-diag', this)">🛠️ Данные</button>
+        </div>
+
+        <!-- ══ ВКЛАДКА 1: 1С и склады ══ -->
+        <div id="tab-1c" class="settings-tab-pane active">
+            <div class="light-block mb-3">
+                <label>URL сервера</label>
+                <div class="flex gap-2">
                     <input type="text" id="set-url" onchange="saveSets()" oninput="validateUrlField()"
-                        placeholder="http://адрес-сервера:3000" style="flex:1;min-width:200px">
-                    <button class="btn-outline" style="min-height:44px;padding:0 16px" onclick="test1CConnection()">📡 Проверить связь</button>
+                        placeholder="http://192.168.88.10:3000" style="flex:1">
                 </div>
                 <div id="set-url-hint" class="input-hint hidden">URL должен начинаться с http:// или https://</div>
-                <div class="flex gap-2 mb-2">
-                    <div style="flex:1"><label>Логин</label><input type="text" id="set-user" onchange="saveSets()"></div>
-                    <div style="flex:1"><label>Пароль</label><input type="password" id="set-pass" onchange="saveSets()"></div>
-                    <div style="flex:1"><label>API-ключ</label><input type="password" id="set-api-key" onchange="saveSets()" autocomplete="off"></div>
+                <div class="flex gap-2 mt-2">
+                    <div style="flex:1"><label>Логин 1С</label><input type="text" id="set-user" onchange="saveSets()" placeholder="admin"></div>
+                    <div style="flex:1"><label>Пароль 1С</label><input type="password" id="set-pass" onchange="saveSets()"></div>
                 </div>
-                <hr style="margin:12px 0;border:none;border-top:1px solid var(--border)">
-                <!-- Склады из 1С -->
+                <div class="input-group mt-2"><label>API-ключ</label><input type="password" id="set-api-key" onchange="saveSets()" autocomplete="off" placeholder="Секретный ключ"></div>
+                <button class="btn-primary w-full mt-3" style="height:48px" onclick="manualSync()">🔄 Полный обмен с 1С</button>
+            </div>
+
+            <div class="light-block">
                 <div class="flex justify-between items-center mb-2">
                     <strong style="font-size:13px">Склады</strong>
                     <div class="flex gap-2 items-center">
                         <span id="wh-sync-status" class="text-sm" style="color:var(--text-sec)"></span>
-                        <button class="btn-outline" style="font-size:13px;min-height:34px;padding:0 12px" onclick="syncWarehousesFrom1C()">🔄 Загрузить склады</button>
+                        <button class="btn-outline" style="font-size:13px;min-height:34px;padding:0 12px" onclick="syncWarehousesFrom1C()">🔄 Загрузить из 1С</button>
                     </div>
                 </div>
                 <div id="settings-warehouses" style="margin-bottom:8px"></div>
-                <p class="text-sm" style="color:var(--text-sec)">Склады и ячейки подтягиваются из 1С автоматически при работе с товарами.</p>
-                <hr style="margin:12px 0;border:none;border-top:1px solid var(--border)">
-                <div class="flex gap-2" style="flex-wrap:wrap">
-                    <button class="btn-outline" style="flex:1;min-width:160px" onclick="manualSync()">🔄 Полный обмен с 1С</button>
-                    <button class="btn-outline" style="flex:1;min-width:160px" onclick="changeManagerPassword()">🔑 Сменить пароль менеджера</button>
-                </div>
-                <div class="flex gap-2 mt-2">
-                    <input type="password" id="set-new-mgr-pass" placeholder="Новый пароль (мин. 4 симв.)" style="flex:1">
-                    <input type="password" id="set-new-mgr-pass-confirm" placeholder="Повторите пароль" style="flex:1">
-                </div>
-                <label class="checkbox-row mt-3">Разрешить ввод ячеек не из списка
+                <p class="text-sm" style="color:var(--text-sec);margin-bottom:10px">Склады и ячейки подтягиваются автоматически из остатков 1С.</p>
+                <label class="checkbox-row">Разрешить ввод ячеек не из списка
                     <input type="checkbox" id="set-allow-new-cells" onchange="saveSets()">
                 </label>
             </div>
         </div>
 
-        <!-- ══ ГРУППА 2: ФОРМА ПРИЁМКИ ══ -->
-        <div class="settings-section">
-            <h3>ФОРМА ПРИЁМКИ</h3>
-            <div class="light-block">
-                <label class="checkbox-row">Ширина <input type="checkbox" id="set-show-width" onchange="saveSets()"></label>
-                <label class="checkbox-row">Плотность (г/м²) <input type="checkbox" id="set-show-density" onchange="saveSets()"></label>
-                <label class="checkbox-row">Бренд <input type="checkbox" id="set-show-brand" onchange="saveSets()"></label>
-                <label class="checkbox-row">Состав <input type="checkbox" id="set-show-comp" onchange="saveSets()"></label>
-                <label class="checkbox-row">Полное наименование <input type="checkbox" id="set-show-fullname" onchange="saveSets()"></label>
-                <div class="input-group mt-2"><label>Наименование для печати (по умолчанию)</label><input type="text" id="set-print-name-default" onchange="saveSets()"></div>
-                <hr style="margin:10px 0;border:none;border-top:1px solid var(--border)">
-                <div class="flex gap-2">
-                    <div style="flex:1"><label>Префикс артикула</label><input type="text" id="set-prefix" onchange="saveSets()"></div>
-                    <div style="flex:1"><label>Следующий №</label><input type="number" id="set-next-num" onchange="saveSets()"></div>
+        <!-- ══ ВКЛАДКА 2: Печать ══ -->
+        <div id="tab-print" class="settings-tab-pane">
+            <!-- Метод печати -->
+            <div class="light-block mb-3">
+                <label>Метод печати</label>
+                <select id="set-print-method" onchange="togglePrintSettingsUI()">
+                    <option value="server">🖥️ Серверная (рекомендуется)</option>
+                    <option value="rawbt">📱 RawBT Android</option>
+                    <option value="printnode">☁️ PrintNode API</option>
+                </select>
+                <div id="printnode-block" style="display:none;margin-top:10px">
+                    <div class="input-group"><label>API Ключ PrintNode</label><input type="text" id="set-pn-key"></div>
+                    <div class="input-group"><label>ID Принтера PrintNode</label><input type="text" id="set-pn-printer"></div>
                 </div>
             </div>
-        </div>
 
-        <!-- ══ ГРУППА 3: БЕЗОПАСНОСТЬ ══ -->
-        <div class="settings-section">
-            <h3>БЕЗОПАСНОСТЬ</h3>
-            <div class="light-block">
-                <div class="input-group">
-                    <label>Автовыход менеджера (часов)</label>
-                    <input type="number" id="set-session-hours" min="0.25" max="24" step="0.25"
-                        placeholder="8" onchange="saveSets()"
-                        title="0.25 = 15 мин · 8 = смена">
-                </div>
-                <p class="text-sm" style="color:var(--text-sec);margin-top:4px">
-                    Сессия: <strong id="session-expires-label">—</strong>
-                </p>
-                <hr style="margin:10px 0;border:none;border-top:1px solid var(--border)">
-                <label class="checkbox-row">Режим разработки (без 1С) <input type="checkbox" id="set-dev-offline" onchange="saveSets()"></label>
-                <label class="checkbox-row">Демо-режим киоска <input type="checkbox" id="set-kiosk-demo" onchange="saveSets()"></label>
-            </div>
-        </div>
-
-        <!-- ══ ГРУППА 4: ПЕЧАТЬ ══ -->
-        <div class="settings-section span-2" id="server-printers-block">
-            <h3>ПЕЧАТЬ</h3>
-            <div class="light-block">
-                <div class="flex gap-2 items-center mb-3" style="flex-wrap:wrap">
-                    <div style="flex:1;min-width:180px">
-                        <label style="font-size:12px;color:var(--text-sec)">Метод печати</label>
-                        <select id="set-print-method" onchange="togglePrintSettingsUI()" style="margin-top:4px">
-                            <option value="server">Серверная (рекомендуется)</option>
-                            <option value="rawbt">RawBT Android</option>
-                            <option value="printnode">PrintNode API</option>
-                        </select>
-                    </div>
-                    <div style="flex:1;min-width:180px">
-                        <label style="font-size:12px;color:var(--text-sec)">Статус принтеров</label>
-                        <div class="flex gap-2 mt-1">
-                            <p id="server-printers-status" class="text-sm" style="color:var(--text-sec);margin:0;align-self:center">Не загружены</p>
-                            <button class="btn-outline" style="font-size:13px;min-height:34px;padding:0 12px" onclick="loadServerPrinters(true)">🔄 Обновить</button>
-                        </div>
+            <!-- Принтеры -->
+            <div class="light-block mb-3" id="server-printers-block">
+                <div class="flex justify-between items-center mb-3">
+                    <strong style="font-size:13px">Назначение принтеров</strong>
+                    <div class="flex gap-2 items-center">
+                        <span id="server-printers-status" class="text-sm" style="color:var(--text-sec)">Не загружены</span>
+                        <button class="btn-outline" style="font-size:12px;min-height:32px;padding:0 10px" onclick="loadServerPrinters(true)">🔄</button>
                     </div>
                 </div>
-                <!-- Назначение принтеров -->
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-                    <div class="input-group" style="margin:0"><label>Клиентская этикетка</label><select id="set-printer-client" onchange="saveSets()"></select></div>
-                    <div class="input-group" style="margin:0"><label>Складская этикетка</label><select id="set-printer-warehouse" onchange="saveSets()"></select></div>
-                    <div class="input-group" style="margin:0"><label>Хангер</label><select id="set-printer-hanger" onchange="saveSets()"></select></div>
-                    <div class="input-group" style="margin:0"><label>Лист A4</label><select id="set-printer-a4" onchange="saveSets()"></select></div>
+                    <div class="input-group" style="margin:0"><label>🏷️ Клиентская этикетка</label><select id="set-printer-client" onchange="saveSets()"></select></div>
+                    <div class="input-group" style="margin:0"><label>📦 Складская этикетка</label><select id="set-printer-warehouse" onchange="saveSets()"></select></div>
+                    <div class="input-group" style="margin:0"><label>🏠 Хангер</label><select id="set-printer-hanger" onchange="saveSets()"></select></div>
+                    <div class="input-group" style="margin:0"><label>📄 Лист A4</label><select id="set-printer-a4" onchange="saveSets()"></select></div>
                 </div>
-                <!-- Тест-печать -->
-                <div class="flex gap-2 mb-3">
-                    <button class="btn-outline w-full" style="font-size:13px" onclick="testPrint('client')">🖨 Тест клиент</button>
-                    <button class="btn-outline w-full" style="font-size:13px" onclick="testPrint('warehouse')">🖨 Тест склад</button>
-                    <button class="btn-outline w-full" style="font-size:13px" onclick="testPrint('hanger')">🖨 Тест хангер</button>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+                    <button class="btn-outline" style="font-size:12px;min-height:40px" onclick="testPrint('client')">🖨 Тест клиент</button>
+                    <button class="btn-outline" style="font-size:12px;min-height:40px" onclick="testPrint('warehouse')">🖨 Тест склад</button>
+                    <button class="btn-outline" style="font-size:12px;min-height:40px" onclick="testPrint('hanger')">🖨 Тест хангер</button>
                 </div>
-                <hr style="margin:12px 0;border:none;border-top:1px solid var(--border)">
-                <!-- Ручное добавление принтера -->
-                <div style="font-size:12px;font-weight:700;color:var(--text-sec);margin-bottom:6px">ДОБАВИТЬ ПРИНТЕР ВРУЧНУЮ</div>
+            </div>
+
+            <!-- Добавить принтер вручную -->
+            <div class="light-block mb-3">
+                <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:8px">ДОБАВИТЬ ПРИНТЕР ВРУЧНУЮ</strong>
                 <div id="custom-printers-list"></div>
                 <div class="flex gap-2 mt-2" id="add-printer-row" style="flex-wrap:wrap">
-                    <input type="text" id="new-printer-name" placeholder="Имя" style="flex:2;min-width:120px">
-                    <input type="text" id="new-printer-ip"   placeholder="IP-адрес" style="flex:1;min-width:100px">
-                    <input type="text" id="new-printer-port" placeholder="Порт" value="9100" style="width:70px">
+                    <input type="text" id="new-printer-name" placeholder="Имя принтера" style="flex:2;min-width:120px">
+                    <input type="text" id="new-printer-ip" placeholder="IP" style="flex:1;min-width:90px">
+                    <input type="text" id="new-printer-port" placeholder="Порт" value="9100" style="width:68px">
                     <select id="new-printer-type" style="flex:1;min-width:90px">
                         <option value="client">Клиент</option>
                         <option value="warehouse">Склад</option>
@@ -1541,55 +1598,99 @@ body {
                     <button class="btn-primary" style="min-width:44px" onclick="addCustomPrinter()">+</button>
                 </div>
             </div>
-        </div>
 
-        <!-- Шаблоны этикеток ZPL -->
-        <div class="settings-section span-2" id="label-templates-block">
-            <h3>ШАБЛОНЫ ЭТИКЕТОК (ZPL)</h3>
-            <div class="light-block">
-                <p class="text-sm" style="color:var(--text-sec);margin-bottom:10px">Шаблоны для принтеров Zebra. Нажмите на переменную чтобы вставить её в шаблон.</p>
+            <!-- ZPL шаблоны -->
+            <div class="light-block" id="label-templates-block">
+                <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:8px">ШАБЛОНЫ ЭТИКЕТОК (ZPL)</strong>
                 <div class="zpl-tabs">
-                    <button class="zpl-tab active" id="ztab-client"    onclick="switchZplTab('client')">Клиентская</button>
-                    <button class="zpl-tab"        id="ztab-warehouse" onclick="switchZplTab('warehouse')">Складская</button>
+                    <button class="zpl-tab active" id="ztab-client" onclick="switchZplTab('client')">Клиентская</button>
+                    <button class="zpl-tab" id="ztab-warehouse" onclick="switchZplTab('warehouse')">Складская</button>
                 </div>
                 <div class="zpl-vars" id="zpl-vars-list"></div>
                 <textarea class="zpl-editor" id="zpl-template-editor" oninput="onZplTemplateInput()"
                     placeholder="^XA&#10;^FO30,30^A0N,34,34^FD{{ARTICUL}}^FS&#10;^XZ"></textarea>
-                <div style="font-size:12px;color:var(--text-sec);margin-top:8px;margin-bottom:4px">Предпросмотр:</div>
+                <div style="font-size:11px;color:var(--text-sec);margin-top:6px;margin-bottom:4px">Предпросмотр:</div>
                 <div class="zpl-preview" id="zpl-preview-output"></div>
                 <div class="flex gap-2 mt-3">
                     <button class="btn-outline w-full" onclick="resetZplTemplate()">↺ Сбросить</button>
-                    <button class="btn-primary w-full" onclick="saveZplTemplate()">💾 Сохранить</button>
+                    <button class="btn-primary w-full" onclick="saveZplTemplate()">💾 Сохранить шаблон</button>
                 </div>
             </div>
         </div>
 
-        <!-- PrintNode (скрыт если не выбран) -->
-        <div class="settings-section" id="printnode-block">
-            <h3>PRINTNODE API</h3>
-            <div class="input-group"><label>API Ключ</label><input type="text" id="set-pn-key"></div>
-            <div class="input-group"><label>ID Принтера</label><input type="text" id="set-pn-printer"></div>
-            <div class="flex gap-2">
-                <button class="btn-outline w-full" onclick="showToast('Связь ОК')">Проверить</button>
-                <button class="btn-primary w-full" onclick="saveSets()">Сохранить</button>
+        <!-- ══ ВКЛАДКА 3: Формы ══ -->
+        <div id="tab-form" class="settings-tab-pane">
+            <div class="light-block mb-3">
+                <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:10px">ПОЛЯ В ФОРМЕ ПРИЁМКИ</strong>
+                <label class="checkbox-row" style="font-size:15px;padding:6px 0">Ширина ткани <input type="checkbox" id="set-show-width" onchange="saveSets()"></label>
+                <label class="checkbox-row" style="font-size:15px;padding:6px 0">Плотность (г/м²) <input type="checkbox" id="set-show-density" onchange="saveSets()"></label>
+                <label class="checkbox-row" style="font-size:15px;padding:6px 0">Бренд <input type="checkbox" id="set-show-brand" onchange="saveSets()"></label>
+                <label class="checkbox-row" style="font-size:15px;padding:6px 0">Состав <input type="checkbox" id="set-show-comp" onchange="saveSets()"></label>
+                <label class="checkbox-row" style="font-size:15px;padding:6px 0">Полное наименование <input type="checkbox" id="set-show-fullname" onchange="saveSets()"></label>
             </div>
-        </div>
-
-        <!-- Диагностика -->
-        <div class="settings-section span-2">
-            <h3>ДИАГНОСТИКА</h3>
+            <div class="light-block mb-3">
+                <div class="input-group"><label>Наименование для печати (по умолчанию)</label>
+                    <input type="text" id="set-print-name-default" onchange="saveSets()" placeholder="Оставьте пустым — будет запрошено при приёмке"></div>
+            </div>
             <div class="light-block">
-                <div class="flex gap-2" style="flex-wrap:wrap">
-                    <button class="btn-outline" style="flex:1;min-width:140px" onclick="openLogsModal()">📋 Логи ошибок</button>
-                    <button class="btn-outline" style="flex:1;min-width:140px" onclick="exportData()">💾 Экспорт данных</button>
-                    <input type="file" id="settings-import-file" class="hidden" accept="application/json" onchange="importData(event)">
-                    <button class="btn-outline" style="flex:1;min-width:140px" onclick="document.getElementById('settings-import-file').click()">📥 Импорт данных</button>
+                <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:8px">СЧЁТЧИК АРТИКУЛОВ</strong>
+                <div class="flex gap-2">
+                    <div style="flex:1"><label>Префикс</label><input type="text" id="set-prefix" onchange="saveSets()" placeholder="R26"></div>
+                    <div style="flex:1"><label>Следующий номер</label><input type="number" id="set-next-num" onchange="saveSets()"></div>
                 </div>
+                <p class="text-sm mt-2" style="color:var(--text-sec)">Пример: R26-0001 — автоматически подставляется в форму приёмки</p>
             </div>
         </div>
 
+        <!-- ══ ВКЛАДКА 4: Доступ ══ -->
+        <div id="tab-security" class="settings-tab-pane">
+            <div class="light-block mb-3">
+                <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:10px">ПАРОЛЬ МЕНЕДЖЕРА</strong>
+                <div class="input-group"><label>Новый пароль (мин. 4 символа)</label>
+                    <input type="password" id="set-new-mgr-pass" placeholder="••••"></div>
+                <div class="input-group"><label>Повторите пароль</label>
+                    <input type="password" id="set-new-mgr-pass-confirm" placeholder="••••"></div>
+                <button class="btn-primary w-full mt-2" style="height:48px" onclick="changeManagerPassword()">🔑 Сохранить новый пароль</button>
+            </div>
+            <div class="light-block mb-3">
+                <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:8px">СЕССИЯ</strong>
+                <div class="input-group">
+                    <label>Автовыход через (часов)</label>
+                    <input type="number" id="set-session-hours" min="0.25" max="24" step="0.25"
+                        placeholder="8" onchange="saveSets()">
+                </div>
+                <p class="text-sm" style="color:var(--text-sec);margin-top:4px">
+                    Истекает: <strong id="session-expires-label">—</strong>
+                </p>
+            </div>
+            <div class="light-block">
+                <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:8px">РЕЖИМЫ РАБОТЫ</strong>
+                <label class="checkbox-row" style="font-size:15px;padding:6px 0">Режим разработки (без 1С)
+                    <input type="checkbox" id="set-dev-offline" onchange="saveSets()"></label>
+                <label class="checkbox-row" style="font-size:15px;padding:6px 0">Демо-режим киоска
+                    <input type="checkbox" id="set-kiosk-demo" onchange="saveSets()"></label>
+            </div>
         </div>
-        <button class="btn-success w-full mt-3" style="height: 60px;" onclick="closeSettings()">ГОТОВО</button>
+
+        <!-- ══ ВКЛАДКА 5: Данные ══ -->
+        <div id="tab-diag" class="settings-tab-pane">
+            <div class="light-block mb-3">
+                <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:10px">ХРАНИЛИЩЕ</strong>
+                <div id="settings-info-panel" style="margin-bottom:0"></div>
+            </div>
+            <div class="light-block mb-3">
+                <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:10px">РЕЗЕРВНАЯ КОПИЯ</strong>
+                <button class="btn-outline w-full mb-2" style="height:48px" onclick="exportData()">💾 Экспорт данных (JSON)</button>
+                <input type="file" id="settings-import-file" class="hidden" accept="application/json" onchange="importData(event)">
+                <button class="btn-outline w-full" style="height:48px" onclick="document.getElementById('settings-import-file').click()">📥 Импорт данных из файла</button>
+            </div>
+            <div class="light-block">
+                <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:10px">ЖУРНАЛ ОШИБОК</strong>
+                <button class="btn-outline w-full" style="height:48px" onclick="openLogsModal()">📋 Открыть журнал ошибок</button>
+            </div>
+        </div>
+
+        <button class="btn-success w-full mt-4" style="height: 60px; font-size:17px;" onclick="closeSettings()">✓ ГОТОВО</button>
     </div>
 </div>
 
@@ -5363,27 +5464,32 @@ body {
             left.append(rowNum, content);
 
             const actions = document.createElement('div');
-            actions.className = 'flex gap-2';
+            actions.className = 'row-actions-bar';
+
+            /* Печать — всегда видна */
             const printBtn = document.createElement('button');
-            printBtn.className = 'btn-icon';
+            printBtn.className = 'row-action-btn print';
             printBtn.type = 'button';
-            printBtn.textContent = '🖨️';
             printBtn.setAttribute('aria-label', 'Печать этикетки');
+            printBtn.innerHTML = '<span class="row-action-ico">🖨️</span><span>Печать</span>';
             printBtn.onclick = () => printLabelForItem(it);
             actions.append(printBtn);
+
             if (d.status === 'active') {
+                /* Редактировать */
                 const editBtn = document.createElement('button');
-                editBtn.className = 'btn-icon';
+                editBtn.className = 'row-action-btn edit';
                 editBtn.type = 'button';
-                editBtn.textContent = '✏️';
                 editBtn.setAttribute('aria-label', 'Редактировать строку');
+                editBtn.innerHTML = '<span class="row-action-ico">✏️</span><span>Изменить</span>';
                 editBtn.onclick = () => editItem(it.id);
 
+                /* Удалить */
                 const delBtn = document.createElement('button');
-                delBtn.className = 'btn-icon text-danger';
+                delBtn.className = 'row-action-btn del';
                 delBtn.type = 'button';
-                delBtn.textContent = '🗑️';
                 delBtn.setAttribute('aria-label', 'Удалить строку');
+                delBtn.innerHTML = '<span class="row-action-ico">🗑️</span><span>Удалить</span>';
                 delBtn.onclick = () => delRow(it.id);
 
                 actions.append(editBtn, delBtn);
@@ -5589,7 +5695,11 @@ body {
             ?.addEventListener('click', () => clearTimeout(timer), { once: true });
     }
 
-    async function openSettings() { document.getElementById('set-show-width').checked = sets.showWidth !== false; document.getElementById('set-show-density').checked = sets.showDensity !== false; document.getElementById('set-show-brand').checked = sets.showBrand !== false; document.getElementById('set-show-comp').checked = sets.showComp !== false; document.getElementById('set-show-fullname').checked = sets.showFullName === true; document.getElementById('set-print-name-default').value = sets.printNameDefault || ''; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-api-key').value = sets.apiKey || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "server"; document.getElementById('set-kiosk-demo').checked = sets.kioskDemoMode !== false; document.getElementById('set-dev-offline').checked = isDemoMode; document.getElementById('set-allow-new-cells').checked = sets.allowNewCells === true; togglePrintSettingsUI(); renderSettingsWh(); renderSettingsInfoPanel(); validateUrlField(); await loadServerPrinters();
+    async function openSettings() {
+        /* Сбрасываем на первую вкладку при каждом открытии */
+        switchSettingsTab('tab-1c', document.querySelector('.settings-tab-btn'));
+        updateConnStatus('unknown', 'Статус подключения к 1С не проверен');
+        document.getElementById('set-show-width').checked = sets.showWidth !== false; document.getElementById('set-show-density').checked = sets.showDensity !== false; document.getElementById('set-show-brand').checked = sets.showBrand !== false; document.getElementById('set-show-comp').checked = sets.showComp !== false; document.getElementById('set-show-fullname').checked = sets.showFullName === true; document.getElementById('set-print-name-default').value = sets.printNameDefault || ''; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-api-key').value = sets.apiKey || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "server"; document.getElementById('set-kiosk-demo').checked = sets.kioskDemoMode !== false; document.getElementById('set-dev-offline').checked = isDemoMode; document.getElementById('set-allow-new-cells').checked = sets.allowNewCells === true; togglePrintSettingsUI(); renderSettingsWh(); renderSettingsInfoPanel(); validateUrlField(); await loadServerPrinters();
         const shEl = document.getElementById('set-session-hours');
         if (shEl) shEl.value = sets.sessionHours ?? MGR_SESSION_DEFAULT_HOURS;
         renderKnownCellsSettings();
@@ -5759,6 +5869,30 @@ body {
             showApiError({ endpoint: '/cells', status: 'net', msg: 'Не удалось загрузить ячейки' });
             logError(`syncCellsFrom1C: ${e.message}`);
         }
+    }
+
+    /* Переключение вкладок настроек */
+    function switchSettingsTab(tabId, btn) {
+        document.querySelectorAll('.settings-tab-pane').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.settings-tab-btn').forEach(b => b.classList.remove('active'));
+        const pane = document.getElementById(tabId);
+        if (pane) pane.classList.add('active');
+        if (btn) btn.classList.add('active');
+        /* Инициализируем ZPL редактор при переходе на вкладку печати */
+        if (tabId === 'tab-print') { renderZplVars(); switchZplTab(_zplCurrentTab || 'client'); }
+        /* Обновляем инфо-панель при переходе на вкладку данных */
+        if (tabId === 'tab-diag') renderSettingsInfoPanel();
+    }
+
+    /* Обновляем статусную строку подключения */
+    function updateConnStatus(state, text) {
+        const bar  = document.getElementById('conn-status-bar');
+        const dot  = document.getElementById('conn-dot');
+        const txt  = document.getElementById('conn-status-text');
+        if (!bar || !dot || !txt) return;
+        bar.className  = 'conn-status-bar ' + state;
+        dot.className  = 'conn-dot ' + state;
+        txt.textContent = text;
     }
 
     function closeSettings() { saveSets(); closeModal('modal-settings'); }
@@ -6072,18 +6206,25 @@ body {
 
     async function test1CConnection() {
         const url = document.getElementById('set-url').value; const user = document.getElementById('set-user').value; const pass = document.getElementById('set-pass').value;
-        if (isDemoMode) { showToast('DEV-режим: связь с 1С не требуется', 'success'); return; }
+        if (isDemoMode) {
+            updateConnStatus('ok', 'DEV-режим: связь с 1С не требуется');
+            showToast('DEV-режим: связь с 1С не требуется', 'success'); return;
+        }
         if (!url) { showToast("Сначала введите URL", "danger"); return; }
+        updateConnStatus('unknown', 'Проверяем связь...');
         showToast("Проверка связи...");
         try {
             const res = await apiFetch(`${url}/product?id=ping`,
                 { headers: { 'Authorization': 'Basic ' + btoa(user + ':' + pass) } });
             if (res.ok || res.status === 404) {
+                updateConnStatus('ok', `✓ Связь с 1С установлена · ${url}`);
                 showToast('Связь с 1С установлена!', 'success');
             } else {
+                updateConnStatus('error', `Ошибка HTTP ${res.status} · проверьте URL и данные`);
                 showApiError({ endpoint: '/product', status: res.status, msg: 'Проверьте URL и учётные данные' });
             }
         } catch (e) {
+            updateConnStatus('error', 'Сервер 1С недоступен · проверьте сеть и URL');
             showApiError({ endpoint: '/product', status: 'net', msg: 'Нет ответа от сервера 1С' });
             logError(`Тест 1С: ${e.message}`);
         }
