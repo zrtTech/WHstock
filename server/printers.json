@@ -1,6 +1,28 @@
 [
-  { "name": "Zebra_Client", "type": "tcp", "ip": "192.168.1.101", "port": 9100, "defaultFor": "client-label" },
-  { "name": "Zebra_Warehouse", "type": "tcp", "ip": "192.168.1.102", "port": 9100, "defaultFor": "warehouse-label" },
-  { "name": "HP_A4_Office", "type": "windows", "windowsName": "HP LaserJet", "defaultFor": "a4" },
-  { "name": "Hanger_Printer", "type": "windows", "windowsName": "ZARTEX Hanger", "defaultFor": "hanger" }
+  {
+    "name": "Zebra_Client",
+    "type": "tcp",
+    "ip": "192.168.88.102",
+    "port": 9100,
+    "defaultFor": "client-label"
+  },
+  {
+    "name": "Zebra_Warehouse",
+    "type": "tcp",
+    "ip": "192.168.88.102",
+    "port": 9100,
+    "defaultFor": "warehouse-label"
+  },
+  {
+    "name": "HP_A4_Office",
+    "type": "tcp",
+    "defaultFor": "a4",
+    "ip": "192.168.88.74"
+  },
+  {
+    "name": "Hanger_Printer",
+    "type": "windows",
+    "windowsName": "\\\\192.168.88.19\\ZebraGK",
+    "defaultFor": "hanger"
+  }
 ]

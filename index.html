@@ -1694,7 +1694,7 @@ body {
 </div>
 
 <div id="modal-search" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modal-search-title"><div class="modal-content"><h2 id="modal-search-title">Поиск</h2><input type="text" id="manual-search-input" placeholder="Введите код или артикул..." autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters" inputmode="text" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter'){ event.stopPropagation(); doManualSearch(); }"><div class="flex gap-2 mt-4"><button class="btn-outline w-full" onclick="closeModal('modal-search')">Отмена</button><button class="btn-primary w-full" onclick="doManualSearch()">Найти</button></div></div></div>
-<div id="modal-login" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modal-login-title"><div class="modal-content" style="text-align:center"><h2 id="modal-login-title">Вход персонала</h2><input type="password" id="login-pass" placeholder="Пароль" autocomplete="new-password" autocorrect="off" spellcheck="false" autocapitalize="none" style="font-size:24px; text-align:center;" onkeydown="if(event.key==='Enter'){ event.stopPropagation(); doLogin(); }"><button class="btn-primary w-full" onclick="doLogin()">Войти</button><button class="btn-outline w-full mt-2" onclick="loginDemo()">Демо-режим</button><button class="btn-outline w-full mt-2" onclick="closeModal('modal-login')">Назад</button></div></div>
+<div id="modal-login" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modal-login-title"><div class="modal-content" style="text-align:center"><h2 id="modal-login-title">Вход персонала</h2><p id="login-hint" style="font-size:12px;color:#888;margin:4px 0 8px">Дефолтный пароль: 1234</p><input type="password" id="login-pass" placeholder="Пароль" autocomplete="new-password" autocorrect="off" spellcheck="false" autocapitalize="none" style="font-size:24px; text-align:center;" onkeydown="if(event.key==='Enter'){ event.stopPropagation(); doLogin(); }"><button class="btn-primary w-full" onclick="doLogin()">Войти</button><button class="btn-outline w-full mt-2" onclick="loginDemo()">Демо-режим</button><button class="btn-outline w-full mt-2" onclick="closeModal('modal-login')">Назад</button></div></div>
 <div id="modal-product-edit" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modal-product-edit-title">
     <div class="modal-content">
         <h2 id="modal-product-edit-title">Изменение номенклатуры</h2>
@@ -2028,7 +2028,7 @@ body {
     }
 
     /* ДАННЫЕ */
-    const defSets = { url:"", user:"", pass:"", apiKey:"", mgr:"", warehouses:[], prefix:"R26", nextNum:1, showWidth:true, showDensity:true, showBrand:true, showComp:true, showFullName:false, printNameDefault:"", printMethod: "server", pnKey:"", pnPrinter:"", printerClient:"", printerWarehouse:"", printerHanger:"", printerA4:"", mgrHash:"", kioskDemoMode:false, devOfflineMode:false, allowNewCells:false, sessionHours:8, knownCells:[] };
+    const defSets = { url:"", user:"", pass:"", apiKey:"", mgr:"1234", warehouses:[], prefix:"R26", nextNum:1, showWidth:true, showDensity:true, showBrand:true, showComp:true, showFullName:false, printNameDefault:"", printMethod: "server", pnKey:"", pnPrinter:"", printerClient:"", printerWarehouse:"", printerHanger:"", printerA4:"", mgrHash:"", kioskDemoMode:false, devOfflineMode:false, allowNewCells:false, sessionHours:8, knownCells:[] };
     let sets = { ...defSets, ...safeLoad('tsd_final_sets', defSets) };
     /* Склады берутся из 1С через syncWarehousesFrom1С в настройках.
        Если пустые — пользователь увидит подсказку в секции «Склады». */
@@ -4817,7 +4817,14 @@ body {
     /* МЕНЕДЖЕР */
     async function doLogin() { const pass = document.getElementById('login-pass').value; if(await verifyManagerPassword(pass)){ if (loginMode === 'customer') enterCustomerManagerMode(); else loginSuccess(); closeModal('modal-login'); } else showToast("Ошибка", "danger"); }
     function loginDemo() { isDemoMode = true; if (loginMode === 'customer') enterCustomerManagerMode(); else loginSuccess(); closeModal('modal-login'); showToast('Демо-режим включён'); }
-    function openLogin(mode = 'full') { loginMode = mode; document.getElementById('login-pass').value = ''; openModal('modal-login'); setTimeout(() => document.getElementById('login-pass').focus(), 300); }
+    function openLogin(mode = 'full') {
+        loginMode = mode;
+        document.getElementById('login-pass').value = '';
+        const hint = document.getElementById('login-hint');
+        if (hint) hint.style.display = sets.mgrHash ? 'none' : 'block';
+        openModal('modal-login');
+        setTimeout(() => document.getElementById('login-pass').focus(), 300);
+    }
     function loginSuccess() {
         isMgr = true;
         startMgrSessionTimer();
