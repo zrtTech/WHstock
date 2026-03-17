@@ -32,14 +32,14 @@
   "screenshots": [
     {
       "src": "/screenshots/screenshot1.png",
-      "sizes": "1366x768",
+      "sizes": "1920x1080",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Главный экран приложения"
     },
     {
       "src": "/screenshots/screenshot2.png",
-      "sizes": "540x1200",
+      "sizes": "400x942",
       "type": "image/png",
       "label": "Рабочий экран на мобильном устройстве"
     }
