@@ -1,10 +1,10 @@
 {
-  "id": "/whstock/",
+  "id": "/",
   "name": "Складской Терминал",
   "short_name": "Склад",
   "description": "PWA-приложение для учёта тканей и товаров на складе",
-  "start_url": "./index.html",
-  "scope": "./",
+  "start_url": "/index.html",
+  "scope": "/",
   "display": "standalone",
   "orientation": "any",
   "theme_color": "#2563eb",
@@ -13,31 +13,49 @@
   "categories": ["business", "productivity"],
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%232563eb'/%3E%3Cpath d='M100 200 L256 110 L412 200 L412 370 Q412 390 392 390 L120 390 Q100 390 100 370 Z' fill='white' opacity='0.15'/%3E%3Cpath d='M100 200 L256 110 L412 200' stroke='white' stroke-width='22' fill='none' stroke-linejoin='round' stroke-linecap='round'/%3E%3Crect x='140' y='210' width='232' height='180' rx='12' fill='white' opacity='0.95'/%3E%3Crect x='170' y='240' width='70' height='70' rx='8' fill='%232563eb'/%3E%3Crect x='272' y='240' width='70' height='28' rx='6' fill='%232563eb' opacity='0.4'/%3E%3Crect x='272' y='278' width='50' height='28' rx='6' fill='%232563eb' opacity='0.25'/%3E%3Crect x='170' y='322' width='172' height='16' rx='6' fill='%232563eb' opacity='0.2'/%3E%3C/svg%3E",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
+      "src": "/icons/web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
     },
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%232563eb'/%3E%3Cpath d='M100 200 L256 110 L412 200' stroke='white' stroke-width='22' fill='none' stroke-linejoin='round' stroke-linecap='round'/%3E%3Crect x='140' y='210' width='232' height='180' rx='12' fill='white' opacity='0.95'/%3E%3Crect x='170' y='240' width='70' height='70' rx='8' fill='%232563eb'/%3E%3Crect x='272' y='240' width='70' height='28' rx='6' fill='%232563eb' opacity='0.4'/%3E%3Crect x='272' y='278' width='50' height='28' rx='6' fill='%232563eb' opacity='0.25'/%3E%3Crect x='170' y='322' width='172' height='16' rx='6' fill='%232563eb' opacity='0.2'/%3E%3C/svg%3E",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/icons/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ],
-  "screenshots": [],
+  "screenshots": [
+    {
+      "src": "/screenshots/desktop-home.png",
+      "sizes": "1366x768",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Главный экран приложения"
+    },
+    {
+      "src": "/screenshots/mobile-work.png",
+      "sizes": "540x1200",
+      "type": "image/png",
+      "label": "Рабочий экран на мобильном устройстве"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Приёмка",
       "short_name": "Приёмка",
       "description": "Открыть документы приёмки",
-      "url": "./index.html#receive"
+      "url": "/index.html#receive"
     },
     {
       "name": "Перемещение",
       "short_name": "Перемещение",
       "description": "Открыть документы перемещения",
-      "url": "./index.html#move"
+      "url": "/index.html#move"
     }
   ]
 }

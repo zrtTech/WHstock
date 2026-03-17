@@ -36,9 +36,11 @@ self.addEventListener('fetch', event => {
     /* API-запросы к 1С / серверу печати — только сеть, без кэша */
     if (url.pathname.includes('/product') ||
         url.pathname.includes('/post-document') ||
+        url.pathname.includes('/update-product') ||
         url.pathname.includes('/print') ||
         url.pathname.includes('/printers') ||
         url.pathname.includes('/trigger-sync') ||
+        url.pathname.includes('/cells') ||
         url.hostname === 'api.printnode.com') {
         event.respondWith(fetch(event.request));
         return;

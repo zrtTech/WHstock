@@ -3,24 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>Складской Терминал</title>
+    <meta name="description" content="Учёт тканей и товаров на складе">
+
+    <!-- PWA -->
+    <meta name="theme-color" content="#2563eb">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Склад">
     <meta name="application-name" content="Складской Терминал">
-    <meta name="description" content="Учёт тканей и товаров на складе">
-    <title>Складской Терминал</title>
 
-    <!-- Настройки PWA -->
-    <meta name="theme-color" content="#1976D2">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Склад">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="icons/favicon-96x96.png">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%231976D2'/%3E%3Cpath d='M256 120L120 188v136l136 68 136-68V188L256 120z' fill='%23fff'/%3E%3C/svg%3E">
-    <link rel="manifest" href="manifest.webmanifest">
 
     <style>
         :root {
@@ -630,6 +631,114 @@
             background:#f8f9fa; border:1px solid var(--border); border-radius:8px;
             padding:10px; white-space:pre-wrap; word-break:break-all;
             max-height:100px; overflow-y:auto; color:var(--text-sec); margin-top:8px; }
+
+        /* ── Тип документа — бейдж на экране работы ── */
+        .doc-type-badge {
+            display:inline-flex; align-items:center; gap:5px;
+            font-size:12px; font-weight:800; padding:3px 10px;
+            border-radius:6px; letter-spacing:.3px;
+        }
+        .doc-type-badge.receive  { background:#e8f5e9; color:#1b5e20; }
+        .doc-type-badge.move     { background:#e3f2fd; color:#0d47a1; }
+        .doc-type-badge.writeoff { background:#fce4ec; color:#880e4f; }
+        .doc-type-badge.stockin  { background:#f3e5f5; color:#4a148c; }
+        .doc-type-badge.price    { background:#fff8e1; color:#e65100; }
+
+        /* ── Строка журнала — кнопки действий ── */
+        .row-actions-bar {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        .row-action-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--surface);
+            color: var(--text-sec);
+            font-size: 12px;
+            font-weight: 700;
+            padding: 0 10px;
+            min-height: 36px;
+            min-width: 72px;
+            cursor: pointer;
+            transition: background .15s, border-color .15s, color .15s;
+            white-space: nowrap;
+        }
+        .row-action-btn:active { transform: scale(0.96); }
+        .row-action-btn.print  { border-color: hsl(230 80% 56% / 0.25); }
+        .row-action-btn.print:hover  { background: hsl(230 80% 56% / 0.06); color: var(--primary); border-color: var(--primary); }
+        .row-action-btn.edit   { border-color: hsl(38 95% 55% / 0.3); }
+        .row-action-btn.edit:hover   { background: hsl(38 95% 55% / 0.06); color: var(--warning); border-color: var(--warning); }
+        .row-action-btn.del    { border-color: hsl(0 75% 55% / 0.2); }
+        .row-action-btn.del:hover    { background: hsl(0 75% 55% / 0.06); color: var(--danger); border-color: var(--danger); }
+        .row-action-ico { font-size: 15px; line-height: 1; }
+
+        /* ── Настройки — вкладки ── */
+        .settings-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0;
+        }
+        .settings-tab-btn {
+            padding: 8px 14px;
+            border-radius: 10px 10px 0 0;
+            font-size: 12px;
+            font-weight: 700;
+            border: 1.5px solid var(--border);
+            border-bottom: none;
+            background: var(--surface-muted);
+            color: var(--text-sec);
+            cursor: pointer;
+            min-height: 38px;
+            transition: .15s;
+            margin-bottom: -2px;
+        }
+        .settings-tab-btn.active {
+            background: var(--surface);
+            color: var(--primary);
+            border-color: var(--primary);
+            border-bottom: 2px solid var(--surface);
+        }
+        .settings-tab-pane { display: none; }
+        .settings-tab-pane.active { display: block; }
+
+        /* ── Настройки — статусная строка подключения ── */
+        .conn-status-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .conn-status-bar.ok      { background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
+        .conn-status-bar.error   { background: #ffebee; color: #b71c1c; border: 1px solid #ef9a9a; }
+        .conn-status-bar.unknown { background: var(--surface-muted); color: var(--text-sec); border: 1px solid var(--border); }
+        .conn-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+        .conn-dot.ok    { background: #43a047; }
+        .conn-dot.error { background: var(--danger); }
+        .conn-dot.unknown { background: #bbb; }
+
+        /* ── Карточка документа — статус 1С ── */
+        .doc-sync-badge {
+            display:inline-flex; align-items:center; gap:3px;
+            font-size:11px; font-weight:700; padding:2px 7px; border-radius:6px;
+            margin-top:4px;
+        }
+        .doc-sync-badge.sent    { background:#e8f5e9; color:#2e7d32; }
+        .doc-sync-badge.pending { background:#fff3e0; color:#e65100; }
+        .doc-sync-badge.error   { background:#ffebee; color:#c62828; }
+        .doc-sync-badge.none    { background:#f5f5f5; color:#9e9e9e; }
+        .doc-card-items { font-size:13px; color:var(--text-sec); margin:2px 0; }
 
         /* ── Outbox / Sync статусы ── */
         .sync-badge {
@@ -1337,6 +1446,9 @@ body {
                         <button class="btn-icon text-success" id="btn-complete-doc" onclick="completeDoc()">✅ Готово</button>
                     </div>
                 </div>
+                <div class="flex items-center gap-2 mb-1">
+                    <span id="work-type-badge" class="doc-type-badge"></span>
+                </div>
                 <h2 id="work-title">Документ</h2>
                 <div class="flex justify-between items-center mt-1">
                     <span id="work-status" class="monospace text-sm font-bold">АКТИВЕН</span>
@@ -1383,113 +1495,102 @@ body {
     <div class="modal-content">
         <div class="flex justify-between items-center mb-6"><h2 id="modal-settings-title">Настройки</h2><button class="btn-icon" aria-label="Закрыть настройки" onclick="closeSettings()">✕</button></div>
         <div id="settings-info-panel" class="settings-info-panel"></div>
-        <div class="settings-grid">
-        <div class="settings-section">
-            <h3>ДИАГНОСТИКА</h3>
-            <div class="light-block">
-                <button class="btn-outline w-full mb-2" onclick="openLogsModal()">📋 Посмотреть логи ошибок</button>
-                <button class="btn-outline w-full mb-2" onclick="exportData()">💾 Экспорт данных</button>
-                <input type="file" id="settings-import-file" class="hidden" accept="application/json" onchange="importData(event)">
-                <button class="btn-outline w-full mb-2" onclick="document.getElementById('settings-import-file').click()">📥 Импорт данных</button>
-                <label class="checkbox-row">Режим разработки (без 1С) <input type="checkbox" id="set-dev-offline" onchange="saveSets()"></label>
-                <label class="checkbox-row">Демо-режим поиска в киоске <input type="checkbox" id="set-kiosk-demo" onchange="saveSets()"></label>
-            </div>
+        <!-- Статус подключения -->
+        <div id="conn-status-bar" class="conn-status-bar unknown">
+            <span class="conn-dot unknown" id="conn-dot"></span>
+            <span id="conn-status-text">Статус подключения к 1С не проверен</span>
+            <button class="btn-outline" style="margin-left:auto;font-size:12px;min-height:32px;padding:0 10px" onclick="test1CConnection()">Проверить</button>
         </div>
 
-        <div class="settings-section">
-            <h3>БЕЗОПАСНОСТЬ СЕССИИ</h3>
-            <div class="light-block">
-                <div class="input-group">
-                    <label>Автовыход через (часов)</label>
-                    <input type="number" id="set-session-hours" min="0.25" max="24" step="0.25"
-                           placeholder="8" onchange="saveSets()"
-                           title="0.25 = 15 мин · 4 = 4 ч · 8 = смена · 0 = без ограничений">
+        <!-- Вкладки настроек -->
+        <div class="settings-tabs">
+            <button class="settings-tab-btn active" onclick="switchSettingsTab('tab-1c', this)">🔗 1С и склады</button>
+            <button class="settings-tab-btn" onclick="switchSettingsTab('tab-print', this)">🖨️ Печать</button>
+            <button class="settings-tab-btn" onclick="switchSettingsTab('tab-form', this)">📋 Формы</button>
+            <button class="settings-tab-btn" onclick="switchSettingsTab('tab-security', this)">🔒 Доступ</button>
+            <button class="settings-tab-btn" onclick="switchSettingsTab('tab-diag', this)">🛠️ Данные</button>
+        </div>
+
+        <!-- ══ ВКЛАДКА 1: 1С и склады ══ -->
+        <div id="tab-1c" class="settings-tab-pane active">
+            <div class="light-block mb-3">
+                <label>URL сервера</label>
+                <div class="flex gap-2">
+                    <input type="text" id="set-url" onchange="saveSets()" oninput="validateUrlField()"
+                        placeholder="http://192.168.88.10:3000" style="flex:1">
                 </div>
-                <p class="text-sm" style="color:var(--text-sec);margin-top:4px;">
-                    Менеджер будет автоматически разлогинен после указанного времени бездействия.
-                    Текущая сессия: <strong id="session-expires-label">—</strong>
-                </p>
+                <div id="set-url-hint" class="input-hint hidden">URL должен начинаться с http:// или https://</div>
+                <div class="flex gap-2 mt-2">
+                    <div style="flex:1"><label>Логин 1С</label><input type="text" id="set-user" onchange="saveSets()" placeholder="admin"></div>
+                    <div style="flex:1"><label>Пароль 1С</label><input type="password" id="set-pass" onchange="saveSets()"></div>
+                </div>
+                <div class="input-group mt-2"><label>API-ключ</label><input type="password" id="set-api-key" onchange="saveSets()" autocomplete="off" placeholder="Секретный ключ"></div>
+                <button class="btn-primary w-full mt-3" style="height:48px" onclick="manualSync()">🔄 Полный обмен с 1С</button>
             </div>
-        </div>
 
-        <div class="settings-section">
-            <h3>МЕТОД ПЕЧАТИ</h3>
-            <div class="light-block">
-                <select id="set-print-method" onchange="togglePrintSettingsUI()">
-                    <option value="server">Серверная печать (рекомендуется)</option>
-                    <option value="rawbt">Бесплатный (Android RawBT)</option>
-                    <option value="printnode">Платный (PrintNode API)</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="settings-section">
-            <h3>ПОЛЯ В ФОРМЕ ПРИЁМКИ</h3>
-            <div class="light-block">
-                <label class="checkbox-row">Показывать поле «Ширина» <input type="checkbox" id="set-show-width" onchange="saveSets()"></label>
-                <label class="checkbox-row">Показывать поле «Плотность (г/м²)» <input type="checkbox" id="set-show-density" onchange="saveSets()"></label>
-                <label class="checkbox-row">Показывать поле «Бренд» <input type="checkbox" id="set-show-brand" onchange="saveSets()"></label>
-                <label class="checkbox-row">Показывать поле «Состав» <input type="checkbox" id="set-show-comp" onchange="saveSets()"></label>
-                <label class="checkbox-row">Показывать поле «Полное наименование» <input type="checkbox" id="set-show-fullname" onchange="saveSets()"></label>
-                <div class="input-group"><label>Наименование для печати (по умолчанию)</label><input type="text" id="set-print-name-default" onchange="saveSets()"></div>
-            </div>
-        </div>
-
-        <div class="settings-section">
-            <h3>СЧЁТЧИК АРТИКУЛОВ</h3>
-            <div class="flex gap-2">
-                <div style="flex:1"><label>Префикс</label><input type="text" id="set-prefix" onchange="saveSets()"></div>
-                <div style="flex:1"><label>Следующий номер</label><input type="number" id="set-next-num" onchange="saveSets()"></div>
-            </div>
-        </div>
-
-        <div class="settings-section">
-            <h3>СКЛАДЫ</h3>
-            <div id="settings-warehouses"></div>
-            <div class="flex gap-2 mt-2"><input type="text" id="new-wh-name" placeholder="Новый склад" style="margin:0" onkeydown="if(event.key==='Enter') addWh()"><button class="btn-outline" style="min-width: 48px;" onclick="addWh()">+</button></div>
-            <button class="btn-primary w-full mt-3" onclick="saveSets()">Сохранить склады</button>
-            <!-- allowNewCells перенесён в секцию "Ячейки склада" ниже -->
-        </div>
-
-
-
-        <div class="settings-section span-2">
-            <h3>ЯЧЕЙКИ СКЛАДА</h3>
             <div class="light-block">
                 <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm">Известных ячеек: <strong id="known-cells-count">0</strong></span>
-                    <div class="flex gap-2">
-                        <button class="btn-outline" style="font-size:13px;min-height:36px;padding:0 12px;" onclick="syncCellsFrom1C()">🔄 Загрузить из 1С</button>
-                        <button class="btn-outline text-danger" style="font-size:13px;min-height:36px;padding:0 12px;" onclick="clearKnownCells()">🗑 Очистить</button>
+                    <strong style="font-size:13px">Склады</strong>
+                    <div class="flex gap-2 items-center">
+                        <span id="wh-sync-status" class="text-sm" style="color:var(--text-sec)"></span>
+                        <button class="btn-outline" style="font-size:13px;min-height:34px;padding:0 12px" onclick="syncWarehousesFrom1C()">🔄 Загрузить из 1С</button>
                     </div>
                 </div>
-                <p class="text-sm text-sec mb-2">Ячейки накапливаются автоматически при работе с товарами. Можно добавить вручную через запятую или Enter.</p>
-                <textarea id="set-known-cells" rows="3"
-                    style="width:100%;font-size:13px;font-family:var(--font-mono,monospace);resize:vertical;border-radius:10px;border:1px solid var(--border);padding:8px;background:var(--surface-muted);"
-                    placeholder="A1, B-14, C3, W13..."
-                    onchange="saveKnownCellsFromTextarea()"></textarea>
-                <label class="checkbox-row mt-2">
+                <div id="settings-warehouses" style="margin-bottom:8px"></div>
+                <p class="text-sm" style="color:var(--text-sec);margin-bottom:10px">Склады и ячейки подтягиваются автоматически из остатков 1С.</p>
+                <label class="checkbox-row">Разрешить ввод ячеек не из списка
                     <input type="checkbox" id="set-allow-new-cells" onchange="saveSets()">
-                    Разрешить ввод ячеек не из списка (снимает проверку при сохранении)
                 </label>
             </div>
         </div>
 
-        <div class="settings-section span-2" id="server-printers-block">
-            <h3>ПРИНТЕРЫ</h3>
-            <div class="light-block">
-                <!-- Список принтеров с сервера -->
-                <div class="flex justify-between items-center mb-2">
-                    <p id="server-printers-status" class="text-sm" style="color:var(--text-sec)">Список не загружен</p>
-                    <button class="btn-outline" style="font-size:13px;min-height:34px;padding:0 12px" onclick="loadServerPrinters(true)">🔄 Обновить</button>
+        <!-- ══ ВКЛАДКА 2: Печать ══ -->
+        <div id="tab-print" class="settings-tab-pane">
+            <!-- Метод печати -->
+            <div class="light-block mb-3">
+                <label>Метод печати</label>
+                <select id="set-print-method" onchange="togglePrintSettingsUI()">
+                    <option value="server">🖥️ Серверная (рекомендуется)</option>
+                    <option value="rawbt">📱 RawBT Android</option>
+                    <option value="printnode">☁️ PrintNode API</option>
+                </select>
+                <div id="printnode-block" style="display:none;margin-top:10px">
+                    <div class="input-group"><label>API Ключ PrintNode</label><input type="text" id="set-pn-key"></div>
+                    <div class="input-group"><label>ID Принтера PrintNode</label><input type="text" id="set-pn-printer"></div>
                 </div>
-                <!-- Ручное добавление принтера -->
+            </div>
+
+            <!-- Принтеры -->
+            <div class="light-block mb-3" id="server-printers-block">
+                <div class="flex justify-between items-center mb-3">
+                    <strong style="font-size:13px">Назначение принтеров</strong>
+                    <div class="flex gap-2 items-center">
+                        <span id="server-printers-status" class="text-sm" style="color:var(--text-sec)">Не загружены</span>
+                        <button class="btn-outline" style="font-size:12px;min-height:32px;padding:0 10px" onclick="loadServerPrinters(true)">🔄</button>
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+                    <div class="input-group" style="margin:0"><label>🏷️ Клиентская этикетка</label><select id="set-printer-client" onchange="saveSets()"></select></div>
+                    <div class="input-group" style="margin:0"><label>📦 Складская этикетка</label><select id="set-printer-warehouse" onchange="saveSets()"></select></div>
+                    <div class="input-group" style="margin:0"><label>🏠 Хангер</label><select id="set-printer-hanger" onchange="saveSets()"></select></div>
+                    <div class="input-group" style="margin:0"><label>📄 Лист A4</label><select id="set-printer-a4" onchange="saveSets()"></select></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+                    <button class="btn-outline" style="font-size:12px;min-height:40px" onclick="testPrint('client')">🖨 Тест клиент</button>
+                    <button class="btn-outline" style="font-size:12px;min-height:40px" onclick="testPrint('warehouse')">🖨 Тест склад</button>
+                    <button class="btn-outline" style="font-size:12px;min-height:40px" onclick="testPrint('hanger')">🖨 Тест хангер</button>
+                </div>
+            </div>
+
+            <!-- Добавить принтер вручную -->
+            <div class="light-block mb-3">
+                <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:8px">ДОБАВИТЬ ПРИНТЕР ВРУЧНУЮ</strong>
                 <div id="custom-printers-list"></div>
-                <div class="flex gap-2 mt-2" id="add-printer-row">
-                    <input type="text" id="new-printer-name" placeholder="Имя принтера (как в сервере)" style="flex:2">
-                    <input type="text" id="new-printer-ip"   placeholder="IP" style="flex:1">
-                    <input type="text" id="new-printer-port" placeholder="Порт" value="9100" style="width:70px">
-                    <select id="new-printer-type" style="flex:1">
+                <div class="flex gap-2 mt-2" id="add-printer-row" style="flex-wrap:wrap">
+                    <input type="text" id="new-printer-name" placeholder="Имя принтера" style="flex:2;min-width:120px">
+                    <input type="text" id="new-printer-ip" placeholder="IP" style="flex:1;min-width:90px">
+                    <input type="text" id="new-printer-port" placeholder="Порт" value="9100" style="width:68px">
+                    <select id="new-printer-type" style="flex:1;min-width:90px">
                         <option value="client">Клиент</option>
                         <option value="warehouse">Склад</option>
                         <option value="hanger">Хангер</option>
@@ -1497,80 +1598,100 @@ body {
                     </select>
                     <button class="btn-primary" style="min-width:44px" onclick="addCustomPrinter()">+</button>
                 </div>
-                <hr style="margin:12px 0;border:none;border-top:1px solid #eee;">
-                <!-- Назначение принтеров по типу -->
-                <div class="input-group"><label>Принтер клиентской этикетки</label><select id="set-printer-client" onchange="saveSets()"></select></div>
-                <div class="input-group"><label>Принтер складской этикетки</label><select id="set-printer-warehouse" onchange="saveSets()"></select></div>
-                <div class="input-group"><label>Принтер хангеров</label><select id="set-printer-hanger" onchange="saveSets()"></select></div>
-                <div class="input-group"><label>Принтер A4</label><select id="set-printer-a4" onchange="saveSets()"></select></div>
-                <!-- Тест-печать -->
-                <div class="flex gap-2 mt-3">
-                    <button class="btn-outline w-full" style="font-size:13px" onclick="testPrint('client')">🖨 Тест: клиент</button>
-                    <button class="btn-outline w-full" style="font-size:13px" onclick="testPrint('warehouse')">🖨 Тест: склад</button>
-                    <button class="btn-outline w-full" style="font-size:13px" onclick="testPrint('hanger')">🖨 Тест: хангер</button>
-                </div>
             </div>
-        </div>
 
-        <!-- Редактор шаблонов этикеток -->
-        <div class="settings-section span-2" id="label-templates-block">
-            <h3>ШАБЛОНЫ ЭТИКЕТОК (ZPL)</h3>
-            <div class="light-block">
-                <p class="text-sm" style="color:var(--text-sec);margin-bottom:10px">
-                    ZPL-команды для принтеров Zebra. Используйте переменные — они заменяются реальными данными товара.
-                </p>
-                <!-- Вкладки типов этикеток -->
+            <!-- ZPL шаблоны -->
+            <div class="light-block" id="label-templates-block">
+                <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:8px">ШАБЛОНЫ ЭТИКЕТОК (ZPL)</strong>
                 <div class="zpl-tabs">
-                    <button class="zpl-tab active" id="ztab-client"    onclick="switchZplTab('client')">Клиентская</button>
-                    <button class="zpl-tab"        id="ztab-warehouse" onclick="switchZplTab('warehouse')">Складская</button>
-                    <!-- Хангер исключён: PDF генерирует 1С, не ZPL в приложении -->
+                    <button class="zpl-tab active" id="ztab-client" onclick="switchZplTab('client')">Клиентская</button>
+                    <button class="zpl-tab" id="ztab-warehouse" onclick="switchZplTab('warehouse')">Складская</button>
                 </div>
-                <!-- Переменные-подсказки -->
                 <div class="zpl-vars" id="zpl-vars-list"></div>
-                <!-- Редактор -->
-                <textarea class="zpl-editor" id="zpl-template-editor"
-                    oninput="onZplTemplateInput()"
+                <textarea class="zpl-editor" id="zpl-template-editor" oninput="onZplTemplateInput()"
                     placeholder="^XA&#10;^FO30,30^A0N,34,34^FD{{ARTICUL}}^FS&#10;^XZ"></textarea>
-                <!-- Предпросмотр с подставленными значениями -->
-                <div style="font-size:12px;color:var(--text-sec);margin-top:8px;margin-bottom:4px">Предпросмотр (тестовые данные):</div>
+                <div style="font-size:11px;color:var(--text-sec);margin-top:6px;margin-bottom:4px">Предпросмотр:</div>
                 <div class="zpl-preview" id="zpl-preview-output"></div>
                 <div class="flex gap-2 mt-3">
-                    <button class="btn-outline w-full" onclick="resetZplTemplate()">↺ Сбросить по умолчанию</button>
-                    <button class="btn-primary w-full"  onclick="saveZplTemplate()">💾 Сохранить шаблон</button>
+                    <button class="btn-outline w-full" onclick="resetZplTemplate()">↺ Сбросить</button>
+                    <button class="btn-primary w-full" onclick="saveZplTemplate()">💾 Сохранить шаблон</button>
                 </div>
             </div>
         </div>
 
-        <div class="settings-section" id="printnode-block">
-            <h3>PRINTNODE API</h3>
-            <div class="input-group"><label>API Ключ</label><input type="text" id="set-pn-key"></div>
-            <div class="input-group"><label>ID Принтера</label><input type="text" id="set-pn-printer"></div>
-            <div class="flex gap-2">
-                <button class="btn-outline w-full" onclick="showToast('Связь ОК')">Проверить</button>
-                <button class="btn-primary w-full" onclick="saveSets()">Сохранить</button>
+        <!-- ══ ВКЛАДКА 3: Формы ══ -->
+        <div id="tab-form" class="settings-tab-pane">
+            <div class="light-block mb-3">
+                <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:10px">ПОЛЯ В ФОРМЕ ПРИЁМКИ</strong>
+                <label class="checkbox-row" style="font-size:15px;padding:6px 0">Ширина ткани <input type="checkbox" id="set-show-width" onchange="saveSets()"></label>
+                <label class="checkbox-row" style="font-size:15px;padding:6px 0">Плотность (г/м²) <input type="checkbox" id="set-show-density" onchange="saveSets()"></label>
+                <label class="checkbox-row" style="font-size:15px;padding:6px 0">Бренд <input type="checkbox" id="set-show-brand" onchange="saveSets()"></label>
+                <label class="checkbox-row" style="font-size:15px;padding:6px 0">Состав <input type="checkbox" id="set-show-comp" onchange="saveSets()"></label>
+                <label class="checkbox-row" style="font-size:15px;padding:6px 0">Полное наименование <input type="checkbox" id="set-show-fullname" onchange="saveSets()"></label>
+            </div>
+            <div class="light-block mb-3">
+                <div class="input-group"><label>Наименование для печати (по умолчанию)</label>
+                    <input type="text" id="set-print-name-default" onchange="saveSets()" placeholder="Оставьте пустым — будет запрошено при приёмке"></div>
+            </div>
+            <div class="light-block">
+                <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:8px">СЧЁТЧИК АРТИКУЛОВ</strong>
+                <div class="flex gap-2">
+                    <div style="flex:1"><label>Префикс</label><input type="text" id="set-prefix" onchange="saveSets()" placeholder="R26"></div>
+                    <div style="flex:1"><label>Следующий номер</label><input type="number" id="set-next-num" onchange="saveSets()"></div>
+                </div>
+                <p class="text-sm mt-2" style="color:var(--text-sec)">Пример: R26-0001 — автоматически подставляется в форму приёмки</p>
             </div>
         </div>
 
-        <div class="settings-section span-2">
-            <details class="settings-spoiler">
-                <summary>Интеграция 1С (расширенные настройки)</summary>
-                <label>URL Сервиса</label><input type="text" id="set-url" onchange="saveSets()" oninput="validateUrlField()" placeholder="https://...">
-                <div id="set-url-hint" class="input-hint hidden">URL должен начинаться с http:// или https://</div>
-                <label>Логин</label><input type="text" id="set-user" onchange="saveSets()">
-                <label>Пароль</label><input type="password" id="set-pass" onchange="saveSets()">
-                <label>API-ключ</label><input type="password" id="set-api-key" onchange="saveSets()" autocomplete="off">
-                <hr style="margin:10px 0;border:none;border-top:1px solid #eee;">
-                <label>Новый пароль менеджера</label><input type="password" id="set-new-mgr-pass" placeholder="минимум 4 символа">
-                <label>Подтверждение пароля</label><input type="password" id="set-new-mgr-pass-confirm" placeholder="повторите пароль">
-                <button class="btn-outline w-full mt-2" onclick="changeManagerPassword()">🔑 Сменить пароль менеджера</button>
-                <button class="btn-outline w-full mt-2" onclick="test1CConnection()">📡 Проверить связь с 1С</button>
-                <button class="btn-primary w-full mt-2" onclick="manualSync()">🔄 Синхронизировать всю базу с 1С</button>
-            </details>
-        </div>
+        <!-- ══ ВКЛАДКА 4: Доступ ══ -->
+        <div id="tab-security" class="settings-tab-pane">
+            <div class="light-block mb-3">
+                <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:10px">ПАРОЛЬ МЕНЕДЖЕРА</strong>
+                <div class="input-group"><label>Новый пароль (мин. 4 символа)</label>
+                    <input type="password" id="set-new-mgr-pass" placeholder="••••"></div>
+                <div class="input-group"><label>Повторите пароль</label>
+                    <input type="password" id="set-new-mgr-pass-confirm" placeholder="••••"></div>
+                <button class="btn-primary w-full mt-2" style="height:48px" onclick="changeManagerPassword()">🔑 Сохранить новый пароль</button>
+            </div>
+            <div class="light-block mb-3">
+                <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:8px">СЕССИЯ</strong>
+                <div class="input-group">
+                    <label>Автовыход через (часов)</label>
+                    <input type="number" id="set-session-hours" min="0.25" max="24" step="0.25"
+                        placeholder="8" onchange="saveSets()">
+                </div>
+                <p class="text-sm" style="color:var(--text-sec);margin-top:4px">
+                    Истекает: <strong id="session-expires-label">—</strong>
+                </p>
+            </div>
+            <div class="light-block">
+                <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:8px">РЕЖИМЫ РАБОТЫ</strong>
+                <label class="checkbox-row" style="font-size:15px;padding:6px 0">Режим разработки (без 1С)
+                    <input type="checkbox" id="set-dev-offline" onchange="saveSets()"></label>
+                <label class="checkbox-row" style="font-size:15px;padding:6px 0">Демо-режим киоска
+                    <input type="checkbox" id="set-kiosk-demo" onchange="saveSets()"></label>
+            </div>
         </div>
 
-        <button class="btn-primary w-full mt-2" style="height: 52px;" onclick="manualSync()">🔄 Полный обмен с 1С (вся база)</button>
-        <button class="btn-success w-full mt-3" style="height: 60px;" onclick="closeSettings()">ГОТОВО</button>
+        <!-- ══ ВКЛАДКА 5: Данные ══ -->
+        <div id="tab-diag" class="settings-tab-pane">
+            <div class="light-block mb-3">
+                <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:10px">ХРАНИЛИЩЕ</strong>
+                <div id="settings-info-panel" style="margin-bottom:0"></div>
+            </div>
+            <div class="light-block mb-3">
+                <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:10px">РЕЗЕРВНАЯ КОПИЯ</strong>
+                <button class="btn-outline w-full mb-2" style="height:48px" onclick="exportData()">💾 Экспорт данных (JSON)</button>
+                <input type="file" id="settings-import-file" class="hidden" accept="application/json" onchange="importData(event)">
+                <button class="btn-outline w-full" style="height:48px" onclick="document.getElementById('settings-import-file').click()">📥 Импорт данных из файла</button>
+            </div>
+            <div class="light-block">
+                <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:10px">ЖУРНАЛ ОШИБОК</strong>
+                <button class="btn-outline w-full" style="height:48px" onclick="openLogsModal()">📋 Открыть журнал ошибок</button>
+            </div>
+        </div>
+
+        <button class="btn-success w-full mt-4" style="height: 60px; font-size:17px;" onclick="closeSettings()">✓ ГОТОВО</button>
     </div>
 </div>
 
@@ -1638,10 +1759,16 @@ body {
 
 <div id="modal-logs" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modal-logs-title">
     <div class="modal-content">
-        <h2 id="modal-logs-title">Журнал ошибок</h2>
+        <div class="flex justify-between items-center mb-2">
+            <h2 id="modal-logs-title" style="margin:0">Журнал ошибок</h2>
+            <select id="log-date-filter" onchange="openLogsModal()" style="font-size:12px;padding:4px 8px;min-height:32px;width:auto"></select>
+        </div>
         <div id="log-area">Нет ошибок</div>
-        <button class="btn-outline w-full mb-2" onclick="shareLogFile()">📤 Поделиться файлом лога</button>
-        <button class="btn-outline w-full mb-2" onclick="clearLogs()">Очистить</button>
+        <div class="flex gap-2 mt-2 mb-2">
+            <button class="btn-outline w-full" onclick="copyLogs()">📋 Копировать</button>
+            <button class="btn-outline w-full" onclick="downloadLogs()">💾 Скачать файл</button>
+            <button class="btn-outline w-full text-danger" onclick="clearLogs()">🗑 Очистить</button>
+        </div>
         <button class="btn-primary w-full" onclick="closeModal('modal-logs')">Закрыть</button>
     </div>
 </div>
@@ -1668,8 +1795,8 @@ body {
     </div>
 </div>
 
-<div id="modal-search" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modal-search-title"><div class="modal-content"><h2 id="modal-search-title">Поиск</h2><input type="text" id="manual-search-input" placeholder="Введите код или артикул..." autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters" inputmode="text" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter'){ event.stopPropagation(); doManualSearch(); }"><div class="flex gap-2 mt-4"><button class="btn-outline w-full" onclick="closeModal('modal-search')">Отмена</button><button class="btn-primary w-full" onclick="doManualSearch()">Найти</button></div></div></div>
-<div id="modal-login" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modal-login-title"><div class="modal-content" style="text-align:center"><h2 id="modal-login-title">Вход персонала</h2><input type="password" id="login-pass" placeholder="Пароль" autocomplete="new-password" autocorrect="off" spellcheck="false" autocapitalize="none" style="font-size:24px; text-align:center;" onkeydown="if(event.key==='Enter'){ event.stopPropagation(); doLogin(); }"><button class="btn-primary w-full" onclick="doLogin()">Войти</button><button class="btn-outline w-full mt-2" onclick="loginDemo()">Демо-режим</button><button class="btn-outline w-full mt-2" onclick="closeModal('modal-login')">Назад</button></div></div>
+<div id="modal-search" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modal-search-title"><div class="modal-content"><h2 id="modal-search-title">Поиск</h2><input type="text" id="manual-search-input" placeholder="Введите код или артикул..." autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters" inputmode="text" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter'){ event.preventDefault(); event.stopPropagation(); doManualSearch(); }"><div class="flex gap-2 mt-4"><button class="btn-outline w-full" onclick="closeModal('modal-search')">Отмена</button><button class="btn-primary w-full" onclick="doManualSearch()">Найти</button></div></div></div>
+<div id="modal-login" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modal-login-title"><div class="modal-content" style="text-align:center"><h2 id="modal-login-title">Вход персонала</h2><p id="login-hint" style="font-size:12px;color:#888;margin:4px 0 8px">Дефолтный пароль: 1234</p><input type="password" id="login-pass" placeholder="Пароль" autocomplete="new-password" autocorrect="off" spellcheck="false" autocapitalize="none" style="font-size:24px; text-align:center;" onkeydown="if(event.key==='Enter'){ event.stopPropagation(); doLogin(); }"><button class="btn-primary w-full" onclick="doLogin()">Войти</button><button class="btn-outline w-full mt-2" onclick="loginDemo()">Демо-режим</button><button class="btn-outline w-full mt-2" onclick="closeModal('modal-login')">Назад</button></div></div>
 <div id="modal-product-edit" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modal-product-edit-title">
     <div class="modal-content">
         <h2 id="modal-product-edit-title">Изменение номенклатуры</h2>
@@ -1749,34 +1876,109 @@ body {
     };
 
     function logError(text) {
+        const now  = new Date();
+        const date = now.toLocaleDateString('ru-RU');            /* 17.03.2026 */
+        const time = now.toLocaleTimeString('ru-RU');            /* 14:05:36  */
         let logs = safeLoad('app_error_logs', []);
-        logs.unshift(`[${new Date().toLocaleTimeString()}] ${text}`);
-        if(logs.length > 50) logs.pop();
+        /* Каждая запись: { date, time, text } */
+        logs.unshift({ date, time, text: String(text) });
+        if (logs.length > 200) logs = logs.slice(0, 200);
         localStorage.setItem('app_error_logs', JSON.stringify(logs));
-        console.error(text);
+        console.error(`[${time}] ${text}`);
     }
 
     function openLogsModal() {
-        const logs = safeLoad('app_error_logs', []);
-        document.getElementById('log-area').textContent = logs.length ? logs.join('\n---\n') : "Нет записей об ошибках";
+        const raw  = safeLoad('app_error_logs', []);
+        const area = document.getElementById('log-area');
+        const sel  = document.getElementById('log-date-filter');
+
+        /* Нормализуем старый формат (строки) и новый (объекты) */
+        const logs = raw.map(e => typeof e === 'string'
+            ? { date: '—', time: '', text: e }
+            : e);
+
+        /* Уникальные даты для фильтра */
+        const dates = [...new Set(logs.map(e => e.date))];
+        const today = new Date().toLocaleDateString('ru-RU');
+
+        if (sel) {
+            const prevVal = sel.value;
+            sel.innerHTML = '';
+            dates.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d;
+                opt.textContent = d === today ? `Сегодня (${d})` : d;
+                sel.appendChild(opt);
+            });
+            /* Выбираем сегодня по умолчанию, иначе первую дату */
+            sel.value = dates.includes(prevVal) ? prevVal
+                      : dates.includes(today) ? today
+                      : dates[0] || '';
+        }
+
+        const filterDate = sel?.value || '';
+        const filtered = logs.filter(e => !filterDate || e.date === filterDate);
+
+        if (!area) { openModal('modal-logs'); return; }
+        if (!filtered.length) {
+            area.textContent = 'Нет записей за эту дату';
+        } else {
+            area.textContent = filtered
+                .map(e => `[${e.time}] ${e.text}`)
+                .join('\n---\n');
+        }
         openModal('modal-logs');
     }
 
-    async function shareLogFile() {
-        const logs = safeLoad('app_error_logs', []);
-        if (!logs.length) { showToast("Логи пусты", "danger"); return; }
-        const text = logs.join('\n---\n');
-        const fileName = `logs_${new Date().getTime()}.txt`;
-        const file = new File([text], fileName, { type: 'text/plain' });
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            try { await navigator.share({ files: [file], title: 'Логи приложения', text: 'Файл отладки складского терминала' }); } catch (err) { logError(`Ошибка шеринга файла: ${err.message}`); }
-        } else {
-            if (navigator.share) { await navigator.share({ title: 'Логи терминала', text: text }); }
-            else { const el = document.createElement('textarea'); el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); showToast("Текст логов скопирован"); }
+    /* Копировать текст текущего фильтра в буфер обмена */
+    async function copyLogs() {
+        const text = document.getElementById('log-area')?.textContent || '';
+        if (!text || text === 'Нет записей за эту дату') {
+            showToast('Нет записей для копирования', 'warning'); return;
+        }
+        try {
+            await navigator.clipboard.writeText(text);
+            showToast('Скопировано в буфер обмена', 'success');
+        } catch {
+            /* fallback для старых браузеров */
+            const ta = document.createElement('textarea');
+            ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+            document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast('Скопировано', 'success');
         }
     }
 
-    function clearLogs() { localStorage.removeItem('app_error_logs'); document.getElementById('log-area').textContent = "Журнал очищен"; }
+    /* Скачать файл с логами выбранной даты */
+    function downloadLogs() {
+        const raw  = safeLoad('app_error_logs', []);
+        const logs = raw.map(e => typeof e === 'string' ? { date: '—', time: '', text: e } : e);
+        const sel  = document.getElementById('log-date-filter');
+        const filterDate = sel?.value || '';
+        const filtered = logs.filter(e => !filterDate || e.date === filterDate);
+        if (!filtered.length) { showToast('Нет записей для скачивания', 'warning'); return; }
+        const text = filtered.map(e => `[${e.date} ${e.time}] ${e.text}`).join('\n---\n');
+        const date = filterDate.replace(/\./g, '-') || 'all';
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href = url; a.download = `logs_${date}.txt`;
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+        showToast(`Файл logs_${date}.txt скачан`, 'success');
+    }
+
+    /* shareLogFile оставляем для совместимости — теперь делегирует в downloadLogs */
+    function shareLogFile() { downloadLogs(); }
+
+    function clearLogs() {
+        localStorage.removeItem('app_error_logs');
+        const area = document.getElementById('log-area');
+        if (area) area.textContent = 'Журнал очищен';
+        const sel = document.getElementById('log-date-filter');
+        if (sel) sel.innerHTML = '';
+    }
 
     /* ════════════════════════════════════════════════════════════════
        INDEXED DB — хранилище складских документов
@@ -1928,8 +2130,11 @@ body {
     }
 
     /* ДАННЫЕ */
-    const defSets = { url:"", user:"", pass:"", apiKey:"", mgr:"", warehouses:["Магазин","Склад","Розница"], prefix:"R26", nextNum:1, showWidth:true, showDensity:true, showBrand:true, showComp:true, showFullName:false, printNameDefault:"", printMethod: "server", pnKey:"", pnPrinter:"", printerClient:"", printerWarehouse:"", printerHanger:"", printerA4:"", mgrHash:"", kioskDemoMode:false, devOfflineMode:false, allowNewCells:false, sessionHours:8, knownCells:[] };
+    const defSets = { url:"", user:"", pass:"", apiKey:"", mgr:"1234", warehouses:[], prefix:"R26", nextNum:1, showWidth:true, showDensity:true, showBrand:true, showComp:true, showFullName:false, printNameDefault:"", printMethod: "server", pnKey:"", pnPrinter:"", printerClient:"", printerWarehouse:"", printerHanger:"", printerA4:"", mgrHash:"", kioskDemoMode:false, devOfflineMode:false, allowNewCells:false, sessionHours:8, knownCells:[] };
     let sets = { ...defSets, ...safeLoad('tsd_final_sets', defSets) };
+    /* Склады берутся из 1С через syncWarehousesFrom1С в настройках.
+       Если пустые — пользователь увидит подсказку в секции «Склады». */
+    if (!Array.isArray(sets.warehouses)) sets.warehouses = [];
     let db = {
         receive: safeLoad('tsd_final_receive', []),
         move: safeLoad('tsd_final_move', []),
@@ -2741,18 +2946,33 @@ body {
         return !isMgr && sets.kioskDemoMode !== false;
     }
 
+    /* ─── safeJson ─────────────────────────────────────────────────────────
+       Безопасный парсинг JSON-ответа. Возвращает null если тело пустое
+       или невалидный JSON (защита от нестандартных ответов 1С).
+    ────────────────────────────────────────────────────────────────── */
+    async function safeJson(res, fallback = null) {
+        try {
+            const text = await res.text();
+            if (!text || !text.trim()) return fallback;
+            return JSON.parse(text);
+        } catch (e) {
+            logError(`safeJson: ${e.message}`);
+            return fallback;
+        }
+    }
+
     /* ─── api1CHeaders ──────────────────────────────────────────────────
        Единое место формирования заголовков авторизации для 1С.
        Используется во всех apiFetch-вызовах к бэкенду.
     ────────────────────────────────────────────────────────────────── */
     function api1CHeaders(extra) {
-        return Object.assign(
-            {
-                'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')),
-                'x-api-key':     sets.apiKey || ''
-            },
-            extra || {}
-        );
+        const headers = {};
+        /* Не отправляем Authorization если логин пустой — иначе уйдёт Basic Og== */
+        if (sets.user && sets.user.trim()) {
+            headers['Authorization'] = 'Basic ' + btoa(sets.user + ':' + (sets.pass || ''));
+        }
+        if (sets.apiKey) headers['x-api-key'] = sets.apiKey;
+        return Object.assign(headers, extra || {});
     }
 
         /* ─── fetchProductByCode ────────────────────────────────────────────
@@ -2783,7 +3003,7 @@ body {
                 `${sets.url}/product?id=${encodeURIComponent(code)}&type=uid`,
                 { headers }
             );
-            return res.ok ? res.json() : null;
+            return res.ok ? await safeJson(res) : null;
         }
 
         /* 2. barcode → 3. char_articul → 4. articul */
@@ -2793,7 +3013,7 @@ body {
                 `${sets.url}/product?id=${encodeURIComponent(code)}&type=${type}`,
                 { headers }
             );
-            if (res.ok) return res.json();
+            if (res.ok) return safeJson(res);
         }
         return null;
     }
@@ -3082,7 +3302,7 @@ body {
             }
 
             if (res) {
-                isProductDirty = false; resolveAndShowProduct(await res.json());
+                isProductDirty = false; const _p = await safeJson(res); if (_p) resolveAndShowProduct(_p); else showApiError({ endpoint: '/product', status: 'net', msg: 'Пустой ответ от сервера' });
             } else {
                 showApiError({ endpoint: '/product', status: lastStatus,
                     msg: lastStatus === 404 ? 'Товар не найден' : 'Ошибка поиска' });
@@ -3987,18 +4207,26 @@ body {
     }
 
     async function printLabelForItem(it) {
+        /* Нарезки приёмки: {id, m, wh, c} → конвертируем в {warehouse, cell, meters} */
+        const stockRows = (it.cuts || []).map(c => ({
+            warehouse: c.wh  || c.warehouse || '',
+            cell:      c.c   || c.cell      || '',
+            meters:    toNumber(c.m ?? c.meters ?? 0)
+        })).filter(r => r.meters > 0);
+
         printService.send({
             type: 'warehouse',
             printerName: sets.printerWarehouse || '',
             payload: {
-                articul:     it.art     || '-',
-                brand:       it.brand   || '',
-                composition: it.comp    || '',
-                width:       it.w       || '',
-                density:     it.dens    || '',
+                articul:     it.art      || '-',
+                brand:       it.brand    || '',
+                composition: it.comp     || '',
+                width:       it.w        || '',
+                density:     it.dens     || '',
                 priceRub:    toNumber(it.priceRub || it.pRub || 0),
-                ean13:       it.ean13   || '',
-                stockRows:   it.cuts    || []
+                ean13:       it.ean13    || '',
+                charName:    it.charName || '',
+                stockRows
             }
         });
     }
@@ -4043,7 +4271,7 @@ body {
         try {
             const res = await apiFetch(`${sets.url}/printers`, { headers: api1CHeaders() });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
+            const data = await safeJson(res, {});
             serverPrinters = Array.isArray(data?.printers) ? data.printers : (Array.isArray(data) ? data : []);
         } catch (e) {
             logError(`printers: ${e.message}`);
@@ -4326,19 +4554,17 @@ body {
         if (status) status.textContent = list.length ? `Найдено принтеров: ${list.length}` : 'Сервер не вернул список принтеров';
     }
 
+    /* sendServerPrintLabel — thin-wrapper над printService для совместимости.
+       Основная логика в printService._sendServer. */
     async function sendServerPrintLabel(labelType = 'client') {
-        if (isDemoMode) return;
-        const payload = getCurrentProductSnapshot();
-        payload.labelType = labelType;
-        payload.printerName = labelType === 'warehouse' ? (sets.printerWarehouse || '') : (sets.printerClient || '');
-        payload.date = new Date().toISOString();
-        if (!sets.url) throw new Error('no-url');
-        const res = await apiFetch(`${sets.url}/print-label`, {
-            method: 'POST',
-            headers: api1CHeaders({ 'Content-Type': 'application/json' }),
-            body: JSON.stringify(payload)
+        const printerName = labelType === 'warehouse'
+            ? (sets.printerWarehouse || '')
+            : (sets.printerClient || '');
+        return printService._sendServer({
+            type: labelType,
+            printerName,
+            payload: getCurrentProductSnapshot()
         });
-        if (!res.ok) throw new Error(`print-label ${res.status}`);
     }
 
     async function openPrintActionsModal() {
@@ -4634,18 +4860,81 @@ body {
 
     /* ШЕРИНГ */
     async function shareDoc() {
-        const d = db[curTab].find(x => x.id === curDocId);
-        if (!d || !d.items.length) return;
-        let text = `ДОКУМЕНТ: ${d.name}\nТИП: ${document.getElementById('list-title').textContent}\nДАТА: ${new Date(d.createdAt).toLocaleDateString()}\n--------------------------\n`;
-        d.items.forEach((it, idx) => { text += `${idx + 1}. Арт: ${it.art}\n`; if (it.cuts) { const total = it.cuts.reduce((s, c) => s + (parseFloat(c.m) || 0), 0); text += `   Метраж: ${total.toFixed(2)} м (${it.cuts.length} отр.)\n`; } else if (it.m) { text += `   Метраж: ${it.m} м\n`; if (it.fromWh) text += `   ${it.fromWh} -> ${it.toWh}\n`; } else if (it.p) { text += `   Цена: ${it.p} €\n`; } });
-        if (navigator.share) { try { await navigator.share({ title: d.name, text: text }); } catch (err) { /* canceled by user */ } }
-        else { const el = document.createElement('textarea'); el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); showToast("Текст скопирован в буфер"); }
+        const d = db[curTab]?.find(x => x.id === curDocId);
+        if (!d) { showToast('Документ не найден', 'danger'); return; }
+
+        /* Формируем текстовое представление документа */
+        const typeNames = { receive:'Приёмка', move:'Перемещение', writeoff:'Списание', stockin:'Оприходование', price:'Цены' };
+        const typeName  = typeNames[curTab] || curTab;
+        const created   = d.createdAt ? new Date(d.createdAt).toLocaleDateString('ru-RU') : '—';
+        const closed    = d.closedAt  ? new Date(d.closedAt).toLocaleDateString('ru-RU')  : '—';
+
+        let text = `${typeName.toUpperCase()}: ${d.name}\n`;
+        text    += `Дата создания: ${created}`;
+        if (d.closedAt) text += `  /  Закрыт: ${closed}`;
+        text    += `\nСтатус: ${d.status === 'active' ? 'Открыт' : 'Завершён'}`;
+        if (d.syncStatus === 'sent') text += `  /  Проведён в 1С`;
+        text    += `\n${'─'.repeat(32)}\n`;
+
+        d.items.forEach((it, idx) => {
+            text += `${idx + 1}. ${it.art}`;
+            if (it.namePrint) text += ` — ${it.namePrint}`;
+            text += '\n';
+            if (it.cuts && it.cuts.length) {
+                const total = it.cuts.reduce((s, c) => s + (parseFloat(c.m) || 0), 0);
+                text += `   ${total.toFixed(2)} м (${it.cuts.length} отр.)`;
+                it.cuts.forEach(c => { text += `  · ${c.wh || ''}${c.c ? '/'+c.c : ''} ${c.m}м`; });
+                text += '\n';
+            } else if (it.m) {
+                if (it.fromWh) text += `   ${it.fromWh}${it.fromCell?'/'+it.fromCell:''} → ${it.toWh || ''}${it.toCell?'/'+it.toCell:''}  ${it.m} м\n`;
+                else           text += `   ${it.wh || ''}${it.cell?'/'+it.cell:''}  ${it.m} м\n`;
+            } else if (it.priceRub) {
+                text += `   Цена: ${it.priceRub} ₽\n`;
+            }
+        });
+
+        /* 1. Пробуем Web Share API */
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: d.name, text });
+                return;
+            } catch (e) {
+                if (e.name === 'AbortError') return; /* пользователь отменил — ничего не делаем */
+                /* Иначе — падаем дальше на clipboard */
+            }
+        }
+
+        /* 2. Копируем в буфер обмена */
+        try {
+            await navigator.clipboard.writeText(text);
+            showToast('Документ скопирован в буфер обмена', 'success');
+            return;
+        } catch { /* fallback */ }
+
+        /* 3. Скачиваем как .txt */
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = `${d.name.replace(/\s+/g,'_')}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+        showToast('Документ сохранён как файл', 'success');
     }
 
     /* МЕНЕДЖЕР */
     async function doLogin() { const pass = document.getElementById('login-pass').value; if(await verifyManagerPassword(pass)){ if (loginMode === 'customer') enterCustomerManagerMode(); else loginSuccess(); closeModal('modal-login'); } else showToast("Ошибка", "danger"); }
     function loginDemo() { isDemoMode = true; if (loginMode === 'customer') enterCustomerManagerMode(); else loginSuccess(); closeModal('modal-login'); showToast('Демо-режим включён'); }
-    function openLogin(mode = 'full') { loginMode = mode; document.getElementById('login-pass').value = ''; openModal('modal-login'); setTimeout(() => document.getElementById('login-pass').focus(), 300); }
+    function openLogin(mode = 'full') {
+        loginMode = mode;
+        document.getElementById('login-pass').value = '';
+        const hint = document.getElementById('login-hint');
+        if (hint) hint.style.display = sets.mgrHash ? 'none' : 'block';
+        openModal('modal-login');
+        setTimeout(() => document.getElementById('login-pass').focus(), 300);
+    }
     function loginSuccess() {
         isMgr = true;
         startMgrSessionTimer();
@@ -4720,6 +5009,8 @@ body {
             const card = document.createElement('div');
             card.className = `card doc-card ${d.status}`;
             card.onclick = () => openDoc(d.id);
+
+            /* ── Шапка: название + точка статуса ── */
             const head = document.createElement('div');
             head.className = 'flex justify-between font-bold';
             const nameEl = document.createElement('span');
@@ -4727,14 +5018,38 @@ body {
             const statusEl = document.createElement('span');
             statusEl.className = `doc-status-dot ${d.status==='active' ? 'active' : 'closed'}`;
             head.append(nameEl, statusEl);
-            const rowsEl = document.createElement('div');
-            rowsEl.textContent = `Записей: ${d.items.length}`;
+
+            /* ── Записей + метраж ── */
             const total = calcDocTotal(d);
-            const meta = document.createElement('div');
-            meta.className = 'doc-meta';
-            const created = d.createdAt ? new Date(d.createdAt).toLocaleDateString() : '-';
-            meta.textContent = curTab === 'price' ? `${d.items.length} поз. · ${created}` : `${total.toFixed(2)} м · ${created}`;
-            card.append(head, rowsEl, meta);
+            const itemsEl = document.createElement('div');
+            itemsEl.className = 'doc-card-items';
+            const created = d.createdAt ? new Date(d.createdAt).toLocaleDateString('ru-RU') : '-';
+            if (curTab === 'price') {
+                itemsEl.textContent = `${d.items.length} позиций · ${created}`;
+            } else {
+                itemsEl.textContent = `${d.items.length} записей · ${total.toFixed(2)} м · ${created}`;
+            }
+
+            /* ── Бейдж статуса 1С ── */
+            const syncBadge = document.createElement('div');
+            const ss = d.syncStatus;
+            if (ss === 'sent') {
+                syncBadge.className = 'doc-sync-badge sent';
+                const sentTime = d.sentAt ? ' · ' + new Date(d.sentAt).toLocaleString('ru-RU', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+                syncBadge.textContent = '✓ Проведён в 1С' + sentTime;
+            } else if (ss === 'pending') {
+                syncBadge.className = 'doc-sync-badge pending';
+                syncBadge.textContent = '⏳ В очереди на отправку';
+            } else if (ss === 'error') {
+                syncBadge.className = 'doc-sync-badge error';
+                syncBadge.textContent = '✗ Ошибка отправки';
+            } else if (d.status === 'closed') {
+                syncBadge.className = 'doc-sync-badge none';
+                syncBadge.textContent = '— Не отправлен в 1С';
+            }
+
+            card.append(head, itemsEl);
+            if (syncBadge.textContent) card.appendChild(syncBadge);
             cont.appendChild(card);
             });
         };
@@ -4757,6 +5072,21 @@ body {
         document.getElementById('tab-bar')?.classList.add('hidden');
         document.getElementById('work-title').textContent = d.name;
         document.getElementById('work-status').textContent = d.status==='active'?'ОТКРЫТ':'ЗАВЕРШЕН';
+        /* Бейдж типа документа */
+        const _typeBadge = document.getElementById('work-type-badge');
+        if (_typeBadge) {
+            const _typeMap = {
+                receive:  { label: '📦 Приёмка',      hint: 'Приход товара на склад' },
+                move:     { label: '🔄 Перемещение',   hint: 'Перемещение между складами' },
+                writeoff: { label: '📋 Списание',      hint: 'Списание товара со склада' },
+                stockin:  { label: '📥 Оприходование', hint: 'Оприходование остатков' },
+                price:    { label: '🏷️ Цены',          hint: 'Обновление цен' },
+            };
+            const _t = _typeMap[curTab] || { label: curTab, hint: '' };
+            _typeBadge.textContent = _t.label;
+            _typeBadge.title       = _t.hint;
+            _typeBadge.className   = `doc-type-badge ${curTab}`;
+        }
         const completeBtn = document.getElementById('btn-complete-doc');
         if (completeBtn) {
             if (d.status === 'active') {
@@ -4797,7 +5127,7 @@ body {
     }
 
     function renderForm() {
-        const cont = document.getElementById('form-container'); const d = db[curTab].find(x=>x.id===curDocId);
+        const cont = document.getElementById('form-container'); const d = db[curTab]?.find(x=>x.id===curDocId);
         if(!d || d.status !== 'active') return;
         let artVal = sets.prefix + String(sets.nextNum).padStart(4,'0');
         if(curTab === 'receive') {
@@ -4932,7 +5262,8 @@ body {
 
     function saveLine() {
         clearAllFieldErrors();
-        const d = db[curTab].find(x => x.id === curDocId);
+        const d = db[curTab]?.find(x => x.id === curDocId);
+        if (!d) return;
         const artInp = document.getElementById('f-art');
         if (!artInp) return;
         const art = artInp.value.trim();
@@ -4990,14 +5321,20 @@ body {
             item.toCell   = normalizeCellValue(document.getElementById('f-cell-to').value);
             item.m        = document.getElementById('f-m').value;
             const qty = toNumber(item.m);
-            if (!(qty > 0))        { fieldError('f-m',         'Укажите метраж > 0'); return; }
-            if (!item.fromCell)    { fieldError('f-cell-from', 'Укажите ячейку ОТКУДА'); return; }
-            if (!item.toCell)      { fieldError('f-cell-to',   'Укажите ячейку КУДА'); return; }
-            if (!isKnownCell(item.fromCell)) { fieldError('f-cell-from', `Ячейка ${item.fromCell} не найдена`); return; }
-            if (!isKnownCell(item.toCell))   { fieldError('f-cell-to',   `Ячейка ${item.toCell} не найдена`); return; }
-            const available = getAvailableMeters(moveStockRowsCache, item.fromWh, item.fromCell);
-            if (available <= 0)    { fieldError('f-cell-from', 'Нет остатков в этой ячейке'); return; }
-            if (qty > available + 1e-9) { fieldError('f-m', `Максимум: ${available.toFixed(2)} м`); return; }
+            if (!(qty > 0)) { fieldError('f-m', 'Укажите метраж > 0'); return; }
+            /* Ячейки необязательны — можно переместить просто между складами */
+            if (item.fromCell && !isKnownCell(item.fromCell)) {
+                fieldError('f-cell-from', `Ячейка ${item.fromCell} не найдена`); return;
+            }
+            if (item.toCell && !isKnownCell(item.toCell)) {
+                fieldError('f-cell-to', `Ячейка ${item.toCell} не найдена`); return;
+            }
+            /* Проверка остатков только если ячейка ОТКУДА указана */
+            if (item.fromCell) {
+                const available = getAvailableMeters(moveStockRowsCache, item.fromWh, item.fromCell);
+                if (available <= 0) { fieldError('f-cell-from', 'Нет остатков в этой ячейке'); return; }
+                if (qty > available + 1e-9) { fieldError('f-m', `Максимум: ${available.toFixed(2)} м`); return; }
+            }
             item.m = qty.toString();
             movePrefillSource = { wh: item.fromWh, cell: item.fromCell };
 
@@ -5066,7 +5403,7 @@ body {
     }
 
     function editItem(id) {
-        const d = db[curTab].find(x=>x.id===curDocId); const it = d.items.find(i=>i.id===id); if(!it) return;
+        const d = db[curTab]?.find(x=>x.id===curDocId); if (!d) return; const it = d.items.find(i=>i.id===id); if(!it) return;
         editingItemId = normalizeId(id);
         if(curTab==='receive') {
             activeReceiveImages = Array.isArray(it.images) ? [...it.images] : [];
@@ -5136,27 +5473,32 @@ body {
             left.append(rowNum, content);
 
             const actions = document.createElement('div');
-            actions.className = 'flex gap-2';
+            actions.className = 'row-actions-bar';
+
+            /* Печать — всегда видна */
             const printBtn = document.createElement('button');
-            printBtn.className = 'btn-icon';
+            printBtn.className = 'row-action-btn print';
             printBtn.type = 'button';
-            printBtn.textContent = '🖨️';
             printBtn.setAttribute('aria-label', 'Печать этикетки');
+            printBtn.innerHTML = '<span class="row-action-ico">🖨️</span><span>Печать</span>';
             printBtn.onclick = () => printLabelForItem(it);
             actions.append(printBtn);
+
             if (d.status === 'active') {
+                /* Редактировать */
                 const editBtn = document.createElement('button');
-                editBtn.className = 'btn-icon';
+                editBtn.className = 'row-action-btn edit';
                 editBtn.type = 'button';
-                editBtn.textContent = '✏️';
                 editBtn.setAttribute('aria-label', 'Редактировать строку');
+                editBtn.innerHTML = '<span class="row-action-ico">✏️</span><span>Изменить</span>';
                 editBtn.onclick = () => editItem(it.id);
 
+                /* Удалить */
                 const delBtn = document.createElement('button');
-                delBtn.className = 'btn-icon text-danger';
+                delBtn.className = 'row-action-btn del';
                 delBtn.type = 'button';
-                delBtn.textContent = '🗑️';
                 delBtn.setAttribute('aria-label', 'Удалить строку');
+                delBtn.innerHTML = '<span class="row-action-ico">🗑️</span><span>Удалить</span>';
                 delBtn.onclick = () => delRow(it.id);
 
                 actions.append(editBtn, delBtn);
@@ -5362,7 +5704,11 @@ body {
             ?.addEventListener('click', () => clearTimeout(timer), { once: true });
     }
 
-    async function openSettings() { document.getElementById('set-show-width').checked = sets.showWidth !== false; document.getElementById('set-show-density').checked = sets.showDensity !== false; document.getElementById('set-show-brand').checked = sets.showBrand !== false; document.getElementById('set-show-comp').checked = sets.showComp !== false; document.getElementById('set-show-fullname').checked = sets.showFullName === true; document.getElementById('set-print-name-default').value = sets.printNameDefault || ''; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-api-key').value = sets.apiKey || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "server"; document.getElementById('set-kiosk-demo').checked = sets.kioskDemoMode !== false; document.getElementById('set-dev-offline').checked = isDemoMode; document.getElementById('set-allow-new-cells').checked = sets.allowNewCells === true; togglePrintSettingsUI(); renderSettingsWh(); renderSettingsInfoPanel(); validateUrlField(); await loadServerPrinters();
+    async function openSettings() {
+        /* Сбрасываем на первую вкладку при каждом открытии */
+        switchSettingsTab('tab-1c', document.querySelector('.settings-tab-btn'));
+        updateConnStatus('unknown', 'Статус подключения к 1С не проверен');
+        document.getElementById('set-show-width').checked = sets.showWidth !== false; document.getElementById('set-show-density').checked = sets.showDensity !== false; document.getElementById('set-show-brand').checked = sets.showBrand !== false; document.getElementById('set-show-comp').checked = sets.showComp !== false; document.getElementById('set-show-fullname').checked = sets.showFullName === true; document.getElementById('set-print-name-default').value = sets.printNameDefault || ''; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-api-key').value = sets.apiKey || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "server"; document.getElementById('set-kiosk-demo').checked = sets.kioskDemoMode !== false; document.getElementById('set-dev-offline').checked = isDemoMode; document.getElementById('set-allow-new-cells').checked = sets.allowNewCells === true; togglePrintSettingsUI(); renderSettingsWh(); renderSettingsInfoPanel(); validateUrlField(); await loadServerPrinters();
         const shEl = document.getElementById('set-session-hours');
         if (shEl) shEl.value = sets.sessionHours ?? MGR_SESSION_DEFAULT_HOURS;
         renderKnownCellsSettings();
@@ -5379,6 +5725,55 @@ body {
     function saveSets() { sets.showWidth = document.getElementById('set-show-width').checked; sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.showFullName = document.getElementById('set-show-fullname').checked; sets.printNameDefault = document.getElementById('set-print-name-default').value; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.apiKey = document.getElementById('set-api-key').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; sets.kioskDemoMode = document.getElementById('set-kiosk-demo').checked; sets.allowNewCells = document.getElementById('set-allow-new-cells').checked; isDemoMode = document.getElementById('set-dev-offline').checked; sets.devOfflineMode = isDemoMode; const _sh = parseFloat(document.getElementById('set-session-hours')?.value); sets.sessionHours = isFinite(_sh) && _sh > 0 ? _sh : MGR_SESSION_DEFAULT_HOURS; sets.printerClient = document.getElementById('set-printer-client')?.value || ''; sets.printerWarehouse = document.getElementById('set-printer-warehouse')?.value || ''; sets.printerHanger = document.getElementById('set-printer-hanger')?.value || ''; sets.printerA4 = document.getElementById('set-printer-a4')?.value || ''; validateUrlField(); save(); saveAppState(); renderSettingsInfoPanel(); }
     function renderSettingsWh() { const root = document.getElementById('settings-warehouses'); if (!root) return; root.innerHTML = ''; (sets.warehouses || []).forEach((w, idx) => { const row = document.createElement('div'); row.className = 'wh-item'; const label = document.createElement('span'); label.textContent = w; const actions = document.createElement('div'); actions.className = 'wh-actions'; const up = document.createElement('button'); up.className = 'btn-outline wh-move-btn'; up.textContent = '↑'; up.disabled = idx === 0; up.addEventListener('click', () => moveWh(idx, -1)); const down = document.createElement('button'); down.className = 'btn-outline wh-move-btn'; down.textContent = '↓'; down.disabled = idx === (sets.warehouses.length - 1); down.addEventListener('click', () => moveWh(idx, 1)); const btn = document.createElement('button'); btn.className = 'btn-icon text-danger'; btn.textContent = '🗑️'; btn.addEventListener('click', () => delWh(w)); actions.append(up, down, btn); row.append(label, actions); root.appendChild(row); }); }
     function moveWh(idx, dir) { const arr = sets.warehouses || []; const to = idx + dir; if (to < 0 || to >= arr.length) return; [arr[idx], arr[to]] = [arr[to], arr[idx]]; renderSettingsWh(); saveSets(); }
+    /* Синхронизация складов из 1С
+       Эндпоинт GET /warehouses должен вернуть:
+         [ "Магазин", "Склад", "Розница" ]
+       или
+         [ { name: "Магазин" }, { name: "Склад" }, ... ]
+    */
+    async function syncWarehousesFrom1C() {
+        const statusEl = document.getElementById('wh-sync-status');
+        if (isDemoMode || !sets.url) {
+            /* DEV: восстанавливаем дефолтные три склада */
+            sets.warehouses = ['Магазин', 'Склад', 'Розница'];
+            save();
+            renderSettingsWh();
+        const _whStatus = document.getElementById('wh-sync-status');
+        if (_whStatus) _whStatus.textContent = sets.warehouses?.length
+            ? `${sets.warehouses.length} склада(ов) · обновите из 1С`
+            : 'Склады не загружены';
+            if (statusEl) statusEl.textContent = 'DEV: загружены демо-склады';
+            showToast('Склады обновлены (демо)', 'success');
+            return;
+        }
+        if (statusEl) statusEl.textContent = 'Загрузка...';
+        try {
+            const res = await apiFetch(`${sets.url}/warehouses`,
+                { headers: api1CHeaders() });
+            if (!res.ok) throw Object.assign(new Error(`HTTP ${res.status}`), { status: res.status });
+            const data = await safeJson(res, []);
+            /* Нормализуем — принимаем массив строк или массив объектов с полем name */
+            const names = Array.isArray(data)
+                ? data.map(w => (typeof w === 'string' ? w : (w.name || w.title || '')).trim()).filter(Boolean)
+                : [];
+            if (!names.length) {
+                showToast('1С вернула пустой список складов', 'warning');
+                if (statusEl) statusEl.textContent = 'Склады не получены';
+                return;
+            }
+            sets.warehouses = names;
+            save();
+            renderSettingsWh();
+            if (statusEl) statusEl.textContent = `Загружено из 1С: ${names.length} склада(ов)`;
+            showToast(`Склады обновлены из 1С: ${names.join(', ')}`, 'success');
+        } catch (e) {
+            showApiError({ endpoint: '/warehouses', status: e.status || 'net',
+                msg: 'Не удалось загрузить склады', retryFn: () => syncWarehousesFrom1C() });
+            if (statusEl) statusEl.textContent = 'Ошибка загрузки';
+            logError(`syncWarehousesFrom1C: ${e.message}`);
+        }
+    }
+
     function addWh() {
         const n = document.getElementById('new-wh-name');
         const raw = n?.value || '';
@@ -5454,7 +5849,7 @@ body {
             const res = await apiFetch(`${sets.url}/cells`,
                 { headers: api1CHeaders() }, 10000);
             if (res.ok) {
-                const data = await res.json();
+                const data = await safeJson(res, {});
                 const list = Array.isArray(data) ? data
                            : Array.isArray(data.cells) ? data.cells
                            : [];
@@ -5483,6 +5878,30 @@ body {
             showApiError({ endpoint: '/cells', status: 'net', msg: 'Не удалось загрузить ячейки' });
             logError(`syncCellsFrom1C: ${e.message}`);
         }
+    }
+
+    /* Переключение вкладок настроек */
+    function switchSettingsTab(tabId, btn) {
+        document.querySelectorAll('.settings-tab-pane').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.settings-tab-btn').forEach(b => b.classList.remove('active'));
+        const pane = document.getElementById(tabId);
+        if (pane) pane.classList.add('active');
+        if (btn) btn.classList.add('active');
+        /* Инициализируем ZPL редактор при переходе на вкладку печати */
+        if (tabId === 'tab-print') { renderZplVars(); switchZplTab(_zplCurrentTab || 'client'); }
+        /* Обновляем инфо-панель при переходе на вкладку данных */
+        if (tabId === 'tab-diag') renderSettingsInfoPanel();
+    }
+
+    /* Обновляем статусную строку подключения */
+    function updateConnStatus(state, text) {
+        const bar  = document.getElementById('conn-status-bar');
+        const dot  = document.getElementById('conn-dot');
+        const txt  = document.getElementById('conn-status-text');
+        if (!bar || !dot || !txt) return;
+        bar.className  = 'conn-status-bar ' + state;
+        dot.className  = 'conn-dot ' + state;
+        txt.textContent = text;
     }
 
     function closeSettings() { saveSets(); closeModal('modal-settings'); }
@@ -5795,25 +6214,39 @@ body {
     async function syncWith1C() { return queueAndSync(); }
 
     async function test1CConnection() {
-        const url = document.getElementById('set-url').value; const user = document.getElementById('set-user').value; const pass = document.getElementById('set-pass').value;
-        if (isDemoMode) { showToast('DEV-режим: связь с 1С не требуется', 'success'); return; }
+        const url    = document.getElementById('set-url').value;
+        const user   = document.getElementById('set-user').value;
+        const pass   = document.getElementById('set-pass').value;
+        const apiKey = document.getElementById('set-api-key').value;
+        if (isDemoMode) {
+            updateConnStatus('ok', 'DEV-режим: связь с 1С не требуется');
+            showToast('DEV-режим: связь с 1С не требуется', 'success'); return;
+        }
         if (!url) { showToast("Сначала введите URL", "danger"); return; }
+        updateConnStatus('unknown', 'Проверяем связь...');
         showToast("Проверка связи...");
         try {
-            const res = await apiFetch(`${url}/product?id=ping`,
-                { headers: { 'Authorization': 'Basic ' + btoa(user + ':' + pass) } });
-            if (res.ok || res.status === 404) {
-                showToast('Связь с 1С установлена!', 'success');
+            /* Сохраняем введённые данные сразу — чтобы api1CHeaders() их подхватил */
+            sets.url    = url;
+            sets.user   = user;
+            sets.pass   = pass;
+            sets.apiKey = apiKey;
+            const res = await apiFetch(`${url}/health`, { headers: api1CHeaders() });
+            if (res.ok) {
+                updateConnStatus('ok', `✓ Сервер доступен · ${url}`);
+                showToast('Связь с сервером установлена!', 'success');
             } else {
-                showApiError({ endpoint: '/product', status: res.status, msg: 'Проверьте URL и учётные данные' });
+                updateConnStatus('error', `Ошибка HTTP ${res.status} · проверьте URL и данные`);
+                showApiError({ endpoint: '/health', status: res.status, msg: 'Проверьте URL и учётные данные' });
             }
         } catch (e) {
-            showApiError({ endpoint: '/product', status: 'net', msg: 'Нет ответа от сервера 1С' });
-            logError(`Тест 1С: ${e.message}`);
+            updateConnStatus('error', 'Сервер недоступен · проверьте сеть и URL');
+            showApiError({ endpoint: '/health', status: 'net', msg: 'Нет ответа от сервера' });
+            logError(`Тест связи: ${e.message}`);
         }
     }
 
-    async function delRow(rid) { if(!await customConfirm("Удалить строку?")) return; const d = db[curTab].find(x=>x.id===curDocId); d.items = d.items.filter(x=>normalizeId(x.id)!==normalizeId(rid)); save(); renderRows(); }
+    async function delRow(rid) { if(!await customConfirm("Удалить строку?")) return; const d = db[curTab]?.find(x=>x.id===curDocId); if (!d) return; d.items = d.items.filter(x=>normalizeId(x.id)!==normalizeId(rid)); save(); renderRows(); }
     async function deleteFullDoc() { if(!await customConfirm("УДАЛИТЬ ВЕСЬ ДОКУМЕНТ?")) return; db[curTab] = db[curTab].filter(x=>x.id!==curDocId); save(); exitWork(); }
     function openManualSearch() {
         scanBuf = "";
