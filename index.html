@@ -16,8 +16,8 @@
     <meta name="application-name" content="Складской Терминал">
 
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="96x96" href="icons/favicon-96x96.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/web-app-manifest-192x192.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="icons/web-app-manifest-192x192.png">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1353,7 +1353,7 @@ body {
             <div id="kiosk-a4-status" class="text-sm">A4 буфер: 0/10</div>
             <div class="text-sm kiosk-a4-subtext">A4 — печать 10 товарных позиций на одном листе офиса</div>
         </div>
-        <input type="text" id="kiosk-scanner-input" style="position: absolute; opacity: 0; pointer-events: none;" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters">
+        <input type="text" id="kiosk-scanner-input" style="position: absolute; opacity: 0; pointer-events: none;" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters" inputmode="none" enterkeyhint="done" tabindex="-1" aria-hidden="true">
     </div>
 
     <!-- КАРТОЧКА КЛИЕНТА -->
@@ -2730,8 +2730,10 @@ body {
            (если фокус ушёл со scanner-input, напр. на внешней клавиатуре) */
         window.addEventListener('keydown', e => {
             if (e.key === 'Escape' && activeModalId) { closeModal(activeModalId); return; }
-            /* Если уже в каком-то input (кроме scanner-input) — не перехватываем */
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            /* Если уже в редактируемом поле (кроме scanner-input) — не перехватываем */
+            const targetTag = e.target?.tagName;
+            const isEditable = targetTag === 'INPUT' || targetTag === 'TEXTAREA' || targetTag === 'SELECT' || e.target?.isContentEditable;
+            if (isEditable && e.target?.id !== 'kiosk-scanner-input') return;
             if (activeModalId) return;
             /* Резервный keydown-буфер — работает только если scanner-input не получил фокус */
             if (e.key === 'Enter') {
@@ -2854,11 +2856,13 @@ body {
         }
         const scannerInp = document.getElementById('kiosk-scanner-input');
         if (!scannerInp || activeModalId) return;
-        const activeTag = document.activeElement?.tagName;
-        if ((activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') && document.activeElement?.id !== 'kiosk-scanner-input') return;
+        const activeEl = document.activeElement;
+        const activeTag = activeEl?.tagName;
+        if ((activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') && activeEl?.id !== 'kiosk-scanner-input') return;
         const kioskVisible = !document.getElementById('screen-kiosk')?.classList.contains('hidden');
-        const workVisible  = !document.getElementById('screen-work')?.classList.contains('hidden');
-        if (kioskVisible || workVisible) scannerInp.focus({ preventScroll: true });
+        /* В менеджерских экранах не перехватываем фокус, чтобы не поднимать системную клавиатуру */
+        if (!kioskVisible) return;
+        scannerInp.focus({ preventScroll: true });
     }
 
     function isCustomerManagerModeActive() { return isMgr || tempCustomerManagerMode; }

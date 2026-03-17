@@ -1,10 +1,14 @@
 /* WHstock Service Worker
    Стратегия: Cache First для статики, Network First для API
 */
-const CACHE_NAME = 'whstock-v1';
+const CACHE_NAME = 'whstock-v2';
 const STATIC_ASSETS = [
+    './',
     './index.html',
-    './manifest.webmanifest'
+    './manifest.webmanifest',
+    './icons/web-app-manifest-192x192.png',
+    './icons/web-app-manifest-512x512.png',
+    './icons/icon-512-maskable.png'
 ];
 
 /* Установка — кэшируем статику */
@@ -46,13 +50,15 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    /* Внешние ресурсы (Google Fonts и т.д.) — сеть с fallback на кэш */
+    /* Внешние ресурсы — сеть с fallback на кэш */
     if (url.origin !== location.origin) {
         event.respondWith(
             fetch(event.request)
                 .then(response => {
-                    const clone = response.clone();
-                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+                    if (response && response.ok) {
+                        const clone = response.clone();
+                        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+                    }
                     return response;
                 })
                 .catch(() => caches.match(event.request))
@@ -60,19 +66,23 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    /* Статика (index.html, manifest) — Cache First */
+    /* Статика — Cache First */
     event.respondWith(
         caches.match(event.request)
             .then(cached => {
                 if (cached) return cached;
                 return fetch(event.request)
                     .then(response => {
-                        if (response.ok) {
+                        if (response && response.ok) {
                             const clone = response.clone();
                             caches.open(CACHE_NAME)
                                 .then(cache => cache.put(event.request, clone));
                         }
                         return response;
+                    })
+                    .catch(() => {
+                        if (event.request.mode === 'navigate') return caches.match('./index.html');
+                        return new Response('Offline', { status: 503, statusText: 'Offline' });
                     });
             })
     );
