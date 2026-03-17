@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Склад">
+    <meta name="application-name" content="Складской Терминал">
+    <meta name="description" content="Учёт тканей и товаров на складе">
     <title>Складской Терминал</title>
 
     <!-- Настройки PWA -->
@@ -1238,7 +1244,7 @@ body {
             <div id="kiosk-a4-status" class="text-sm">A4 буфер: 0/10</div>
             <div class="text-sm kiosk-a4-subtext">A4 — печать 10 товарных позиций на одном листе офиса</div>
         </div>
-        <input type="text" id="kiosk-scanner-input" style="position: absolute; opacity: 0; pointer-events: none;">
+        <input type="text" id="kiosk-scanner-input" style="position: absolute; opacity: 0; pointer-events: none;" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters">
     </div>
 
     <!-- КАРТОЧКА КЛИЕНТА -->
@@ -1552,7 +1558,7 @@ body {
                 <div id="set-url-hint" class="input-hint hidden">URL должен начинаться с http:// или https://</div>
                 <label>Логин</label><input type="text" id="set-user" onchange="saveSets()">
                 <label>Пароль</label><input type="password" id="set-pass" onchange="saveSets()">
-                <label>API-ключ</label><input type="text" id="set-api-key" onchange="saveSets()">
+                <label>API-ключ</label><input type="password" id="set-api-key" onchange="saveSets()" autocomplete="off">
                 <hr style="margin:10px 0;border:none;border-top:1px solid #eee;">
                 <label>Новый пароль менеджера</label><input type="password" id="set-new-mgr-pass" placeholder="минимум 4 символа">
                 <label>Подтверждение пароля</label><input type="password" id="set-new-mgr-pass-confirm" placeholder="повторите пароль">
@@ -1707,7 +1713,15 @@ body {
     <div class="modal-content">
         <h2 id="sr-title">Редактирование склада</h2>
         <div class="input-group"><label>Склад</label><select id="sr-wh"></select></div>
-        <div class="input-group"><label>Ячейка</label><input type="text" id="sr-cell" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters" oninput="this.value=this.value.toUpperCase()" onfocus="this.select()"></div>
+        <div class="input-group"><label>Ячейка <span style="font-size:11px;color:var(--text-sec);font-weight:400">(необязательно)</span></label>
+            <input type="text" id="sr-cell" list="list-cells"
+                autocomplete="off" autocorrect="off" spellcheck="false"
+                autocapitalize="characters"
+                placeholder="Не указана — товар на складе без ячейки"
+                oninput="this.value=this.value.toUpperCase(); srValidateCell(this.value)"
+                onfocus="this.select()">
+            <span id="sr-cell-hint" class="field-error-msg" style="display:none"></span>
+        </div>
         <div class="input-group"><label>Количество (метров)</label><input type="text" id="sr-meters" inputmode="decimal" onfocus="this.select()"></div>
         <div class="flex gap-2 mt-3">
             <button class="btn-outline w-full" onclick="closeModal('modal-stock-row-edit')">Отмена</button>
@@ -1914,7 +1928,7 @@ body {
     }
 
     /* ДАННЫЕ */
-    const defSets = { url:"http://83.237.242.90:3000", user:"", pass:"", apiKey:"zX9#mK4$pL7@nQ2&wR8!vT3^hY6*jB5", mgr:"1234", warehouses:["Магазин","Склад","Розница"], prefix:"R26", nextNum:1, showWidth:true, showDensity:true, showBrand:true, showComp:true, showFullName:false, printNameDefault:"", printMethod: "server", pnKey:"", pnPrinter:"", printerClient:"", printerWarehouse:"", printerHanger:"", printerA4:"", mgrHash:"", kioskDemoMode:true, devOfflineMode:true, allowNewCells:false, sessionHours:8, knownCells:[] };
+    const defSets = { url:"", user:"", pass:"", apiKey:"", mgr:"", warehouses:["Магазин","Склад","Розница"], prefix:"R26", nextNum:1, showWidth:true, showDensity:true, showBrand:true, showComp:true, showFullName:false, printNameDefault:"", printMethod: "server", pnKey:"", pnPrinter:"", printerClient:"", printerWarehouse:"", printerHanger:"", printerA4:"", mgrHash:"", kioskDemoMode:false, devOfflineMode:false, allowNewCells:false, sessionHours:8, knownCells:[] };
     let sets = { ...defSets, ...safeLoad('tsd_final_sets', defSets) };
     let db = {
         receive: safeLoad('tsd_final_receive', []),
@@ -2474,16 +2488,59 @@ body {
         const throttledViewportSync = rafThrottle(syncAppViewportHeight);
         window.addEventListener('resize', throttledViewportSync);
         window.addEventListener('orientationchange', throttledViewportSync);
+        /* ── Сканер: kiosk-scanner-input как основной канал ──────────────
+           Сканер вводит символы в скрытый input, Enter = конец скана.
+           Таймаут SCANNER_TIMEOUT_MS сбрасывает input если Enter не пришёл
+           (защита от случайного ввода и медленных сканеров).
+        ────────────────────────────────────────────────────────────────── */
+        const SCANNER_TIMEOUT_MS = 500;   /* мс — увеличьте для медленных сканеров */
+        const SCANNER_MIN_LEN    = 3;     /* минимальная длина валидного скана */
+
+        const scannerInpEl = document.getElementById('kiosk-scanner-input');
+        if (scannerInpEl) {
+            /* Enter в скрытом input = завершение скана */
+            scannerInpEl.addEventListener('keydown', e => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const code = scannerInpEl.value.trim();
+                    scannerInpEl.value = '';
+                    if (scanBufResetTimer) { clearTimeout(scanBufResetTimer); scanBufResetTimer = null; }
+                    if (code.length >= SCANNER_MIN_LEN) handleScan(code);
+                }
+            });
+            /* Таймаут: если Enter не пришёл — сбрасываем буфер */
+            scannerInpEl.addEventListener('input', () => {
+                if (scanBufResetTimer) clearTimeout(scanBufResetTimer);
+                scanBufResetTimer = setTimeout(() => {
+                    const code = scannerInpEl.value.trim();
+                    scannerInpEl.value = '';
+                    scanBuf = '';
+                    /* Если накопилось достаточно символов — всё равно пробуем обработать */
+                    if (code.length >= SCANNER_MIN_LEN) handleScan(code);
+                }, SCANNER_TIMEOUT_MS);
+            });
+        }
+
+        /* Глобальный keydown — только Escape и резервный канал
+           (если фокус ушёл со scanner-input, напр. на внешней клавиатуре) */
         window.addEventListener('keydown', e => {
             if (e.key === 'Escape' && activeModalId) { closeModal(activeModalId); return; }
-            if (e.target.tagName === 'INPUT') return;
-            /* Пока открыта любая модалка — сканер не обрабатываем */
+            /* Если уже в каком-то input (кроме scanner-input) — не перехватываем */
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
             if (activeModalId) return;
-            if (e.key === 'Enter') { if (scanBuf.length > 2) handleScan(scanBuf); scanBuf = ""; if (scanBufResetTimer) clearTimeout(scanBufResetTimer); }
-            else if (e.key.length === 1) {
+            /* Резервный keydown-буфер — работает только если scanner-input не получил фокус */
+            if (e.key === 'Enter') {
+                if (scanBuf.length >= SCANNER_MIN_LEN) handleScan(scanBuf);
+                scanBuf = '';
+                if (scanBufResetTimer) { clearTimeout(scanBufResetTimer); scanBufResetTimer = null; }
+            } else if (e.key.length === 1) {
                 scanBuf += e.key;
                 if (scanBufResetTimer) clearTimeout(scanBufResetTimer);
-                scanBufResetTimer = setTimeout(() => { scanBuf = ""; }, 180);
+                scanBufResetTimer = setTimeout(() => {
+                    const code = scanBuf.trim();
+                    scanBuf = '';
+                    if (code.length >= SCANNER_MIN_LEN) handleScan(code);
+                }, SCANNER_TIMEOUT_MS);
             }
         });
         document.querySelectorAll('.modal-overlay').forEach(m => {
@@ -3556,6 +3613,9 @@ body {
         const delBtn = document.querySelector('#modal-stock-row-edit .btn-danger');
         if (delBtn) delBtn.style.display = index >= 0 ? 'inline-flex' : 'none';
         document.getElementById('sr-cell').value = row.cell || '';
+        document.getElementById('sr-cell').classList.remove('input-error');
+        const srHint = document.getElementById('sr-cell-hint');
+        if (srHint) srHint.style.display = 'none';
         document.getElementById('sr-meters').value = row.meters ?? row.m ?? row.qty ?? '';
         openModal('modal-stock-row-edit');
         setTimeout(() => {
@@ -3565,18 +3625,64 @@ body {
         }, 50);
     }
 
+    /* Живая проверка ячейки в модалке — показывает предупреждение под полем */
+    function srValidateCell(value) {
+        const hint = document.getElementById('sr-cell-hint');
+        if (!hint) return;
+        const cell = normalizeCellValue(value);
+        if (!cell) { hint.style.display = 'none'; return; }
+        if (!isKnownCell(cell)) {
+            hint.textContent = sets.allowNewCells
+                ? `Ячейка «${cell}» новая — будет добавлена в базу`
+                : `Ячейка «${cell}» не найдена в базе. Включите «Разрешить новые ячейки» в настройках.`;
+            hint.style.color  = sets.allowNewCells ? 'var(--warning)' : 'var(--danger)';
+            hint.style.display = 'block';
+        } else {
+            hint.style.display = 'none';
+        }
+    }
+
     function applyStockRowEdit() {
         if (!currentProduct) return;
         if (!Array.isArray(currentProduct.stockRows)) currentProduct.stockRows = [];
+
         const metersValue = toNumber(document.getElementById('sr-meters').value);
-        const row = {
-            warehouse: document.getElementById('sr-wh').value,
-            cell: document.getElementById('sr-cell').value.trim().toUpperCase(),
-            meters: metersValue,
-            qty: metersValue
-        };
+        const cell = normalizeCellValue(document.getElementById('sr-cell').value);
+        const warehouse = document.getElementById('sr-wh').value;
+
+        /* Проверка метража */
+        if (!(metersValue >= 0)) {
+            fieldError('sr-meters', 'Укажите количество метров');
+            return;
+        }
+
+        /* Проверка ячейки — только если указана */
+        if (cell && !isKnownCell(cell)) {
+            if (!sets.allowNewCells) {
+                const hint = document.getElementById('sr-cell-hint');
+                if (hint) {
+                    hint.textContent = `Ячейка «${cell}» не найдена. Включите «Разрешить новые ячейки» в настройках.`;
+                    hint.style.color   = 'var(--danger)';
+                    hint.style.display = 'block';
+                }
+                document.getElementById('sr-cell')?.classList.add('input-error');
+                document.getElementById('sr-cell')?.focus();
+                return;
+            }
+            /* allowNewCells = true — добавляем ячейку в knownCells */
+            if (!Array.isArray(sets.knownCells)) sets.knownCells = [];
+            if (!sets.knownCells.includes(cell)) {
+                sets.knownCells.push(cell);
+                sets.knownCells.sort();
+                save();
+                updateDataLists();
+            }
+        }
+
+        const row = { warehouse, cell, meters: metersValue, qty: metersValue };
         if (activeStockRowIndex >= 0) currentProduct.stockRows[activeStockRowIndex] = row;
         else currentProduct.stockRows.push(row);
+
         markProductDirty();
         showProduct(currentProduct);
         closeModal('modal-stock-row-edit');
@@ -4988,7 +5094,8 @@ body {
     function cancelEdit() { editingItemId = null; renderForm(); renderRows(); }
 
     function renderRows() {
-        const cont = document.getElementById('rows-container'); const d = db[curTab].find(x=>x.id===curDocId); cont.innerHTML = "";
+        const cont = document.getElementById('rows-container'); const d = db[curTab]?.find(x=>x.id===curDocId); cont.innerHTML = "";
+        if (!d) return;
         d.items.forEach((it, idx) => {
             const div = document.createElement('div');
             div.className = 'history-item' + (normalizeId(editingItemId)===normalizeId(it.id) ? ' editing' : '') + (normalizeId(lastSavedItemId)===normalizeId(it.id) ? ' just-added' : '');
@@ -5064,22 +5171,18 @@ body {
 
     /* УТИЛИТЫ */
     function save() {
+        /* Настройки и schema version — в localStorage (всегда маленькие) */
         try {
             localStorage.setItem('tsd_schema_version', String(DB_SCHEMA_VERSION));
-            localStorage.setItem('tsd_final_sets',      JSON.stringify(sets));
-            localStorage.setItem('tsd_final_receive',   JSON.stringify(db.receive));
-            localStorage.setItem('tsd_final_move',      JSON.stringify(db.move));
-            localStorage.setItem('tsd_final_writeoff',  JSON.stringify(db.writeoff));
-            localStorage.setItem('tsd_final_stockin',   JSON.stringify(db.stockin));
-            localStorage.setItem('tsd_final_price',     JSON.stringify(db.price));
+            localStorage.setItem('tsd_final_sets', JSON.stringify(sets));
         } catch (e) {
             if (e && (e.name === 'QuotaExceededError' || e.code === 22)) {
-                showToast('Память устройства переполнена. Очистите старые документы.', 'danger');
+                showToast('Память устройства переполнена.', 'danger');
                 logError('QuotaExceededError: localStorage full');
-                return;
             }
-            throw e;
         }
+        /* Документы — в IndexedDB (async, с fallback на localStorage) */
+        saveDb().catch(e => logError(`saveDb: ${e.message}`));
         updateDataLists();
         updateTabBadges();
     }
@@ -5594,34 +5697,38 @@ body {
         outboxFlushing = true;
         let sentCount = 0, errorCount = 0;
 
-        for (const item of toSend) {
-            const tab = item.tab || ['receive','move','writeoff','stockin','price']
-                .find(t => (db[t]||[]).some(x => x.id === item.id));
-            const d = tab ? (db[tab]||[]).find(x => x.id === item.id) : null;
-            if (!d) { outboxRemove(item.id); continue; }
+        try {
+            for (const item of toSend) {
+                const tab = item.tab || ['receive','move','writeoff','stockin','price']
+                    .find(t => (db[t]||[]).some(x => x.id === item.id));
+                const d = tab ? (db[tab]||[]).find(x => x.id === item.id) : null;
+                if (!d) { outboxRemove(item.id); continue; }
 
-            try {
-                const res = await apiFetch(`${sets.url}/post-document`, {
-                    method: 'POST',
-                    headers: api1CHeaders({ 'Content-Type': 'application/json' }),
-                    body: JSON.stringify({ type: (tab||'').toUpperCase(), data: d })
-                });
-                if (res.ok) {
-                    outboxRemove(item.id);
-                    setDocSyncStatus(item.id, 'sent');
-                    sentCount++;
-                } else {
-                    outboxMarkError(item.id, `HTTP ${res.status}`);
+                try {
+                    const res = await apiFetch(`${sets.url}/post-document`, {
+                        method: 'POST',
+                        headers: api1CHeaders({ 'Content-Type': 'application/json' }),
+                        body: JSON.stringify({ type: (tab||'').toUpperCase(), data: d })
+                    });
+                    if (res.ok) {
+                        outboxRemove(item.id);
+                        setDocSyncStatus(item.id, 'sent');
+                        sentCount++;
+                    } else {
+                        outboxMarkError(item.id, `HTTP ${res.status}`);
+                        errorCount++;
+                    }
+                } catch (e) {
+                    outboxMarkError(item.id, 'Нет связи');
                     errorCount++;
+                    break; /* Нет сети — прерываем, не тратим попытки */
                 }
-            } catch (e) {
-                outboxMarkError(item.id, 'Нет связи');
-                errorCount++;
-                break; /* Нет сети — прерываем, не тратим попытки */
             }
+        } finally {
+            /* Сбрасываем флаг в любом случае — даже при неожиданной ошибке */
+            outboxFlushing = false;
         }
 
-        outboxFlushing = false;
         updateOutboxIndicator();
         renderDocSyncStatusRow(curDocId);
 
