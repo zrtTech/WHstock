@@ -2741,18 +2741,33 @@ body {
         return !isMgr && sets.kioskDemoMode !== false;
     }
 
+    /* ─── safeJson ─────────────────────────────────────────────────────────
+       Безопасный парсинг JSON-ответа. Возвращает null если тело пустое
+       или невалидный JSON (защита от нестандартных ответов 1С).
+    ────────────────────────────────────────────────────────────────── */
+    async function safeJson(res, fallback = null) {
+        try {
+            const text = await res.text();
+            if (!text || !text.trim()) return fallback;
+            return JSON.parse(text);
+        } catch (e) {
+            logError(`safeJson: ${e.message}`);
+            return fallback;
+        }
+    }
+
     /* ─── api1CHeaders ──────────────────────────────────────────────────
        Единое место формирования заголовков авторизации для 1С.
        Используется во всех apiFetch-вызовах к бэкенду.
     ────────────────────────────────────────────────────────────────── */
     function api1CHeaders(extra) {
-        return Object.assign(
-            {
-                'Authorization': 'Basic ' + btoa(sets.user + ':' + (sets.pass || '')),
-                'x-api-key':     sets.apiKey || ''
-            },
-            extra || {}
-        );
+        const headers = {};
+        /* Не отправляем Authorization если логин пустой — иначе уйдёт Basic Og== */
+        if (sets.user && sets.user.trim()) {
+            headers['Authorization'] = 'Basic ' + btoa(sets.user + ':' + (sets.pass || ''));
+        }
+        if (sets.apiKey) headers['x-api-key'] = sets.apiKey;
+        return Object.assign(headers, extra || {});
     }
 
         /* ─── fetchProductByCode ────────────────────────────────────────────
@@ -2783,7 +2798,7 @@ body {
                 `${sets.url}/product?id=${encodeURIComponent(code)}&type=uid`,
                 { headers }
             );
-            return res.ok ? res.json() : null;
+            return res.ok ? await safeJson(res) : null;
         }
 
         /* 2. barcode → 3. char_articul → 4. articul */
@@ -2793,7 +2808,7 @@ body {
                 `${sets.url}/product?id=${encodeURIComponent(code)}&type=${type}`,
                 { headers }
             );
-            if (res.ok) return res.json();
+            if (res.ok) return safeJson(res);
         }
         return null;
     }
@@ -3082,7 +3097,7 @@ body {
             }
 
             if (res) {
-                isProductDirty = false; resolveAndShowProduct(await res.json());
+                isProductDirty = false; const _p = await safeJson(res); if (_p) resolveAndShowProduct(_p); else showApiError({ endpoint: '/product', status: 'net', msg: 'Пустой ответ от сервера' });
             } else {
                 showApiError({ endpoint: '/product', status: lastStatus,
                     msg: lastStatus === 404 ? 'Товар не найден' : 'Ошибка поиска' });
@@ -4043,7 +4058,7 @@ body {
         try {
             const res = await apiFetch(`${sets.url}/printers`, { headers: api1CHeaders() });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
+            const data = await safeJson(res, {});
             serverPrinters = Array.isArray(data?.printers) ? data.printers : (Array.isArray(data) ? data : []);
         } catch (e) {
             logError(`printers: ${e.message}`);
@@ -4326,19 +4341,17 @@ body {
         if (status) status.textContent = list.length ? `Найдено принтеров: ${list.length}` : 'Сервер не вернул список принтеров';
     }
 
+    /* sendServerPrintLabel — thin-wrapper над printService для совместимости.
+       Основная логика в printService._sendServer. */
     async function sendServerPrintLabel(labelType = 'client') {
-        if (isDemoMode) return;
-        const payload = getCurrentProductSnapshot();
-        payload.labelType = labelType;
-        payload.printerName = labelType === 'warehouse' ? (sets.printerWarehouse || '') : (sets.printerClient || '');
-        payload.date = new Date().toISOString();
-        if (!sets.url) throw new Error('no-url');
-        const res = await apiFetch(`${sets.url}/print-label`, {
-            method: 'POST',
-            headers: api1CHeaders({ 'Content-Type': 'application/json' }),
-            body: JSON.stringify(payload)
+        const printerName = labelType === 'warehouse'
+            ? (sets.printerWarehouse || '')
+            : (sets.printerClient || '');
+        return printService._sendServer({
+            type: labelType,
+            printerName,
+            payload: getCurrentProductSnapshot()
         });
-        if (!res.ok) throw new Error(`print-label ${res.status}`);
     }
 
     async function openPrintActionsModal() {
@@ -4797,7 +4810,7 @@ body {
     }
 
     function renderForm() {
-        const cont = document.getElementById('form-container'); const d = db[curTab].find(x=>x.id===curDocId);
+        const cont = document.getElementById('form-container'); const d = db[curTab]?.find(x=>x.id===curDocId);
         if(!d || d.status !== 'active') return;
         let artVal = sets.prefix + String(sets.nextNum).padStart(4,'0');
         if(curTab === 'receive') {
@@ -4932,7 +4945,8 @@ body {
 
     function saveLine() {
         clearAllFieldErrors();
-        const d = db[curTab].find(x => x.id === curDocId);
+        const d = db[curTab]?.find(x => x.id === curDocId);
+        if (!d) return;
         const artInp = document.getElementById('f-art');
         if (!artInp) return;
         const art = artInp.value.trim();
@@ -5066,7 +5080,7 @@ body {
     }
 
     function editItem(id) {
-        const d = db[curTab].find(x=>x.id===curDocId); const it = d.items.find(i=>i.id===id); if(!it) return;
+        const d = db[curTab]?.find(x=>x.id===curDocId); if (!d) return; const it = d.items.find(i=>i.id===id); if(!it) return;
         editingItemId = normalizeId(id);
         if(curTab==='receive') {
             activeReceiveImages = Array.isArray(it.images) ? [...it.images] : [];
@@ -5454,7 +5468,7 @@ body {
             const res = await apiFetch(`${sets.url}/cells`,
                 { headers: api1CHeaders() }, 10000);
             if (res.ok) {
-                const data = await res.json();
+                const data = await safeJson(res, {});
                 const list = Array.isArray(data) ? data
                            : Array.isArray(data.cells) ? data.cells
                            : [];
@@ -5813,7 +5827,7 @@ body {
         }
     }
 
-    async function delRow(rid) { if(!await customConfirm("Удалить строку?")) return; const d = db[curTab].find(x=>x.id===curDocId); d.items = d.items.filter(x=>normalizeId(x.id)!==normalizeId(rid)); save(); renderRows(); }
+    async function delRow(rid) { if(!await customConfirm("Удалить строку?")) return; const d = db[curTab]?.find(x=>x.id===curDocId); if (!d) return; d.items = d.items.filter(x=>normalizeId(x.id)!==normalizeId(rid)); save(); renderRows(); }
     async function deleteFullDoc() { if(!await customConfirm("УДАЛИТЬ ВЕСЬ ДОКУМЕНТ?")) return; db[curTab] = db[curTab].filter(x=>x.id!==curDocId); save(); exitWork(); }
     function openManualSearch() {
         scanBuf = "";
