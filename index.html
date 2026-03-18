@@ -16,8 +16,8 @@
     <meta name="application-name" content="Складской Терминал">
 
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="96x96" href="icons/favicon-96x96.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/web-app-manifest-192x192.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="icons/web-app-manifest-192x192.png">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1353,7 +1353,7 @@ body {
             <div id="kiosk-a4-status" class="text-sm">A4 буфер: 0/10</div>
             <div class="text-sm kiosk-a4-subtext">A4 — печать 10 товарных позиций на одном листе офиса</div>
         </div>
-        <input type="text" id="kiosk-scanner-input" style="position: absolute; opacity: 0; pointer-events: none;" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters">
+        <input type="text" id="kiosk-scanner-input" style="position:fixed;top:0;left:0;width:1px;height:1px;font-size:16px;border:none;outline:none;padding:0;margin:0;background:transparent;color:transparent;caret-color:transparent;z-index:-1;pointer-events:none;" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters" inputmode="none" enterkeyhint="done" tabindex="-1" aria-hidden="true">
     </div>
 
     <!-- КАРТОЧКА КЛИЕНТА -->
@@ -1720,7 +1720,7 @@ body {
             <input type="text" id="a4-manual-art"
                 placeholder="Артикул или штрихкод → Enter"
                 onkeydown="if(event.key==='Enter'){ event.stopPropagation(); addA4ItemManual(); }"
-                oninput="this.value=this.value.toUpperCase()"
+                oninput="this.value=this.value.toUpperCase(); scheduleA4AutoAdd()"
                 autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters"
                 inputmode="text">
             <button class="btn-primary" type="button" onclick="addA4ItemManual()" style="min-width:44px;padding:0 12px;">+</button>
@@ -2262,6 +2262,7 @@ body {
     let scannerFocusInterval = null;
     let customerScanOverlayTimer = null;
     let scanBufResetTimer = null;
+    let a4AutoAddTimer = null;
     let serverPrinters = [];
     let kioskA4CollectMode = false;
     let kioskA4Buffer = [];
@@ -2701,50 +2702,82 @@ body {
         const SCANNER_TIMEOUT_MS = 500;   /* мс — увеличьте для медленных сканеров */
         const SCANNER_MIN_LEN    = 3;     /* минимальная длина валидного скана */
 
+        function normalizeScanCode(raw) {
+            return String(raw || '')
+                .replace(/[\u0000-\u001F\u007F]/g, '') /* CR/LF/TAB и управляющие */
+                .trim();
+        }
+
+        function submitScan(raw) {
+            const code = normalizeScanCode(raw);
+            if (code.length >= SCANNER_MIN_LEN) handleScan(code);
+        }
+
         const scannerInpEl = document.getElementById('kiosk-scanner-input');
         if (scannerInpEl) {
             /* Enter в скрытом input = завершение скана */
             scannerInpEl.addEventListener('keydown', e => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    const code = scannerInpEl.value.trim();
+                    const code = scannerInpEl.value;
                     scannerInpEl.value = '';
                     if (scanBufResetTimer) { clearTimeout(scanBufResetTimer); scanBufResetTimer = null; }
-                    if (code.length >= SCANNER_MIN_LEN) handleScan(code);
+                    submitScan(code);
                 }
             });
             /* Таймаут: если Enter не пришёл — сбрасываем буфер */
             scannerInpEl.addEventListener('input', () => {
                 if (scanBufResetTimer) clearTimeout(scanBufResetTimer);
                 scanBufResetTimer = setTimeout(() => {
-                    const code = scannerInpEl.value.trim();
+                    const code = scannerInpEl.value;
                     scannerInpEl.value = '';
                     scanBuf = '';
                     /* Если накопилось достаточно символов — всё равно пробуем обработать */
-                    if (code.length >= SCANNER_MIN_LEN) handleScan(code);
+                    submitScan(code);
                 }, SCANNER_TIMEOUT_MS);
             });
+
+            /* Некоторые профили Zebra вставляют скан как Paste/Clipboard */
+            scannerInpEl.addEventListener('paste', e => {
+                const pasted = e.clipboardData?.getData('text') || '';
+                if (!pasted) return;
+                e.preventDefault();
+                scannerInpEl.value = '';
+                scanBuf = '';
+                submitScan(pasted);
+            });
         }
+
+        window.addEventListener('paste', e => {
+            if (activeModalId) return;
+            if (!shouldCaptureScannerInput()) return;
+            const pasted = e.clipboardData?.getData('text') || '';
+            if (!pasted) return;
+            e.preventDefault();
+            submitScan(pasted);
+        });
 
         /* Глобальный keydown — только Escape и резервный канал
            (если фокус ушёл со scanner-input, напр. на внешней клавиатуре) */
         window.addEventListener('keydown', e => {
             if (e.key === 'Escape' && activeModalId) { closeModal(activeModalId); return; }
-            /* Если уже в каком-то input (кроме scanner-input) — не перехватываем */
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            /* Если уже в редактируемом поле (кроме scanner-input) — не перехватываем */
+            const targetTag = e.target?.tagName;
+            const isEditable = targetTag === 'INPUT' || targetTag === 'TEXTAREA' || targetTag === 'SELECT' || e.target?.isContentEditable;
+            if (isEditable && e.target?.id !== 'kiosk-scanner-input') return;
             if (activeModalId) return;
             /* Резервный keydown-буфер — работает только если scanner-input не получил фокус */
             if (e.key === 'Enter') {
-                if (scanBuf.length >= SCANNER_MIN_LEN) handleScan(scanBuf);
+                submitScan(scanBuf);
                 scanBuf = '';
                 if (scanBufResetTimer) { clearTimeout(scanBufResetTimer); scanBufResetTimer = null; }
             } else if (e.key.length === 1) {
                 scanBuf += e.key;
                 if (scanBufResetTimer) clearTimeout(scanBufResetTimer);
                 scanBufResetTimer = setTimeout(() => {
-                    const code = scanBuf.trim();
+                    const code = scanBuf;
                     scanBuf = '';
-                    if (code.length >= SCANNER_MIN_LEN) handleScan(code);
+                    submitScan(code);
                 }, SCANNER_TIMEOUT_MS);
             }
         });
@@ -2756,6 +2789,10 @@ body {
         window.addEventListener('hashchange', applyRouteFromHash);
         window.addEventListener('popstate', applyRouteFromHash);
         document.addEventListener('pointerdown', ensureScannerFocus, { passive: true });
+        window.addEventListener('focus', ensureScannerFocus);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') ensureScannerFocus();
+        });
         const customerView = document.getElementById('customer-view');
         if (customerView) {
             customerView.addEventListener('pointerdown', () => {
@@ -2790,7 +2827,8 @@ body {
         }
         ensureScannerFocus();
         if (scannerFocusInterval) clearInterval(scannerFocusInterval);
-        scannerFocusInterval = setInterval(ensureScannerFocus, 1200);
+        scannerFocusInterval = setInterval(ensureScannerFocus, 1500);
+        setTimeout(ensureScannerFocus, 350);
     };
 
     function saveAppState() {
@@ -2842,6 +2880,17 @@ body {
         suppressRouteSync = false;
     }
 
+    function shouldCaptureScannerInput() {
+        if (activeModalId) return false;
+        const kioskVisible = !document.getElementById('screen-kiosk')?.classList.contains('hidden');
+        const customerVisible = !document.getElementById('customer-view')?.classList.contains('hidden');
+        const managerVisible = !document.getElementById('manager-view')?.classList.contains('hidden');
+        /* Для Zebra в PWA важно иметь стабильный фокус при keyboard wedge:
+           - в клиентском киоске/карточке (обычное поведение);
+           - в manager-режиме тоже (если нет активного поля, обработает fallback в handleScan). */
+        return kioskVisible || (customerVisible && !isCustomerManagerModeActive()) || (isMgr && managerVisible);
+    }
+
     function ensureScannerFocus() {
         /* Если открыта модалка A4 — держим фокус на поле ввода артикула */
         if (activeModalId === 'modal-a4-preview') {
@@ -2853,12 +2902,11 @@ body {
             return;
         }
         const scannerInp = document.getElementById('kiosk-scanner-input');
-        if (!scannerInp || activeModalId) return;
-        const activeTag = document.activeElement?.tagName;
-        if ((activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') && document.activeElement?.id !== 'kiosk-scanner-input') return;
-        const kioskVisible = !document.getElementById('screen-kiosk')?.classList.contains('hidden');
-        const workVisible  = !document.getElementById('screen-work')?.classList.contains('hidden');
-        if (kioskVisible || workVisible) scannerInp.focus({ preventScroll: true });
+        if (!scannerInp || !shouldCaptureScannerInput()) return;
+        const activeEl = document.activeElement;
+        const activeTag = activeEl?.tagName;
+        if ((activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') && activeEl?.id !== 'kiosk-scanner-input') return;
+        scannerInp.focus({ preventScroll: true });
     }
 
     function isCustomerManagerModeActive() { return isMgr || tempCustomerManagerMode; }
@@ -2899,9 +2947,9 @@ body {
         lastScanAt = now;
         const manualSearchOpen = document.getElementById('modal-search')?.classList.contains('open');
         const customerOpen = !document.getElementById('customer-view')?.classList.contains('hidden');
-        if (kioskA4CollectMode && !isMgr && !customerOpen) {
+        if (kioskA4CollectMode && !isMgr && !customerOpen && !manualSearchOpen && activeModalId !== 'modal-a4-preview') {
+            /* В режиме A4 добавляем в буфер, но НЕ блокируем обычный поиск в киоске */
             collectA4ItemByCode(code);
-            return;
         }
         if (customerOpen && !isCustomerManagerModeActive()) {
             searchAndShowCustomerOverlay(code);
@@ -2918,6 +2966,9 @@ body {
                 if (curTab === 'writeoff') loadWriteoffStockPreview();
                 if (curTab === 'stockin') loadStockinStockPreview();
                 if (curTab === 'move') loadMoveStockPreview();
+            } else {
+                /* Менеджер в списке/карточке без активного поля — не теряем скан */
+                search1C(code, { type: 'barcode' });
             }
         }
     }
@@ -4696,7 +4747,20 @@ body {
         }, 80);
     }
 
+    function scheduleA4AutoAdd() {
+        const inp = document.getElementById('a4-manual-art');
+        if (!inp) return;
+        if (a4AutoAddTimer) clearTimeout(a4AutoAddTimer);
+        a4AutoAddTimer = setTimeout(() => {
+            if (activeModalId !== 'modal-a4-preview') return;
+            const val = (inp.value || '').trim();
+            if (val.length < 3) return;
+            addA4ItemManual();
+        }, 220);
+    }
+
     async function addA4ItemManual() {
+        if (a4AutoAddTimer) { clearTimeout(a4AutoAddTimer); a4AutoAddTimer = null; }
         const inp = document.getElementById('a4-manual-art');
         const raw = (inp?.value || '').trim().toUpperCase();
         if (!raw) return;
@@ -5624,6 +5688,8 @@ body {
             const focusable = nextModal?.querySelector(FOCUSABLE);
             if (focusable) setTimeout(() => focusable.focus(), 0);
         }
+        /* Если все модалки закрыты — возвращаем фокус в канал сканера */
+        if (!activeModalId) setTimeout(ensureScannerFocus, 100);
     }
     function showToast(m, t, durationMs = 2500) {
         const c = document.getElementById('toast-container');
