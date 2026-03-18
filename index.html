@@ -2853,7 +2853,7 @@ body {
         updateTabBadges();
         /* SW не регистрируем в srcdoc/blob-контекстах и на file:// */
         if ('serviceWorker' in navigator && location.protocol !== 'about:' && location.protocol !== 'blob:' && location.protocol !== 'file:') {
-            navigator.serviceWorker.register('./sw.js').catch(err => logError(`sw: ${err.message}`));
+            navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch(err => logError(`sw: ${err.message}`));
         }
         ensureScannerFocus();
         if (scannerFocusInterval) clearInterval(scannerFocusInterval);

@@ -1,7 +1,7 @@
 /* WHstock Service Worker
    Стратегия: Cache First для статики, Network First для API
 */
-const CACHE_NAME = 'whstock-v2';
+const CACHE_NAME = 'whstock-v3';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -50,6 +50,22 @@ self.addEventListener('fetch', event => {
         return;
     }
 
+    /* Навигация HTML — Network First, чтобы не застревать на старом index.html */
+    if (event.request.mode === 'navigate') {
+        event.respondWith(
+            fetch(event.request)
+                .then(response => {
+                    if (response && response.ok) {
+                        const clone = response.clone();
+                        caches.open(CACHE_NAME).then(cache => cache.put('./index.html', clone));
+                    }
+                    return response;
+                })
+                .catch(() => caches.match('./index.html'))
+        );
+        return;
+    }
+
     /* Внешние ресурсы — сеть с fallback на кэш */
     if (url.origin !== location.origin) {
         event.respondWith(
@@ -81,7 +97,6 @@ self.addEventListener('fetch', event => {
                         return response;
                     })
                     .catch(() => {
-                        if (event.request.mode === 'navigate') return caches.match('./index.html');
                         return new Response('Offline', { status: 503, statusText: 'Offline' });
                     });
             })
