@@ -2720,17 +2720,38 @@ body {
             handleScan(code);
         }
 
+        function scanCharFromEvent(e) {
+            if (typeof e.key === 'string' && e.key.length === 1) return e.key;
+            const kc = Number(e.keyCode || e.which || 0);
+            if (kc >= 32 && kc <= 126) return String.fromCharCode(kc);
+            return '';
+        }
+
         const scannerInpEl = document.getElementById('kiosk-scanner-input');
         if (scannerInpEl) {
             /* Enter в скрытом input = завершение скана */
             scannerInpEl.addEventListener('keydown', e => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    const code = scannerInpEl.value;
+                    e.stopPropagation();
+                    const code = scannerInpEl.value || scanBuf;
                     scannerInpEl.value = '';
+                    scanBuf = '';
                     if (scanBufResetTimer) { clearTimeout(scanBufResetTimer); scanBufResetTimer = null; }
                     submitScan(code);
+                    return;
                 }
+
+                const ch = scanCharFromEvent(e);
+                if (!ch) return;
+                scanBuf += ch;
+                if (scanBufResetTimer) clearTimeout(scanBufResetTimer);
+                scanBufResetTimer = setTimeout(() => {
+                    const code = scanBuf;
+                    scanBuf = '';
+                    submitScan(code);
+                }, SCANNER_TIMEOUT_MS);
+                e.stopPropagation();
             });
             /* Таймаут: если Enter не пришёл — сбрасываем буфер */
             scannerInpEl.addEventListener('input', () => {
@@ -2778,8 +2799,10 @@ body {
                 submitScan(scanBuf);
                 scanBuf = '';
                 if (scanBufResetTimer) { clearTimeout(scanBufResetTimer); scanBufResetTimer = null; }
-            } else if (e.key.length === 1) {
-                scanBuf += e.key;
+            } else {
+                const ch = scanCharFromEvent(e);
+                if (!ch) return;
+                scanBuf += ch;
                 if (scanBufResetTimer) clearTimeout(scanBufResetTimer);
                 scanBufResetTimer = setTimeout(() => {
                     const code = scanBuf;
