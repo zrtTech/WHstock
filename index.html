@@ -2882,9 +2882,11 @@ body {
         if (activeModalId) return false;
         const kioskVisible = !document.getElementById('screen-kiosk')?.classList.contains('hidden');
         const customerVisible = !document.getElementById('customer-view')?.classList.contains('hidden');
-        /* Сканер должен быть активен в клиентских экранах киоска и карточки товара,
-           но не должен перехватывать фокус в менеджерских разделах. */
-        return kioskVisible || (customerVisible && !isCustomerManagerModeActive());
+        const managerVisible = !document.getElementById('manager-view')?.classList.contains('hidden');
+        /* Для Zebra в PWA важно иметь стабильный фокус при keyboard wedge:
+           - в клиентском киоске/карточке (обычное поведение);
+           - в manager-режиме тоже (если нет активного поля, обработает fallback в handleScan). */
+        return kioskVisible || (customerVisible && !isCustomerManagerModeActive()) || (isMgr && managerVisible);
     }
 
     function ensureScannerFocus() {
