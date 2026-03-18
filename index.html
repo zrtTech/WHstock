@@ -2962,6 +2962,9 @@ body {
                 if (curTab === 'writeoff') loadWriteoffStockPreview();
                 if (curTab === 'stockin') loadStockinStockPreview();
                 if (curTab === 'move') loadMoveStockPreview();
+            } else {
+                /* Менеджер в списке/карточке без активного поля — не теряем скан */
+                search1C(code, { type: 'barcode' });
             }
         }
     }
