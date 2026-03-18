@@ -1353,7 +1353,7 @@ body {
             <div id="kiosk-a4-status" class="text-sm">A4 буфер: 0/10</div>
             <div class="text-sm kiosk-a4-subtext">A4 — печать 10 товарных позиций на одном листе офиса</div>
         </div>
-        <input type="text" id="kiosk-scanner-input" style="position:fixed;top:0;left:0;width:1px;height:1px;font-size:16px;border:none;outline:none;padding:0;margin:0;background:transparent;color:transparent;caret-color:transparent;opacity:0.01;z-index:-1;pointer-events:none;" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters" inputmode="text" tabindex="-1" aria-hidden="true">
+        <input type="text" id="kiosk-scanner-input" style="position:fixed;top:0;left:0;width:1px;height:1px;font-size:16px;border:none;outline:none;padding:0;margin:0;background:transparent;color:transparent;caret-color:transparent;opacity:0.01;z-index:-1;pointer-events:none;" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters" inputmode="text" virtualkeyboardpolicy="manual" tabindex="-1" aria-hidden="true">
     </div>
 
     <!-- КАРТОЧКА КЛИЕНТА -->
@@ -2789,6 +2789,31 @@ body {
         window.addEventListener('hashchange', applyRouteFromHash);
         window.addEventListener('popstate', applyRouteFromHash);
         document.addEventListener('pointerdown', () => setTimeout(ensureScannerFocus, 100), { passive: true });
+        /* ── Периодический рефокус + VirtualKeyboard guard ─────────────────
+           setInterval держит фокус на scanner-input постоянно.
+           visualViewport.resize guard: если клавиатура всё же появилась
+           (напр. Chrome < 94 без virtualkeyboardpolicy) — немедленно скрываем.
+        ────────────────────────────────────────────────────────────────── */
+        if (scannerFocusInterval) clearInterval(scannerFocusInterval);
+        scannerFocusInterval = setInterval(ensureScannerFocus, 1500);
+        setTimeout(ensureScannerFocus, 350);
+        /* Fallback: visualViewport resize = клавиатура появилась */
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', () => {
+                const kbHeight = window.innerHeight - window.visualViewport.height;
+                if (kbHeight < 80) return; /* < 80px — не клавиатура */
+                const scInp = document.getElementById('kiosk-scanner-input');
+                if (document.activeElement !== scInp) return; /* не наше поле */
+                /* Клавиатура появилась у scanner-input — убираем */
+                if (navigator.virtualKeyboard) {
+                    navigator.virtualKeyboard.hide();
+                } else {
+                    /* Последний резерв для очень старых Chrome */
+                    scInp.blur();
+                    setTimeout(() => scInp.focus({ preventScroll: true }), 50);
+                }
+            });
+        }
         window.addEventListener('focus', ensureScannerFocus);
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') ensureScannerFocus();
@@ -2907,6 +2932,10 @@ body {
         const activeTag = activeEl?.tagName;
         if ((activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') && activeEl?.id !== 'kiosk-scanner-input') return;
         scannerInp.focus({ preventScroll: true });
+        /* VirtualKeyboard API (Chrome 94+): скрываем клавиатуру после
+           программного фокуса. Работает совместно с virtualkeyboardpolicy="manual"
+           на элементе. Для Chrome < 94 — просто no-op. */
+        if (navigator.virtualKeyboard) navigator.virtualKeyboard.hide();
     }
 
     function isCustomerManagerModeActive() { return isMgr || tempCustomerManagerMode; }
