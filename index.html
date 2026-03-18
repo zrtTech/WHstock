@@ -1882,9 +1882,13 @@ body {
         let logs = safeLoad('app_error_logs', []);
         /* Каждая запись: { date, time, text } */
         logs.unshift({ date, time, text: String(text) });
-        if (logs.length > 200) logs = logs.slice(0, 200);
+        if (logs.length > 400) logs = logs.slice(0, 400);
         localStorage.setItem('app_error_logs', JSON.stringify(logs));
         console.error(`[${time}] ${text}`);
+    }
+
+    function logScan(text) {
+        logError(`[SCAN] ${text}`);
     }
 
     function openLogsModal() {
@@ -2710,7 +2714,10 @@ body {
 
         function submitScan(raw) {
             const code = normalizeScanCode(raw);
-            if (code.length >= SCANNER_MIN_LEN) handleScan(code);
+            if (!code) { logScan('ignored: empty payload'); return; }
+            if (code.length < SCANNER_MIN_LEN) { logScan(`ignored: too short (len=${code.length}) value="${code}"`); return; }
+            logScan(`accepted: "${code}" modal=${activeModalId || '-'} mgr=${isMgr ? 1 : 0} a4=${kioskA4CollectMode ? 1 : 0}`);
+            handleScan(code);
         }
 
         const scannerInpEl = document.getElementById('kiosk-scanner-input');
@@ -2949,13 +2956,17 @@ body {
         const customerOpen = !document.getElementById('customer-view')?.classList.contains('hidden');
         if (kioskA4CollectMode && !isMgr && !customerOpen && !manualSearchOpen && activeModalId !== 'modal-a4-preview') {
             /* В режиме A4 добавляем в буфер, но НЕ блокируем обычный поиск в киоске */
+            logScan(`route: collectA4ItemByCode(${code})`);
             collectA4ItemByCode(code);
         }
         if (customerOpen && !isCustomerManagerModeActive()) {
             searchAndShowCustomerOverlay(code);
             return;
         }
-        if (!isMgr || manualSearchOpen) search1C(code, { type: 'barcode' });
+        if (!isMgr || manualSearchOpen) {
+            logScan(`route: search1C barcode code=${code} manualSearchOpen=${manualSearchOpen ? 1 : 0}`);
+            search1C(code, { type: 'barcode', fromScan: true });
+        }
         else {
             const inp = document.querySelector('input[data-art-field]');
             if (inp) {
@@ -2968,7 +2979,8 @@ body {
                 if (curTab === 'move') loadMoveStockPreview();
             } else {
                 /* Менеджер в списке/карточке без активного поля — не теряем скан */
-                search1C(code, { type: 'barcode' });
+                logScan(`route: search1C fallback (manager/no-input) code=${code}`);
+                search1C(code, { type: 'barcode', fromScan: true });
             }
         }
     }
@@ -3286,8 +3298,9 @@ body {
     }
 
     async function search1C(id, opts = {}) {
-        if (isSearchPending) return;
+        if (isSearchPending) { if (opts.fromScan) logScan(`search1C skipped: pending id=${id}`); return; }
         setSearchLock(true);
+        if (opts.fromScan) logScan(`search1C start id=${id} type=${opts.type || 'auto'}`);
         showToast("Поиск...");
         if (!sets.url || isDemoMode || isKioskClientDemoMode()) {
             isProductDirty = false;
@@ -3353,14 +3366,16 @@ body {
             }
 
             if (res) {
-                isProductDirty = false; const _p = await safeJson(res); if (_p) resolveAndShowProduct(_p); else showApiError({ endpoint: '/product', status: 'net', msg: 'Пустой ответ от сервера' });
+                isProductDirty = false; const _p = await safeJson(res); if (_p) { if (opts.fromScan) logScan(`search1C success id=${id}`); resolveAndShowProduct(_p); } else showApiError({ endpoint: '/product', status: 'net', msg: 'Пустой ответ от сервера' });
             } else {
+                if (opts.fromScan) logScan(`search1C not found id=${id} status=${lastStatus}`);
                 showApiError({ endpoint: '/product', status: lastStatus,
                     msg: lastStatus === 404 ? 'Товар не найден' : 'Ошибка поиска' });
             }
         } catch (e) {
             showApiError({ endpoint: '/product', status: e.name === 'AbortError' ? 'timeout' : 'net',
                 msg: 'Сервер 1С недоступен', retryFn: () => search1C(id, opts) });
+            if (opts.fromScan) logScan(`search1C error id=${id} err=${e.message}`);
             logError(`Поиск 1С: ${e.message}`);
         }
         finally { setSearchLock(false); }
