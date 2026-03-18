@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">WHstock</string>
+    <string name="settings_title">Настройки подключения</string>
+    <string name="settings_saved">Настройки сохранены</string>
+    <string name="connection_ok">Связь с сервером ОК</string>
+    <string name="connection_fail">Ошибка связи с сервером</string>
+</resources>

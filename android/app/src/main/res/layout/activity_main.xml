@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tvMode"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Режим: клиент"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btnManagerMode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Менеджер" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnOpenSettings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Открыть настройки" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Сканер / ручной ввод кода"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/inputScanCode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="barcode / uid / articul"
+            android:imeOptions="actionSearch"
+            android:inputType="text"
+            android:maxLines="1" />
+
+        <Button
+            android:id="@+id/btnSearch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Искать товар" />
+
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Готово" />
+
+        <LinearLayout
+            android:id="@+id/productCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="#F1F5F9"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Карточка товара"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvArticul"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Артикул: -" />
+
+            <TextView
+                android:id="@+id/tvName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Название: -" />
+
+            <TextView
+                android:id="@+id/tvBrand"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Бренд: -" />
+
+            <TextView
+                android:id="@+id/tvWidth"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Ширина: -" />
+
+            <TextView
+                android:id="@+id/tvComp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Состав: -" />
+
+            <TextView
+                android:id="@+id/tvDensity"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Плотность: -" />
+
+            <EditText
+                android:id="@+id/inputPrice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:enabled="false"
+                android:hint="Цена, ₽"
+                android:inputType="numberDecimal" />
+
+            <Button
+                android:id="@+id/btnUpdateProduct"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:enabled="false"
+                android:text="Отправить изменения в 1С" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnCreateDemoDoc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Добавить demo документ в outbox" />
+
+        <Button
+            android:id="@+id/btnRunSync"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Запустить sync worker" />
+
+    </LinearLayout>
+</ScrollView>
