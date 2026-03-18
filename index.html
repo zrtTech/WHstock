@@ -2701,30 +2701,60 @@ body {
         const SCANNER_TIMEOUT_MS = 500;   /* мс — увеличьте для медленных сканеров */
         const SCANNER_MIN_LEN    = 3;     /* минимальная длина валидного скана */
 
+        function normalizeScanCode(raw) {
+            return String(raw || '')
+                .replace(/[\u0000-\u001F\u007F]/g, '') /* CR/LF/TAB и управляющие */
+                .trim();
+        }
+
+        function submitScan(raw) {
+            const code = normalizeScanCode(raw);
+            if (code.length >= SCANNER_MIN_LEN) handleScan(code);
+        }
+
         const scannerInpEl = document.getElementById('kiosk-scanner-input');
         if (scannerInpEl) {
             /* Enter в скрытом input = завершение скана */
             scannerInpEl.addEventListener('keydown', e => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    const code = scannerInpEl.value.trim();
+                    const code = scannerInpEl.value;
                     scannerInpEl.value = '';
                     if (scanBufResetTimer) { clearTimeout(scanBufResetTimer); scanBufResetTimer = null; }
-                    if (code.length >= SCANNER_MIN_LEN) handleScan(code);
+                    submitScan(code);
                 }
             });
             /* Таймаут: если Enter не пришёл — сбрасываем буфер */
             scannerInpEl.addEventListener('input', () => {
                 if (scanBufResetTimer) clearTimeout(scanBufResetTimer);
                 scanBufResetTimer = setTimeout(() => {
-                    const code = scannerInpEl.value.trim();
+                    const code = scannerInpEl.value;
                     scannerInpEl.value = '';
                     scanBuf = '';
                     /* Если накопилось достаточно символов — всё равно пробуем обработать */
-                    if (code.length >= SCANNER_MIN_LEN) handleScan(code);
+                    submitScan(code);
                 }, SCANNER_TIMEOUT_MS);
             });
+
+            /* Некоторые профили Zebra вставляют скан как Paste/Clipboard */
+            scannerInpEl.addEventListener('paste', e => {
+                const pasted = e.clipboardData?.getData('text') || '';
+                if (!pasted) return;
+                e.preventDefault();
+                scannerInpEl.value = '';
+                scanBuf = '';
+                submitScan(pasted);
+            });
         }
+
+        window.addEventListener('paste', e => {
+            if (activeModalId) return;
+            if (!shouldCaptureScannerInput()) return;
+            const pasted = e.clipboardData?.getData('text') || '';
+            if (!pasted) return;
+            e.preventDefault();
+            submitScan(pasted);
+        });
 
         /* Глобальный keydown — только Escape и резервный канал
            (если фокус ушёл со scanner-input, напр. на внешней клавиатуре) */
@@ -2737,16 +2767,16 @@ body {
             if (activeModalId) return;
             /* Резервный keydown-буфер — работает только если scanner-input не получил фокус */
             if (e.key === 'Enter') {
-                if (scanBuf.length >= SCANNER_MIN_LEN) handleScan(scanBuf);
+                submitScan(scanBuf);
                 scanBuf = '';
                 if (scanBufResetTimer) { clearTimeout(scanBufResetTimer); scanBufResetTimer = null; }
             } else if (e.key.length === 1) {
                 scanBuf += e.key;
                 if (scanBufResetTimer) clearTimeout(scanBufResetTimer);
                 scanBufResetTimer = setTimeout(() => {
-                    const code = scanBuf.trim();
+                    const code = scanBuf;
                     scanBuf = '';
-                    if (code.length >= SCANNER_MIN_LEN) handleScan(code);
+                    submitScan(code);
                 }, SCANNER_TIMEOUT_MS);
             }
         });
