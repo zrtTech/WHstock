@@ -2960,9 +2960,19 @@ body {
             collectA4ItemByCode(code);
         }
         if (customerOpen && !isCustomerManagerModeActive()) {
+            logScan(`route: customerOverlay code=${code}`);
             searchAndShowCustomerOverlay(code);
             return;
         }
+
+        const kioskVisible = !document.getElementById('screen-kiosk')?.classList.contains('hidden');
+        if (kioskVisible && !manualSearchOpen) {
+            /* Самообслуживание: в киоске скан всегда должен запускать поиск без кнопок */
+            logScan(`route: kioskAutoSearch code=${code}`);
+            search1C(code, { type: 'barcode', fromScan: true });
+            return;
+        }
+
         if (!isMgr || manualSearchOpen) {
             logScan(`route: search1C barcode code=${code} manualSearchOpen=${manualSearchOpen ? 1 : 0}`);
             search1C(code, { type: 'barcode', fromScan: true });
