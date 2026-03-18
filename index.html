@@ -1353,7 +1353,7 @@ body {
             <div id="kiosk-a4-status" class="text-sm">A4 буфер: 0/10</div>
             <div class="text-sm kiosk-a4-subtext">A4 — печать 10 товарных позиций на одном листе офиса</div>
         </div>
-        <input type="text" id="kiosk-scanner-input" style="position:absolute; left:-10000px; top:0; width:1px; height:1px; opacity:0;" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters" inputmode="none" enterkeyhint="done" tabindex="-1" aria-hidden="true">
+        <input type="text" id="kiosk-scanner-input" style="position:fixed; top:0; left:0; width:1px; height:1px; border:none; outline:none; padding:0; margin:0; background:transparent; color:transparent; caret-color:transparent; pointer-events:none; z-index:-1;" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters" inputmode="none" enterkeyhint="done" tabindex="-1" aria-hidden="true">
     </div>
 
     <!-- КАРТОЧКА КЛИЕНТА -->
@@ -5687,6 +5687,8 @@ body {
             const focusable = nextModal?.querySelector(FOCUSABLE);
             if (focusable) setTimeout(() => focusable.focus(), 0);
         }
+        /* После закрытия модалки возвращаем фокус в канал сканера */
+        setTimeout(ensureScannerFocus, 80);
     }
     function showToast(m, t, durationMs = 2500) {
         const c = document.getElementById('toast-container');
