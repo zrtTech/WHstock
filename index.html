@@ -1353,7 +1353,7 @@ body {
             <div id="kiosk-a4-status" class="text-sm">A4 буфер: 0/10</div>
             <div class="text-sm kiosk-a4-subtext">A4 — печать 10 товарных позиций на одном листе офиса</div>
         </div>
-        <input type="text" id="kiosk-scanner-input" style="position: absolute; left: -9999px; top: 0; width: 1px; height: 1px; border: none; padding: 0;" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters" autofocus>
+        <input type="text" id="kiosk-scanner-input" style="position: absolute; left: -9999px; top: 0; width: 1px; height: 1px; opacity: 0; border: none; padding: 0;" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters" inputmode="none" enterkeyhint="done">
     </div>
 
     <!-- КАРТОЧКА КЛИЕНТА -->
@@ -2785,7 +2785,17 @@ body {
         });
         window.addEventListener('hashchange', applyRouteFromHash);
         window.addEventListener('popstate', applyRouteFromHash);
-        document.addEventListener('pointerdown', ensureScannerFocus, { passive: true });
+        
+        /* Исправление: не перехватываем фокус, если клик был по кнопке или интерактивному элементу, чтобы не ломать нажатия (баг Android) */
+        document.addEventListener('pointerdown', (e) => {
+            if (e.target.closest('button, .kiosk-tool-btn, .kiosk-search-btn, .doc-card, .char-item, .row-clickable, select, a, input, textarea')) return;
+            ensureScannerFocus();
+        }, { passive: true });
+        
+        window.addEventListener('focus', ensureScannerFocus);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') ensureScannerFocus();
+        });
         const customerView = document.getElementById('customer-view');
         if (customerView) {
             customerView.addEventListener('pointerdown', () => {
