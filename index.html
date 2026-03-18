@@ -7,7 +7,6 @@
     <title>Складской Терминал</title>
     <meta name="description" content="Учёт тканей и товаров на складе">
 
-    <!-- PWA -->
     <meta name="theme-color" content="#2563eb">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,8 +15,8 @@
     <meta name="application-name" content="Складской Терминал">
 
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="96x96" href="icons/favicon-96x96.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/web-app-manifest-192x192.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="icons/web-app-manifest-192x192.png">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1321,7 +1320,6 @@ body {
 <body>
 
 <div id="app">
-    <!-- ЭКРАН КИОСКА -->
     <div id="screen-kiosk">
         <button class="kiosk-staff-entry" onclick="openLogin()" aria-label="Вход персонала">🔒 Персонал</button>
         <div class="kiosk-logo-wrap" aria-hidden="true">
@@ -1353,10 +1351,18 @@ body {
             <div id="kiosk-a4-status" class="text-sm">A4 буфер: 0/10</div>
             <div class="text-sm kiosk-a4-subtext">A4 — печать 10 товарных позиций на одном листе офиса</div>
         </div>
-        <input type="text" id="kiosk-scanner-input" style="position: absolute; left: -9999px; top: 0; width: 1px; height: 1px; opacity: 0; border: none; padding: 0;" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters" inputmode="none" enterkeyhint="done">
+        <input type="text" id="kiosk-scanner-input" 
+            style="position: fixed; top: 0; left: 0; width: 1px; height: 1px;
+                   border: none; outline: none; padding: 0; margin: 0;
+                   background: transparent; color: transparent;
+                   caret-color: transparent; pointer-events: none; z-index: -1;"
+            inputmode="none"
+            autocomplete="off" autocorrect="off" spellcheck="false" 
+            autocapitalize="characters"
+            tabindex="-1"
+            aria-hidden="true">
     </div>
 
-    <!-- КАРТОЧКА КЛИЕНТА -->
     <div id="customer-view" class="hidden" style="position:fixed; inset:0; background:white; z-index:1500; padding:24px; display:flex; flex-direction:column;">
         <div class="flex justify-between items-center mb-4">
             <h1 id="c-name" class="customer-view-title" style="flex: 1;">Товар</h1>
@@ -1419,7 +1425,6 @@ body {
         </div>
     </div>
 
-    <!-- ЗОНА ПЕРСОНАЛА -->
     <div id="manager-view" class="hidden">
         <div id="screen-list" class="p-4">
             <div class="flex justify-between items-center mb-4">
@@ -1490,19 +1495,16 @@ body {
     </div>
 </div>
 
-<!-- МОДАЛЬНЫЕ ОКНА -->
 <div id="modal-settings" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modal-settings-title">
     <div class="modal-content">
         <div class="flex justify-between items-center mb-6"><h2 id="modal-settings-title">Настройки</h2><button class="btn-icon" aria-label="Закрыть настройки" onclick="closeSettings()">✕</button></div>
         <div id="settings-info-panel" class="settings-info-panel"></div>
-        <!-- Статус подключения -->
         <div id="conn-status-bar" class="conn-status-bar unknown">
             <span class="conn-dot unknown" id="conn-dot"></span>
             <span id="conn-status-text">Статус подключения к 1С не проверен</span>
             <button class="btn-outline" style="margin-left:auto;font-size:12px;min-height:32px;padding:0 10px" onclick="test1CConnection()">Проверить</button>
         </div>
 
-        <!-- Вкладки настроек -->
         <div class="settings-tabs">
             <button class="settings-tab-btn active" onclick="switchSettingsTab('tab-1c', this)">🔗 1С и склады</button>
             <button class="settings-tab-btn" onclick="switchSettingsTab('tab-print', this)">🖨️ Печать</button>
@@ -1511,7 +1513,6 @@ body {
             <button class="settings-tab-btn" onclick="switchSettingsTab('tab-diag', this)">🛠️ Данные</button>
         </div>
 
-        <!-- ══ ВКЛАДКА 1: 1С и склады ══ -->
         <div id="tab-1c" class="settings-tab-pane active">
             <div class="light-block mb-3">
                 <label>URL сервера</label>
@@ -1544,9 +1545,7 @@ body {
             </div>
         </div>
 
-        <!-- ══ ВКЛАДКА 2: Печать ══ -->
         <div id="tab-print" class="settings-tab-pane">
-            <!-- Метод печати -->
             <div class="light-block mb-3">
                 <label>Метод печати</label>
                 <select id="set-print-method" onchange="togglePrintSettingsUI()">
@@ -1560,7 +1559,6 @@ body {
                 </div>
             </div>
 
-            <!-- Принтеры -->
             <div class="light-block mb-3" id="server-printers-block">
                 <div class="flex justify-between items-center mb-3">
                     <strong style="font-size:13px">Назначение принтеров</strong>
@@ -1582,7 +1580,6 @@ body {
                 </div>
             </div>
 
-            <!-- Добавить принтер вручную -->
             <div class="light-block mb-3">
                 <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:8px">ДОБАВИТЬ ПРИНТЕР ВРУЧНУЮ</strong>
                 <div id="custom-printers-list"></div>
@@ -1600,7 +1597,6 @@ body {
                 </div>
             </div>
 
-            <!-- ZPL шаблоны -->
             <div class="light-block" id="label-templates-block">
                 <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:8px">ШАБЛОНЫ ЭТИКЕТОК (ZPL)</strong>
                 <div class="zpl-tabs">
@@ -1619,7 +1615,6 @@ body {
             </div>
         </div>
 
-        <!-- ══ ВКЛАДКА 3: Формы ══ -->
         <div id="tab-form" class="settings-tab-pane">
             <div class="light-block mb-3">
                 <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:10px">ПОЛЯ В ФОРМЕ ПРИЁМКИ</strong>
@@ -1643,7 +1638,6 @@ body {
             </div>
         </div>
 
-        <!-- ══ ВКЛАДКА 4: Доступ ══ -->
         <div id="tab-security" class="settings-tab-pane">
             <div class="light-block mb-3">
                 <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:10px">ПАРОЛЬ МЕНЕДЖЕРА</strong>
@@ -1673,11 +1667,10 @@ body {
             </div>
         </div>
 
-        <!-- ══ ВКЛАДКА 5: Данные ══ -->
         <div id="tab-diag" class="settings-tab-pane">
             <div class="light-block mb-3">
                 <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:10px">ХРАНИЛИЩЕ</strong>
-                <div id="settings-info-panel" style="margin-bottom:0"></div>
+                <div id="settings-info-panel-diag" style="margin-bottom:0"></div>
             </div>
             <div class="light-block mb-3">
                 <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:10px">РЕЗЕРВНАЯ КОПИЯ</strong>
@@ -1720,7 +1713,7 @@ body {
             <input type="text" id="a4-manual-art"
                 placeholder="Артикул или штрихкод → Enter"
                 onkeydown="if(event.key==='Enter'){ event.stopPropagation(); addA4ItemManual(); }"
-                oninput="this.value=this.value.toUpperCase()"
+                oninput="this.value=this.value.toUpperCase(); scheduleA4AutoAdd()"
                 autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters"
                 inputmode="text">
             <button class="btn-primary" type="button" onclick="addA4ItemManual()" style="min-width:44px;padding:0 12px;">+</button>
@@ -2173,36 +2166,6 @@ body {
         else localStorage.setItem('tsd_schema_version', String(DB_SCHEMA_VERSION));
     }
 
-    function initOutbox() {
-        const indicator = document.getElementById('outbox-indicator');
-        if (indicator) indicator.classList.remove('visible');
-    }
-
-    function flushOutbox() {
-        if (typeof showToast === 'function') showToast('Очередь пуста');
-    }
-
-    function updateDataLists() {
-        const dlCells = document.getElementById('list-cells');
-        if (dlCells && Array.isArray(sets.knownCells)) {
-            dlCells.innerHTML = sets.knownCells.map(c => `<option value="${c}">`).join('');
-        }
-    }
-
-    function updateKioskA4Status() {
-        const el = document.getElementById('kiosk-a4-status');
-        if (el && typeof kioskA4Buffer !== 'undefined') {
-            el.textContent = `A4 буфер: ${kioskA4Buffer.length}/10`;
-        }
-    }
-
-    /* Защитные заглушки на случай отсутствия других функций */
-    if (typeof window.showToast !== 'function') window.showToast = (msg) => console.log('TOAST:', msg);
-    if (typeof window.closeModal !== 'function') window.closeModal = (id) => { const el = document.getElementById(id); if (el) el.classList.remove('open'); };
-    if (typeof window.switchTab !== 'function') window.switchTab = () => {};
-    if (typeof window.openDoc !== 'function') window.openDoc = () => {};
-    if (typeof window.renderDocList !== 'function') window.renderDocList = () => {};
-
     let curTab = safeLoad('app_last_tab', 'receive');
     let curDocId = safeLoad('app_last_doc_id', null);
     let isMgr = false; /* Инициализируем через checkSessionValidity() ниже */
@@ -2292,6 +2255,7 @@ body {
     let scannerFocusInterval = null;
     let customerScanOverlayTimer = null;
     let scanBufResetTimer = null;
+    let a4AutoAddTimer = null;
     let serverPrinters = [];
     let kioskA4CollectMode = false;
     let kioskA4Buffer = [];
@@ -2481,7 +2445,7 @@ body {
     }
 
     function renderSettingsInfoPanel() {
-        const box = document.getElementById('settings-info-panel');
+        const box = document.getElementById('settings-info-panel-diag');
         if (!box) return;
         const allDocs = ['receive','move','writeoff','stockin','price'].reduce((s,t)=>s+(db[t]||[]).length,0);
         const activeDocs = ['receive','move','writeoff','stockin','price'].reduce((s,t)=>s+(db[t]||[]).filter(d=>d.status==='active').length,0);
@@ -2731,50 +2695,82 @@ body {
         const SCANNER_TIMEOUT_MS = 500;   /* мс — увеличьте для медленных сканеров */
         const SCANNER_MIN_LEN    = 3;     /* минимальная длина валидного скана */
 
+        function normalizeScanCode(raw) {
+            return String(raw || '')
+                .replace(/[\u0000-\u001F\u007F]/g, '') /* CR/LF/TAB и управляющие */
+                .trim();
+        }
+
+        function submitScan(raw) {
+            const code = normalizeScanCode(raw);
+            if (code.length >= SCANNER_MIN_LEN) handleScan(code);
+        }
+
         const scannerInpEl = document.getElementById('kiosk-scanner-input');
         if (scannerInpEl) {
             /* Enter в скрытом input = завершение скана */
             scannerInpEl.addEventListener('keydown', e => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    const code = scannerInpEl.value.trim();
+                    const code = scannerInpEl.value;
                     scannerInpEl.value = '';
                     if (scanBufResetTimer) { clearTimeout(scanBufResetTimer); scanBufResetTimer = null; }
-                    if (code.length >= SCANNER_MIN_LEN) handleScan(code);
+                    submitScan(code);
                 }
             });
             /* Таймаут: если Enter не пришёл — сбрасываем буфер */
             scannerInpEl.addEventListener('input', () => {
                 if (scanBufResetTimer) clearTimeout(scanBufResetTimer);
                 scanBufResetTimer = setTimeout(() => {
-                    const code = scannerInpEl.value.trim();
+                    const code = scannerInpEl.value;
                     scannerInpEl.value = '';
                     scanBuf = '';
                     /* Если накопилось достаточно символов — всё равно пробуем обработать */
-                    if (code.length >= SCANNER_MIN_LEN) handleScan(code);
+                    submitScan(code);
                 }, SCANNER_TIMEOUT_MS);
             });
+
+            /* Некоторые профили Zebra вставляют скан как Paste/Clipboard */
+            scannerInpEl.addEventListener('paste', e => {
+                const pasted = e.clipboardData?.getData('text') || '';
+                if (!pasted) return;
+                e.preventDefault();
+                scannerInpEl.value = '';
+                scanBuf = '';
+                submitScan(pasted);
+            });
         }
+
+        window.addEventListener('paste', e => {
+            if (activeModalId) return;
+            if (!shouldCaptureScannerInput()) return;
+            const pasted = e.clipboardData?.getData('text') || '';
+            if (!pasted) return;
+            e.preventDefault();
+            submitScan(pasted);
+        });
 
         /* Глобальный keydown — только Escape и резервный канал
            (если фокус ушёл со scanner-input, напр. на внешней клавиатуре) */
         window.addEventListener('keydown', e => {
             if (e.key === 'Escape' && activeModalId) { closeModal(activeModalId); return; }
-            /* Если уже в каком-то input (кроме scanner-input) — не перехватываем */
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            /* Если уже в редактируемом поле (кроме scanner-input) — не перехватываем */
+            const targetTag = e.target?.tagName;
+            const isEditable = targetTag === 'INPUT' || targetTag === 'TEXTAREA' || targetTag === 'SELECT' || e.target?.isContentEditable;
+            if (isEditable && e.target?.id !== 'kiosk-scanner-input') return;
             if (activeModalId) return;
             /* Резервный keydown-буфер — работает только если scanner-input не получил фокус */
             if (e.key === 'Enter') {
-                if (scanBuf.length >= SCANNER_MIN_LEN) handleScan(scanBuf);
+                submitScan(scanBuf);
                 scanBuf = '';
                 if (scanBufResetTimer) { clearTimeout(scanBufResetTimer); scanBufResetTimer = null; }
             } else if (e.key.length === 1) {
                 scanBuf += e.key;
                 if (scanBufResetTimer) clearTimeout(scanBufResetTimer);
                 scanBufResetTimer = setTimeout(() => {
-                    const code = scanBuf.trim();
+                    const code = scanBuf;
                     scanBuf = '';
-                    if (code.length >= SCANNER_MIN_LEN) handleScan(code);
+                    submitScan(code);
                 }, SCANNER_TIMEOUT_MS);
             }
         });
@@ -2785,13 +2781,7 @@ body {
         });
         window.addEventListener('hashchange', applyRouteFromHash);
         window.addEventListener('popstate', applyRouteFromHash);
-        
-        /* Исправление: не перехватываем фокус, если клик был по кнопке или интерактивному элементу, чтобы не ломать нажатия (баг Android) */
-        document.addEventListener('pointerdown', (e) => {
-            if (e.target.closest('button, .kiosk-tool-btn, .kiosk-search-btn, .doc-card, .char-item, .row-clickable, select, a, input, textarea')) return;
-            ensureScannerFocus();
-        }, { passive: true });
-        
+        document.addEventListener('pointerdown', ensureScannerFocus, { passive: true });
         window.addEventListener('focus', ensureScannerFocus);
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') ensureScannerFocus();
@@ -2828,9 +2818,12 @@ body {
         if ('serviceWorker' in navigator && location.protocol !== 'about:' && location.protocol !== 'blob:' && location.protocol !== 'file:') {
             navigator.serviceWorker.register('./sw.js').catch(err => logError(`sw: ${err.message}`));
         }
+        
+        /* ИСПРАВЛЕННЫЙ ЗАПУСК ИНТЕРВАЛА ФОКУСИРОВКИ И НАЧАЛЬНЫЙ ФОКУС */
         ensureScannerFocus();
         if (scannerFocusInterval) clearInterval(scannerFocusInterval);
-        scannerFocusInterval = setInterval(ensureScannerFocus, 1200);
+        scannerFocusInterval = setInterval(ensureScannerFocus, 1500);
+        setTimeout(ensureScannerFocus, 350);
     };
 
     function saveAppState() {
@@ -2882,6 +2875,17 @@ body {
         suppressRouteSync = false;
     }
 
+    function shouldCaptureScannerInput() {
+        if (activeModalId) return false;
+        const kioskVisible = !document.getElementById('screen-kiosk')?.classList.contains('hidden');
+        const customerVisible = !document.getElementById('customer-view')?.classList.contains('hidden');
+        const managerVisible = !document.getElementById('manager-view')?.classList.contains('hidden');
+        /* Для Zebra в PWA важно иметь стабильный фокус при keyboard wedge:
+           - в клиентском киоске/карточке (обычное поведение);
+           - в manager-режиме тоже (если нет активного поля, обработает fallback в handleScan). */
+        return kioskVisible || (customerVisible && !isCustomerManagerModeActive()) || (isMgr && managerVisible);
+    }
+
     function ensureScannerFocus() {
         /* Если открыта модалка A4 — держим фокус на поле ввода артикула */
         if (activeModalId === 'modal-a4-preview') {
@@ -2893,12 +2897,11 @@ body {
             return;
         }
         const scannerInp = document.getElementById('kiosk-scanner-input');
-        if (!scannerInp || activeModalId) return;
-        const activeTag = document.activeElement?.tagName;
-        if ((activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') && document.activeElement?.id !== 'kiosk-scanner-input') return;
-        const kioskVisible = !document.getElementById('screen-kiosk')?.classList.contains('hidden');
-        const workVisible  = !document.getElementById('screen-work')?.classList.contains('hidden');
-        if (kioskVisible || workVisible) scannerInp.focus({ preventScroll: true });
+        if (!scannerInp || !shouldCaptureScannerInput()) return;
+        const activeEl = document.activeElement;
+        const activeTag = activeEl?.tagName;
+        if ((activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') && activeEl?.id !== 'kiosk-scanner-input') return;
+        scannerInp.focus({ preventScroll: true });
     }
 
     function isCustomerManagerModeActive() { return isMgr || tempCustomerManagerMode; }
@@ -2939,10 +2942,12 @@ body {
         lastScanAt = now;
         const manualSearchOpen = document.getElementById('modal-search')?.classList.contains('open');
         const customerOpen = !document.getElementById('customer-view')?.classList.contains('hidden');
-        if (kioskA4CollectMode && !isMgr && !customerOpen) {
+        
+        /* ИСПРАВЛЕННАЯ ЛОГИКА: ТОВАР ИЩЕТСЯ ДАЖЕ ЕСЛИ ВКЛЮЧЕН СБОР А4 */
+        if (kioskA4CollectMode && !isMgr && !customerOpen && !manualSearchOpen) {
             collectA4ItemByCode(code);
-            return;
         }
+        
         if (customerOpen && !isCustomerManagerModeActive()) {
             searchAndShowCustomerOverlay(code);
             return;
@@ -2958,6 +2963,9 @@ body {
                 if (curTab === 'writeoff') loadWriteoffStockPreview();
                 if (curTab === 'stockin') loadStockinStockPreview();
                 if (curTab === 'move') loadMoveStockPreview();
+            } else {
+                /* Менеджер в списке/карточке без активного поля — не теряем скан */
+                search1C(code, { type: 'barcode' });
             }
         }
     }
@@ -3015,22 +3023,6 @@ body {
         return Object.assign(headers, extra || {});
     }
 
-        /* ─── fetchProductByCode ────────────────────────────────────────────
-       Универсальный поиск товара по коду (штрихкод → артикул fallback).
-       Возвращает объект Product или null при ошибке / не найдено.
-       Бросает исключение только при сетевой ошибке — caller решает как
-       отображать ошибку.
-    ────────────────────────────────────────────────────────────────── */
-    /* ─── Цепочка поиска товара ─────────────────────────────────────────
-       Приоритет:
-         1. uid          — GUID 8-4-4-4-12, уникален в 1С
-         2. barcode      — штрихкод EAN/QR на этикетке товара
-         3. char_articul — артикул характеристики (SKU варианта, например ART-001/СИН)
-         4. articul      — артикул номенклатуры (базовый, может вернуть список характеристик)
-
-       Для fetchProductByCode (внутренний, без type) — полная цепочка.
-       Для search1C (из UI/сканера) — тип передаётся явно или определяется auto.
-    ────────────────────────────────────────────────────────────────── */
     const UID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
     async function fetchProductByCode(art) {
@@ -3065,17 +3057,6 @@ body {
         { warehouse: 'Розница',  cell: 'C3',    meters: 1.5 }
     ];
 
-    /* ─── loadStockPreview ──────────────────────────────────────────────
-       Единая функция загрузки и отрисовки остатков для writeoff/move/stockin.
-
-       config {
-         boxId      : string   — id DOM-элемента-контейнера
-         cacheKey   : string   — имя переменной кэша ('writeoffStockRowsCache' …)
-         emptyHint  : string   — текст когда артикул не введён
-         sectionLabel: string  — заголовок секции ("Остатки по складам:" / "Данные хранения:")
-         rowClickFn : string   — имя функции-обработчика клика на строку
-       }
-    ────────────────────────────────────────────────────────────────── */
     async function loadStockPreview(config) {
         const { boxId, cacheKey, emptyHint, sectionLabel, rowClickFn } = config;
 
@@ -3126,8 +3107,6 @@ body {
 
         const total = rows.reduce((s, r) => s + toNumber(r.meters ?? r.m), 0);
 
-        /* Строки таблицы — данные из 1С, вставляем через textContent
-           чтобы избежать XSS. Собираем узлы вручную. */
         const frag = document.createDocumentFragment();
 
         const header = document.createElement('div');
@@ -3142,7 +3121,6 @@ body {
             const row = document.createElement('div');
             row.className = 'row row-clickable';
             row.setAttribute('onmousedown', `event.preventDefault(); ${rowClickFn}(${i});`);
-            /* event.preventDefault() — не даём фокусу уйти с art-поля до срабатывания клика */
 
             const whCell   = document.createElement('div');
             const mCell    = document.createElement('div');
@@ -3161,7 +3139,6 @@ body {
         box.innerHTML = '';
         box.appendChild(frag);
 
-        /* Восстанавливаем подсветку если строка уже была выбрана */
         const tabKey = cacheKey === 'writeoffStockRowsCache' ? 'writeoff'
                      : cacheKey === 'moveStockRowsCache'     ? 'move'
                      : 'stockin';
@@ -3169,7 +3146,6 @@ body {
         if (savedIdx >= 0) highlightStockRow(boxId, savedIdx);
     }
 
-    /* ─── Тонкие обёртки — все внешние вызовы остаются без изменений ── */
     async function loadWriteoffStockPreview() {
         return loadStockPreview({
             boxId:        'writeoff-stock-preview',
@@ -3294,7 +3270,6 @@ body {
                     "https://images.unsplash.com/photo-1619596662488-085e45fddf72?auto=format&fit=crop&w=1200&q=60",
                     "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=1200&q=60"
                 ],
-                /* Демо: несколько характеристик — покажет модалку выбора */
                 characteristics: [
                     { uid: "char-001", name: "Белый / 150см",
                       priceRub: 1290,
@@ -3315,18 +3290,14 @@ body {
             const headers = api1CHeaders();
             const code = String(id || '').trim();
 
-            /* Определяем стартовый тип и цепочку fallback */
             let types;
             if (opts.type === 'articul') {
-                /* Явный поиск по артикулу → char_articul не нужен */
                 types = ['articul'];
             } else if (opts.type === 'char_articul') {
-                /* Явный поиск по артикулу характеристики */
                 types = ['char_articul', 'articul'];
             } else if (UID_RE.test(code)) {
                 types = ['uid'];
             } else {
-                /* Сканирование или авто: полная цепочка */
                 types = ['barcode', 'char_articul', 'articul'];
             }
 
@@ -3390,7 +3361,6 @@ body {
         return [];
     }
 
-    /* Накапливаем ячейки из ответа 1С в sets.knownCells и обновляем datalist */
     function collectCellsFromRows(rows) {
         if (!Array.isArray(rows) || !rows.length) return;
         let changed = false;
@@ -3413,13 +3383,10 @@ body {
         const cell = normalizeCellValue(cellValue);
         if (!cell || sets.allowNewCells) return true;
         const known = new Set();
-        /* 1. Накопленные из 1С */
         if (Array.isArray(sets.knownCells)) {
             sets.knownCells.forEach(c => { const v = normalizeCellValue(c); if (v) known.add(v); });
         }
-        /* 2. Datalist (из документов и 1С) */
         document.querySelectorAll('#list-cells option').forEach(o => { const v = normalizeCellValue(o.value); if (v) known.add(v); });
-        /* 3. Текущие кэши остатков */
         [...writeoffStockRowsCache, ...moveStockRowsCache, ...stockinStockRowsCache].forEach(r => {
             const c = normalizeCellValue(r.cell || r.shelf || '');
             if (c && c !== '-') known.add(c);
@@ -3434,7 +3401,6 @@ body {
         return matched.reduce((sum, r) => sum + toNumber(r.meters ?? r.m), 0);
     }
 
-    /* Подсвечивает кликнутую строку в превью остатков */
     function highlightStockRow(previewId, idx) {
         const box = document.getElementById(previewId);
         if (!box) return;
@@ -3450,7 +3416,6 @@ body {
         if (!row) return;
         const wh   = String(row.warehouse || row.wh   || '').trim();
         const cell = normalizeCellValue(row.cell || row.shelf || '');
-        /* Выбираем склад — ищем совпадение без учёта регистра и пробелов */
         const whSel = document.getElementById('f-wh-doc');
         if (whSel && wh) {
             const match = [...whSel.options].find(o => o.value.trim().toLowerCase() === wh.toLowerCase());
@@ -3460,7 +3425,6 @@ body {
         if (cellInp) cellInp.value = cell === '-' ? '' : cell;
         if (whSel?.value) setDocWarehouse(whSel.value);
         writeoffPrefillSource = { wh: whSel?.value || wh, cell: cellInp?.value || '' };
-        /* Снимаем подсветку с остальных, выделяем кликнутую строку */
         _selectedStockRowIdx.writeoff = idx;
         highlightStockRow('writeoff-stock-preview', idx);
         const qtyInp = document.getElementById('f-m');
@@ -3616,28 +3580,6 @@ body {
         summary.textContent = `Общий метраж: ${total.toFixed(2)} м`;
     }
 
-    /* ════════════════════════════════════════════════════════════════
-       ХАРАКТЕРИСТИКИ НОМЕНКЛАТУРЫ (1С УНФ)
-
-       Контракт с 1С. Два варианта ответа от /product:
-
-       Вариант 3 — штрихкод однозначен (одна характеристика):
-         { uid, articul, name, ..., charUid: "guid", charName: "Синий 150см",
-           priceRub: 920, stockRows: [...] }
-
-       Вариант 2 — fallback, несколько характеристик:
-         { uid, articul, name, ...,
-           characteristics: [
-             { uid: "guid1", name: "Синий 150см", priceRub: 920,
-               stockRows: [{warehouse, cell, meters}] },
-             { uid: "guid2", name: "Белый 180см", priceRub: 990,
-               stockRows: [...] }
-           ]
-         }
-
-       Если characteristics[] length == 1 — выбор пропускается.
-    ════════════════════════════════════════════════════════════════ */
-
     function hasCharacteristics(p) {
         return Array.isArray(p.characteristics) && p.characteristics.length > 0;
     }
@@ -3646,48 +3588,22 @@ body {
         return hasCharacteristics(p) && p.characteristics.length === 1;
     }
 
-    /* Применяем характеристику к продукту — подменяем цену и остатки */
     function applyCharacteristic(baseProduct, char) {
         return {
             ...baseProduct,
-            /* Характеристика перекрывает базовые поля */
             charUid:    char.uid      || char.charUid   || '',
             charName:   char.name     || char.charName  || '',
             priceRub:   char.priceRub ?? char.price     ?? baseProduct.priceRub ?? 0,
             stockRows:  char.stockRows || char.stocks   || baseProduct.stockRows || [],
             ean13:      char.ean13    || baseProduct.ean13 || '',
-            /* Сохраняем список для возможности смены характеристики */
             characteristics: baseProduct.characteristics,
             _baseProduct: baseProduct,
         };
     }
 
-    /* Точка входа — решает показать выбор или сразу карточку */
-    function resolveAndShowProduct(p) {
-        /* Вариант 3: в ответе уже charUid — штрихкод был уникальным */
-        if (p.charUid && !hasCharacteristics(p)) {
-            showProduct(p);
-            return;
-        }
-        /* Нет характеристик вообще — обычный товар */
-        if (!hasCharacteristics(p)) {
-            showProduct(p);
-            return;
-        }
-        /* Одна характеристика — выбор пропускаем, применяем сразу */
-        if (hasSingleChar(p)) {
-            showProduct(applyCharacteristic(p, p.characteristics[0]));
-            return;
-        }
-        /* Несколько характеристик — показываем модалку выбора */
-        openCharSelectModal(p);
-    }
-
-    /* Текущий базовый продукт для модалки (чтобы можно было вернуться к выбору) */
     let _charSelectBaseProduct = null;
 
     function openCharSelectModal(baseProduct) {
-        /* Если вызов без аргумента — повторно открываем для currentProduct */
         const p = baseProduct || currentProduct?._baseProduct || currentProduct;
         if (!p || !hasCharacteristics(p)) return;
         _charSelectBaseProduct = p;
@@ -3705,7 +3621,6 @@ body {
             const item = document.createElement('div');
             item.className = 'char-item';
 
-            /* Подсвечиваем текущую если уже выбрана */
             if (currentProduct?.charUid && currentProduct.charUid === char.uid) {
                 item.classList.add('selected');
             }
@@ -3749,7 +3664,6 @@ body {
         openModal('modal-char-select');
     }
 
-    /* Обновляем строку характеристики в карточке */
     function renderCharRow(p) {
         const row     = document.getElementById('c-row-char');
         const tagEl   = document.getElementById('c-char-tag');
@@ -3762,7 +3676,6 @@ body {
 
         if (hasChar) {
             tagEl.textContent = p.charName || p.charUid;
-            /* Показываем стрелку если можно сменить */
             if (canSwitch) {
                 tagEl.title = 'Нажмите для смены характеристики';
                 const badge = document.createElement('span');
@@ -3885,7 +3798,6 @@ body {
         }, 50);
     }
 
-    /* Живая проверка ячейки в модалке — показывает предупреждение под полем */
     function srValidateCell(value) {
         const hint = document.getElementById('sr-cell-hint');
         if (!hint) return;
@@ -3910,13 +3822,11 @@ body {
         const cell = normalizeCellValue(document.getElementById('sr-cell').value);
         const warehouse = document.getElementById('sr-wh').value;
 
-        /* Проверка метража */
         if (!(metersValue >= 0)) {
             fieldError('sr-meters', 'Укажите количество метров');
             return;
         }
 
-        /* Проверка ячейки — только если указана */
         if (cell && !isKnownCell(cell)) {
             if (!sets.allowNewCells) {
                 const hint = document.getElementById('sr-cell-hint');
@@ -3929,7 +3839,6 @@ body {
                 document.getElementById('sr-cell')?.focus();
                 return;
             }
-            /* allowNewCells = true — добавляем ячейку в knownCells */
             if (!Array.isArray(sets.knownCells)) sets.knownCells = [];
             if (!sets.knownCells.includes(cell)) {
                 sets.knownCells.push(cell);
@@ -4061,24 +3970,9 @@ body {
     }
 
     /* ПЕЧАТЬ */
-    /* ════════════════════════════════════════════════════════════════
-       PRINT SERVICE — единый сервис печати этикеток
-       Все вызовы идут через printService.send(job), метод определяется
-       из sets.printMethod автоматически.
-
-       job {
-         type        : 'client' | 'warehouse' | 'hanger' | 'a4'
-         payload     : объект с полями товара (articul, brand, ...)
-         printerName : имя принтера (опционально, берётся из настроек)
-       }
-
-       Возвращает { ok, method, error? }
-    ════════════════════════════════════════════════════════════════ */
     const printService = {
 
-        /* ── ZPL-шаблон клиентской/складской этикетки ── */
         _buildZpl(p, labelType) {
-            /* Пользовательский шаблон из настроек */
             const customTpl = (sets.zplTemplates || {})[labelType || 'client'];
             if (customTpl) {
                 const sv2 = sanitizeZplValue;
@@ -4108,9 +4002,11 @@ body {
                 `^FO30,210^A0N,30,30^FD\u0426\u0435\u043d\u0430: ${sv(price)}^FS` +
                 `^FO60,250^BY2^BCN,70,Y,N,N^FD${sv(p.articul || '-')}^FS^XZ`;
         },
+
         _zplToBase64(zpl) {
             return btoa(new TextEncoder().encode(zpl).reduce((d, b) => d + String.fromCharCode(b), ''));
         },
+
         async _sendServer(job) {
             if (!sets.url) throw Object.assign(new Error('URL не настроен'), { code: 'no-url' });
             const body = {
@@ -4128,6 +4024,7 @@ body {
             if (!res.ok) throw Object.assign(new Error(`HTTP ${res.status}`), { code: `http_${res.status}`, status: res.status });
             return { ok: true, method: 'server', endpoint };
         },
+
         async _sendPrintNode(job) {
             if (!sets.pnKey || !sets.pnPrinter) {
                 throw Object.assign(new Error('PrintNode не настроен'), { code: 'not_configured' });
@@ -4150,18 +4047,22 @@ body {
             if (!res.ok) throw Object.assign(new Error(`PrintNode HTTP ${res.status}`), { code: `http_${res.status}`, status: res.status });
             return { ok: true, method: 'printnode' };
         },
+
         _sendRawBT(job) {
             const zpl     = this._buildZpl(job.payload, job.type);
             const encoded = this._zplToBase64(zpl);
             window.location.href = `intent://base64,${encoded}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`;
             return { ok: true, method: 'rawbt' };
         },
+
         async send(job) {
             const method = sets.printMethod || 'server';
+
             if (isDemoMode) {
                 showToast(`DEV: печать (${job.type}) через ${method}`, 'success');
                 return { ok: true, method: 'demo' };
             }
+
             try {
                 let result;
                 if (method === 'server') {
@@ -4171,11 +4072,14 @@ body {
                 } else {
                     result = this._sendRawBT(job);
                 }
+
                 const labels = { client: 'Этикетка', warehouse: 'Складская этикетка', hanger: 'Хангер', a4: 'Лист A4' };
                 showToast(`${labels[job.type] || 'Печать'} отправлена`, 'success');
                 return result;
+
             } catch (e) {
                 logError(`printService.send(${job.type}/${method}): ${e.message}`);
+
                 if (method === 'server' && (job.type === 'client' || job.type === 'warehouse')) {
                     showApiError({
                         endpoint: '/print-label',
@@ -4184,6 +4088,7 @@ body {
                     });
                     return this._sendRawBT(job);
                 }
+
                 showApiError({
                     endpoint: e.code === 'not_configured' ? 'PrintNode' : '/print-label',
                     status: e.status || 'net',
@@ -4257,6 +4162,7 @@ body {
         });
     }
 
+
     function getCurrentProductSnapshot() {
         const p = currentProduct || {};
         return {
@@ -4296,95 +4202,37 @@ body {
         return serverPrinters;
     }
 
-    /* ЗАЩИТА ОТ ПРОЖИГА ПИКСЕЛЕЙ */
-    (function burnInGuard() {
-        const ssEl = document.createElement('div');
-        ssEl.id = 'burnin-screensaver';
-        ssEl.innerHTML = `
-          <div id="burnin-screensaver-logo">
-            <svg width="72" height="72" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-              <path d="M12 24L32 10L52 24" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
-              <rect x="13" y="24" width="38" height="30" rx="6" stroke="currentColor" stroke-width="2.8"/>
-              <rect x="24" y="34" width="16" height="14" rx="2" fill="currentColor" opacity=".30"/>
-              <circle cx="32" cy="19" r="3" fill="currentColor"/>
-            </svg>
-            <span>СКЛАД-ЦЕНТР</span>
-            <span id="burnin-screensaver-hint">КОСНИТЕСЬ ДЛЯ ПРОДОЛЖЕНИЯ</span>
-          </div>`;
+    const ZPL_VARS = [
+        { key: '{{ARTICUL}}',     hint: 'Артикул' },
+        { key: '{{NAME}}',        hint: 'Наименование' },
+        { key: '{{BRAND}}',       hint: 'Бренд' },
+        { key: '{{COMPOSITION}}', hint: 'Состав' },
+        { key: '{{WIDTH}}',       hint: 'Ширина' },
+        { key: '{{DENSITY}}',     hint: 'Плотность' },
+        { key: '{{PRICE}}',       hint: 'Цена' },
+        { key: '{{EAN13}}',       hint: 'Штрихкод EAN-13' },
+        { key: '{{DATE}}',        hint: 'Дата' },
+        { key: '{{STOCK_LINES}}', hint: 'Строки остатков' },
+    ];
 
-        const dimEl = document.createElement('div');
-        dimEl.id = 'burnin-dim';
+    const ZPL_TEST_DATA = {
+        ARTICUL:      'ART-001',
+        NAME:         'Ткань лён натуральный',
+        BRAND:        'BrandName',
+        COMPOSITION:  '100%LN',
+        WIDTH:        '150',
+        DENSITY:      '220',
+        PRICE:        '1290.00 ₽',
+        EAN13:        '4600000000001',
+        DATE:         new Date().toLocaleDateString('ru-RU'),
+        STOCK_LINES:  'Магазин/A1/12.5м',
+    };
 
-        document.body.appendChild(dimEl);
-        document.body.appendChild(ssEl);
-
-        const DIM_MS = 3 * 60 * 1000;
-        const SS_MS  = 5 * 60 * 1000;
-
-        let dimTimer = null;
-        let ssTimer  = null;
-        let active   = false;
-
-        function isKiosk() {
-            const el = document.getElementById('screen-kiosk');
-            return el && !el.classList.contains('hidden');
-        }
-
-        function showSS() {
-            if (!isKiosk() || active) return;
-            active = true;
-            ssEl.classList.add('bs-active');
-        }
-
-        function hideSS() {
-            active = false;
-            ssEl.classList.remove('bs-active');
-            dimEl.classList.remove('bd-active');
-            reset();
-        }
-
-        function dim() {
-            if (!isKiosk() || active) return;
-            dimEl.classList.add('bd-active');
-        }
-
-        function reset() {
-            clearTimeout(dimTimer);
-            clearTimeout(ssTimer);
-            dimEl.classList.remove('bd-active');
-            if (!isKiosk()) return;
-            dimTimer = setTimeout(dim, DIM_MS);
-            ssTimer  = setTimeout(showSS, SS_MS);
-        }
-
-        const EVENTS = ['pointerdown','pointermove','keydown','touchstart','wheel'];
-        EVENTS.forEach(ev => document.addEventListener(ev, () => {
-            if (active) hideSS();
-            else reset();
-        }, { passive: true }));
-
-        ssEl.addEventListener('click', hideSS);
-        ssEl.addEventListener('touchstart', hideSS, { passive: true });
-
-        reset();
-
-        const _orig_login  = window.loginSuccess;
-        const _orig_logout = window.logout;
-
-        if (typeof _orig_login === 'function') {
-            window.loginSuccess = function() {
-                hideSS();
-                return _orig_login.apply(this, arguments);
-            };
-        }
-        if (typeof _orig_logout === 'function') {
-            window.logout = function() {
-                const r = _orig_logout.apply(this, arguments);
-                reset();
-                return r;
-            };
-        }
-    })();
-</script>
-</body>
-</html>
+    const ZPL_DEFAULTS = {
+        client: `^XA^CI28
+^FO30,30^A0N,34,34^FD{{ARTICUL}}^FS
+^FO30,70^A0N,26,26^FD{{BRAND}}^FS
+^FO30,105^A0N,24,24^FD{{COMPOSITION}}^FS
+^FO30,135^A0N,24,24^FDШир: {{WIDTH}} Пл: {{DENSITY}}^FS
+^FO30,168^A0N,30,30^FD{{PRICE}}^FS
+^FO30,205^A0N,20,20^FD
