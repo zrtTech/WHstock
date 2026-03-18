@@ -1720,7 +1720,7 @@ body {
             <input type="text" id="a4-manual-art"
                 placeholder="Артикул или штрихкод → Enter"
                 onkeydown="if(event.key==='Enter'){ event.stopPropagation(); addA4ItemManual(); }"
-                oninput="this.value=this.value.toUpperCase()"
+                oninput="this.value=this.value.toUpperCase(); scheduleA4AutoAdd()"
                 autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters"
                 inputmode="text">
             <button class="btn-primary" type="button" onclick="addA4ItemManual()" style="min-width:44px;padding:0 12px;">+</button>
@@ -2262,6 +2262,7 @@ body {
     let scannerFocusInterval = null;
     let customerScanOverlayTimer = null;
     let scanBufResetTimer = null;
+    let a4AutoAddTimer = null;
     let serverPrinters = [];
     let kioskA4CollectMode = false;
     let kioskA4Buffer = [];
@@ -4745,7 +4746,20 @@ body {
         }, 80);
     }
 
+    function scheduleA4AutoAdd() {
+        const inp = document.getElementById('a4-manual-art');
+        if (!inp) return;
+        if (a4AutoAddTimer) clearTimeout(a4AutoAddTimer);
+        a4AutoAddTimer = setTimeout(() => {
+            if (activeModalId !== 'modal-a4-preview') return;
+            const val = (inp.value || '').trim();
+            if (val.length < 3) return;
+            addA4ItemManual();
+        }, 220);
+    }
+
     async function addA4ItemManual() {
+        if (a4AutoAddTimer) { clearTimeout(a4AutoAddTimer); a4AutoAddTimer = null; }
         const inp = document.getElementById('a4-manual-art');
         const raw = (inp?.value || '').trim().toUpperCase();
         if (!raw) return;
