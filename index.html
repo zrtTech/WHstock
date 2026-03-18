@@ -2758,6 +2758,10 @@ body {
         window.addEventListener('hashchange', applyRouteFromHash);
         window.addEventListener('popstate', applyRouteFromHash);
         document.addEventListener('pointerdown', ensureScannerFocus, { passive: true });
+        window.addEventListener('focus', ensureScannerFocus);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') ensureScannerFocus();
+        });
         const customerView = document.getElementById('customer-view');
         if (customerView) {
             customerView.addEventListener('pointerdown', () => {
@@ -2844,6 +2848,15 @@ body {
         suppressRouteSync = false;
     }
 
+    function shouldCaptureScannerInput() {
+        if (activeModalId) return false;
+        const kioskVisible = !document.getElementById('screen-kiosk')?.classList.contains('hidden');
+        const customerVisible = !document.getElementById('customer-view')?.classList.contains('hidden');
+        /* Сканер должен быть активен в клиентских экранах киоска и карточки товара,
+           но не должен перехватывать фокус в менеджерских разделах. */
+        return kioskVisible || (customerVisible && !isCustomerManagerModeActive());
+    }
+
     function ensureScannerFocus() {
         /* Если открыта модалка A4 — держим фокус на поле ввода артикула */
         if (activeModalId === 'modal-a4-preview') {
@@ -2855,13 +2868,10 @@ body {
             return;
         }
         const scannerInp = document.getElementById('kiosk-scanner-input');
-        if (!scannerInp || activeModalId) return;
+        if (!scannerInp || !shouldCaptureScannerInput()) return;
         const activeEl = document.activeElement;
         const activeTag = activeEl?.tagName;
         if ((activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') && activeEl?.id !== 'kiosk-scanner-input') return;
-        const kioskVisible = !document.getElementById('screen-kiosk')?.classList.contains('hidden');
-        /* В менеджерских экранах не перехватываем фокус, чтобы не поднимать системную клавиатуру */
-        if (!kioskVisible) return;
         scannerInp.focus({ preventScroll: true });
     }
 
