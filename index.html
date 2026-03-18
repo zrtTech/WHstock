@@ -2946,9 +2946,9 @@ body {
         lastScanAt = now;
         const manualSearchOpen = document.getElementById('modal-search')?.classList.contains('open');
         const customerOpen = !document.getElementById('customer-view')?.classList.contains('hidden');
-        if (kioskA4CollectMode && !isMgr && !customerOpen) {
+        if (kioskA4CollectMode && !isMgr && !customerOpen && activeModalId !== 'modal-a4-preview') {
+            /* В режиме A4 добавляем в буфер, но НЕ блокируем обычный поиск в киоске */
             collectA4ItemByCode(code);
-            return;
         }
         if (customerOpen && !isCustomerManagerModeActive()) {
             searchAndShowCustomerOverlay(code);
