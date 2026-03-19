@@ -46,8 +46,11 @@
             --shadow-popup: 0 20px 50px rgba(15, 23, 42, 0.14);
             --ease: 180ms ease;
             --tab-height: 52px;
-            --app-height: 100dvh;
+            --app-height: 100vh;
             --keyboard-offset: 0px;
+        }
+        @supports (height: 100dvh) {
+            :root { --app-height: 100dvh; }
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -2490,7 +2493,11 @@ body {
                 return;
             }
             if (root.requestFullscreen) {
-                await root.requestFullscreen({ navigationUI: 'hide' });
+                try {
+                    await root.requestFullscreen({ navigationUI: 'hide' });
+                } catch (_) {
+                    await root.requestFullscreen();
+                }
                 showToast('Полноэкранный режим включен');
             } else {
                 showToast('Браузер не поддерживает полноэкранный режим', 'danger');
@@ -2518,6 +2525,15 @@ body {
         document.documentElement.style.setProperty('--keyboard-offset', `${val}px`);
     }
 
+    function safeScrollIntoViewCenter(el) {
+        if (!el || typeof el.scrollIntoView !== 'function') return;
+        try {
+            el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+        } catch (_) {
+            try { el.scrollIntoView(false); } catch (__){}
+        }
+    }
+
     function setupInputAssistancePolicy() {
         document.querySelectorAll('input, textarea').forEach(el => {
             if (el.id === 'login-pass') return;
@@ -2529,22 +2545,27 @@ body {
 
     function setupKeyboardAvoidance() {
         const vv = window.visualViewport;
-        if (!vv) return;
 
         const applyViewport = rafThrottle(() => {
             syncAppViewportHeight();
+            if (!vv) {
+                setKeyboardOffset(0);
+                return;
+            }
             const keyboard = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
             setKeyboardOffset(keyboard > 80 ? keyboard : 0);
         });
 
-        vv.addEventListener('resize', applyViewport);
-        vv.addEventListener('scroll', applyViewport);
+        if (vv) {
+            vv.addEventListener('resize', applyViewport);
+            vv.addEventListener('scroll', applyViewport);
+        }
 
         document.addEventListener('focusin', (e) => {
             const t = e.target;
             if (!(t instanceof HTMLElement)) return;
             if (!t.matches('input, textarea, select')) return;
-            setTimeout(() => t.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' }), 80);
+            setTimeout(() => safeScrollIntoViewCenter(t), 80);
         }, true);
 
         document.addEventListener('focusout', () => {
