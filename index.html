@@ -144,7 +144,7 @@
         .kiosk-staff-entry:focus-visible { opacity: .88; }
 
         .product-admin-row { margin-top: 12px; }
-        .kiosk-inner { width: min(520px, 100%); position: relative; z-index: 1; }
+        .kiosk-inner { width: min(520px, 100%); max-width: 100%; position: relative; z-index: 1; }
         .kiosk-logo-wrap {
             width: 112px;
             height: 112px;
@@ -293,6 +293,19 @@
             .kiosk-search-btn { min-height: 58px; font-size: 22px; }
             .kiosk-tools { flex-wrap: wrap; }
             .kiosk-tool-btn { flex: 1 1 180px; }
+        }
+        @media (orientation: landscape) and (max-height: 620px) {
+            #screen-kiosk { padding: 12px 14px; justify-content: flex-start; overflow-y: auto; }
+            .kiosk-logo-wrap { width: 74px; height: 74px; margin-bottom: 6px; }
+            .kiosk-logo { width: 62px; height: 62px; }
+            .kiosk-title { font-size: clamp(28px, 4.4vw, 44px); }
+            .kiosk-subtitle { margin: 6px 0 14px; font-size: clamp(12px, 1.8vw, 16px); }
+            .kiosk-scan-hint { margin-bottom: 12px; font-size: clamp(20px, 3vw, 28px); }
+            .kiosk-search-btn { min-height: 48px; font-size: clamp(16px, 2.2vw, 22px); }
+            .kiosk-tools { margin-top: 10px; flex-wrap: wrap; gap: 8px; }
+            .kiosk-tool-btn { min-height: 38px; font-size: 14px; flex: 1 1 30%; }
+            #kiosk-a4-status { margin-top: 8px; font-size: 12px; }
+            .kiosk-a4-subtext { display: none; }
         }
 
         /* КНОПКИ */
@@ -1356,7 +1369,7 @@ body {
             <div id="kiosk-a4-status" class="text-sm">A4 буфер: 0/10</div>
             <div class="text-sm kiosk-a4-subtext">A4 — печать 10 товарных позиций на одном листе офиса</div>
         </div>
-        <input type="text" id="kiosk-scanner-input" style="position:fixed;top:0;left:0;width:1px;height:1px;font-size:16px;border:none;outline:none;padding:0;margin:0;background:transparent;color:transparent;caret-color:transparent;z-index:-1;pointer-events:none;" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters" inputmode="none" enterkeyhint="done" tabindex="-1" aria-hidden="true">
+        <input type="text" id="kiosk-scanner-input" style="position:fixed;left:6px;bottom:6px;width:2px;height:2px;opacity:0.02;font-size:16px;border:none;outline:none;padding:0;margin:0;background:transparent;color:transparent;caret-color:transparent;z-index:3;pointer-events:auto;" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="off" inputmode="none" enterkeyhint="done" tabindex="-1" aria-label="scanner input">
     </div>
 
     <!-- КАРТОЧКА КЛИЕНТА -->
@@ -2942,13 +2955,23 @@ body {
         return kioskVisible || (customerVisible && !isCustomerManagerModeActive()) || (isMgr && managerVisible);
     }
 
+    function focusScannerInput(el) {
+        if (!el || typeof el.focus !== 'function') return false;
+        try {
+            el.focus({ preventScroll: true });
+        } catch (_) {
+            try { el.focus(); } catch (__){}
+        }
+        return document.activeElement === el;
+    }
+
     function ensureScannerFocus() {
         /* Если открыта модалка A4 — держим фокус на поле ввода артикула */
         if (activeModalId === 'modal-a4-preview') {
             const a4inp = document.getElementById('a4-manual-art');
             if (a4inp && document.activeElement !== a4inp
                       && document.activeElement?.tagName !== 'BUTTON') {
-                a4inp.focus({ preventScroll: true });
+                focusScannerInput(a4inp);
             }
             return;
         }
@@ -2957,7 +2980,7 @@ body {
         const activeEl = document.activeElement;
         const activeTag = activeEl?.tagName;
         if ((activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') && activeEl?.id !== 'kiosk-scanner-input') return;
-        scannerInp.focus({ preventScroll: true });
+        focusScannerInput(scannerInp);
     }
 
     function isCustomerManagerModeActive() { return isMgr || tempCustomerManagerMode; }
