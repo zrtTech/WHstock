@@ -3038,9 +3038,11 @@ body {
         const manualSearchOpen = document.getElementById('modal-search')?.classList.contains('open');
         const customerOpen = !document.getElementById('customer-view')?.classList.contains('hidden');
         if (kioskA4CollectMode && !isMgr && !customerOpen && !manualSearchOpen && activeModalId !== 'modal-a4-preview') {
-            /* В режиме A4 добавляем в буфер, но НЕ блокируем обычный поиск в киоске */
+            /* В режиме A4 скан работает как "сбор листа":
+               добавляем в буфер и НЕ уводим пользователя в карточку товара. */
             logScan(`route: collectA4ItemByCode(${code})`);
             collectA4ItemByCode(code);
+            return;
         }
         if (customerOpen && !isCustomerManagerModeActive()) {
             logScan(`route: customerOverlay code=${code}`);
