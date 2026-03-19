@@ -385,9 +385,25 @@
 
         /* ПЛАНШЕТНАЯ СЕТКА */
         .work-layout { display: flex; flex-direction: column; gap: 16px; }
+        #screen-list,
+        #screen-work {
+            height: var(--app-height);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
         @media (min-width: 900px) {
             .work-layout { display: grid; grid-template-columns: 420px 1fr; align-items: start; }
             .sticky-form { position: sticky; top: 110px; }
+        }
+        @media (orientation: landscape) and (max-height: 760px) {
+            .work-layout { gap: 10px; }
+            #screen-work .header-fixed { position: sticky; top: 0; z-index: 8; }
+            #screen-work .p-4 { padding: 10px 12px calc(var(--tab-height) + 14px + env(safe-area-inset-bottom, 0px)); }
+            #screen-work .card { padding: 10px; margin-bottom: 8px; }
+        }
+        @media (min-width: 900px) and (orientation: landscape) and (max-height: 760px) {
+            .work-layout { grid-template-columns: minmax(320px, 42%) minmax(0, 1fr); }
+            .sticky-form { position: static; }
         }
 
         /* МОДАЛКИ */
@@ -5282,6 +5298,28 @@ body {
         });
     }
 
+    function setupReceiveEnterNavigation() {
+        if (curTab !== 'receive') return;
+        const ids = ['f-art', 'f-name-print', 'f-full-name', 'f-width', 'f-density', 'f-brand', 'f-comp']
+            .filter(id => !!document.getElementById(id));
+        ids.forEach((id, idx) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener('keydown', (event) => {
+                if (event.key !== 'Enter' || event.shiftKey) return;
+                event.preventDefault();
+                event.stopPropagation();
+                const nextId = ids[idx + 1];
+                if (nextId) {
+                    const next = document.getElementById(nextId);
+                    if (next && typeof next.focus === 'function') next.focus();
+                    return;
+                }
+                saveLine();
+            });
+        });
+    }
+
     function renderForm() {
         const cont = document.getElementById('form-container'); const d = db[curTab]?.find(x=>x.id===curDocId);
         if(!d || d.status !== 'active') return;
@@ -5325,6 +5363,7 @@ body {
         clearAllFieldErrors();
         _selectedStockRowIdx = { writeoff: -1, move: -1, stockin: -1 };
         setupInputAssistancePolicy();
+        setupReceiveEnterNavigation();
     }
 
     function renderCuts() {
