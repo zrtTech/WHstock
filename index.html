@@ -405,6 +405,20 @@
             .work-layout { grid-template-columns: minmax(320px, 42%) minmax(0, 1fr); }
             .sticky-form { position: static; }
         }
+        @media (orientation: landscape) and (max-height: 900px) {
+            #screen-work .header-fixed { padding: 6px 12px 4px; }
+            #screen-work .header-fixed .mb-2 { margin-bottom: 4px; }
+            #screen-work .header-fixed .mb-1 { margin-bottom: 2px; }
+            #screen-work #work-title { font-size: 34px; line-height: 1.05; margin: 0; }
+            #screen-work #work-status { font-size: 11px; }
+            #screen-work #work-counter { font-size: 11px; }
+            #screen-work .p-4 { padding-top: 6px; }
+            #form-container input,
+            #form-container select { min-height: 38px; padding: 8px 10px; font-size: 14px; }
+            #form-container .input-group { margin-bottom: 4px; }
+            #form-container label { margin-bottom: 2px; font-size: 10px; }
+            #rows-container { max-height: calc(var(--app-height) - 210px); overflow-y: auto; }
+        }
 
         /* МОДАЛКИ */
         .modal-overlay {
@@ -822,6 +836,20 @@
         .a4-progress-bar { height:4px; border-radius:2px; background:var(--border); margin-bottom:10px; overflow:hidden; }
         .a4-progress-fill { height:100%; border-radius:2px; background:var(--primary); transition:width .2s; }
         .a4-count-label { font-size:12px; color:var(--text-sec); font-weight:600; margin-bottom:6px; }
+        @media (orientation: landscape) and (max-height: 900px) {
+            #modal-a4-preview { align-items: flex-start; padding-top: 8px; }
+            #modal-a4-preview .modal-content {
+                width: min(860px, 96vw);
+                max-height: min(56vh, 360px);
+                padding: 12px;
+                border-radius: 12px;
+            }
+            #modal-a4-preview .a4-scan-row { margin-bottom: 6px; gap: 6px; }
+            #modal-a4-preview .a4-slots { gap: 6px; margin: 6px 0; }
+            #modal-a4-preview .a4-slot { min-height: 46px; padding: 4px 3px; }
+            #modal-a4-preview .a4-count-label { margin-bottom: 4px; font-size: 11px; }
+            #modal-a4-preview button { min-height: 34px; }
+        }
 
         .photo-preview-box { border: 1px dashed #cfd8e3; border-radius: 10px; padding: 8px; margin-top: 8px; background: #fafcff; }
         .photo-preview-box img { width: 100%; max-height: 180px; object-fit: contain; border-radius: 8px; background: #f2f2f2; }
