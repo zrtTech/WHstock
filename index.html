@@ -412,13 +412,15 @@
             .sticky-form { position: static; }
         }
         @media (orientation: landscape) and (max-height: 900px) {
-            #screen-work .header-fixed { padding: 6px 12px 4px; }
-            #screen-work .header-fixed .mb-2 { margin-bottom: 4px; }
-            #screen-work .header-fixed .mb-1 { margin-bottom: 2px; }
-            #screen-work #work-title { font-size: 34px; line-height: 1.05; margin: 0; }
+            #screen-work .header-fixed { padding: 2px 10px 2px; }
+            #screen-work .work-topbar { margin-bottom: 2px !important; }
+            #screen-work .work-topbar .btn-icon { min-width: 32px; min-height: 32px; font-size: 19px; border-radius: 10px; }
+            #screen-work .work-badge-row { justify-content: center; margin-bottom: 0 !important; }
+            #screen-work #work-title { font-size: 30px; line-height: 1.02; margin: 0; text-align: center; }
+            #screen-work .work-meta-row { margin-top: 0 !important; }
             #screen-work #work-status { font-size: 11px; }
             #screen-work #work-counter { font-size: 11px; }
-            #screen-work .p-4 { padding-top: 6px; }
+            #screen-work .p-4 { padding-top: 2px; }
             #form-container input,
             #form-container select { min-height: 38px; padding: 8px 10px; font-size: 14px; }
             #form-container .input-group { margin-bottom: 4px; }
@@ -1505,18 +1507,18 @@ body {
 
         <div id="screen-work" class="hidden">
             <div class="header-fixed">
-                <div class="flex justify-between items-center mb-2">
+                <div class="flex justify-between items-center mb-2 work-topbar">
                     <button class="btn-icon" aria-label="Вернуться назад" onclick="exitWork()">← Назад</button>
                     <div class="flex gap-2">
                         <button class="btn-icon text-danger" aria-label="Удалить документ" onclick="deleteFullDoc()">🗑️</button>
                         <button class="btn-icon text-success" id="btn-complete-doc" onclick="completeDoc()">✅ Готово</button>
                     </div>
                 </div>
-                <div class="flex items-center gap-2 mb-1">
+                <div class="flex items-center gap-2 mb-1 work-badge-row">
                     <span id="work-type-badge" class="doc-type-badge"></span>
                 </div>
-                <h2 id="work-title">Документ</h2>
-                <div class="flex justify-between items-center mt-1">
+                <h2 id="work-title" class="work-doc-title">Документ</h2>
+                <div class="flex justify-between items-center mt-1 work-meta-row">
                     <span id="work-status" class="monospace text-sm font-bold">АКТИВЕН</span>
                     <span id="work-counter" class="text-sm font-bold text-primary">Записей: 0</span>
                 </div>
