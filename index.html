@@ -6372,7 +6372,8 @@ body {
     async function syncWith1C() { return queueAndSync(); }
 
     async function test1CConnection() {
-        const url    = document.getElementById('set-url').value;
+        const rawUrl = document.getElementById('set-url').value;
+        const url    = String(rawUrl || '').trim().replace(/\/+$/, '');
         const user   = document.getElementById('set-user').value;
         const pass   = document.getElementById('set-pass').value;
         const apiKey = document.getElementById('set-api-key').value;
@@ -6381,6 +6382,24 @@ body {
             showToast('DEV-режим: связь с 1С не требуется', 'success'); return;
         }
         if (!url) { showToast("Сначала введите URL", "danger"); return; }
+        let parsed;
+        try {
+            parsed = new URL(url);
+        } catch (_) {
+            updateConnStatus('error', 'Некорректный URL сервера');
+            showToast('URL должен быть в формате http(s)://host:port', 'danger');
+            return;
+        }
+        const isMixedHttp = location.protocol === 'https:' && parsed.protocol === 'http:' && parsed.hostname !== 'localhost' && parsed.hostname !== '127.0.0.1';
+        if (isMixedHttp) {
+            updateConnStatus('error', 'Блокировка mixed content: HTTPS → HTTP');
+            showApiError({
+                endpoint: '/health',
+                status: 'net',
+                msg: 'Страница открыта по HTTPS, а 1С указан как HTTP. Используйте HTTPS URL для 1С или откройте приложение по HTTP в локальной сети.'
+            });
+            return;
+        }
         updateConnStatus('unknown', 'Проверяем связь...');
         showToast("Проверка связи...");
         try {
@@ -6398,8 +6417,12 @@ body {
                 showApiError({ endpoint: '/health', status: res.status, msg: 'Проверьте URL и учётные данные' });
             }
         } catch (e) {
-            updateConnStatus('error', 'Сервер недоступен · проверьте сеть и URL');
-            showApiError({ endpoint: '/health', status: 'net', msg: 'Нет ответа от сервера' });
+            const errMsg = String(e && e.message || '');
+            const netHint = errMsg.includes('Failed to fetch')
+                ? 'Нет ответа от сервера (возможны: CORS, mixed content, VPN/сеть, блокировка порта)'
+                : 'Нет ответа от сервера';
+            updateConnStatus('error', 'Сервер недоступен · проверьте сеть, URL и протокол');
+            showApiError({ endpoint: '/health', status: 'net', msg: netHint });
             logError(`Тест связи: ${e.message}`);
         }
     }
