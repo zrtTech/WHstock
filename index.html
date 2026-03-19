@@ -295,7 +295,13 @@
             .kiosk-tool-btn { flex: 1 1 180px; }
         }
         @media (orientation: landscape) and (max-height: 620px) {
-            #screen-kiosk { padding: 12px 14px; justify-content: flex-start; overflow-y: auto; }
+            #screen-kiosk {
+                padding: 12px 14px;
+                justify-content: center;
+                overflow: hidden;
+                overscroll-behavior: none;
+                touch-action: manipulation;
+            }
             .kiosk-logo-wrap { width: 74px; height: 74px; margin-bottom: 6px; }
             .kiosk-logo { width: 62px; height: 62px; }
             .kiosk-title { font-size: clamp(28px, 4.4vw, 44px); }
