@@ -1787,8 +1787,9 @@ body {
                 placeholder="Артикул или штрихкод → Enter"
                 onkeydown="if(event.key==='Enter'){ event.stopPropagation(); addA4ItemManual(); }"
                 oninput="this.value=this.value.toUpperCase(); scheduleA4AutoAdd()"
-                autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters"
-                inputmode="text">
+                autocomplete="new-password" autocorrect="off" spellcheck="false" autocapitalize="off"
+                inputmode="none" enterkeyhint="done" name="a4_manual_art_noautofill"
+                data-lpignore="true" data-form-type="other">
             <button class="btn-primary" type="button" onclick="addA4ItemManual()" style="min-width:44px;padding:0 12px;">+</button>
         </div>
         <div id="a4-slots-grid" class="a4-slots"></div>
