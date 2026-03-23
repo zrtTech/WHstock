@@ -46,8 +46,11 @@
             --shadow-popup: 0 20px 50px rgba(15, 23, 42, 0.14);
             --ease: 180ms ease;
             --tab-height: 52px;
-            --app-height: 100dvh;
+            --app-height: 100vh;
             --keyboard-offset: 0px;
+        }
+        @supports (height: 100dvh) {
+            :root { --app-height: 100dvh; }
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -141,7 +144,7 @@
         .kiosk-staff-entry:focus-visible { opacity: .88; }
 
         .product-admin-row { margin-top: 12px; }
-        .kiosk-inner { width: min(520px, 100%); position: relative; z-index: 1; }
+        .kiosk-inner { width: min(520px, 100%); max-width: 100%; position: relative; z-index: 1; }
         .kiosk-logo-wrap {
             width: 112px;
             height: 112px;
@@ -291,6 +294,25 @@
             .kiosk-tools { flex-wrap: wrap; }
             .kiosk-tool-btn { flex: 1 1 180px; }
         }
+        @media (orientation: landscape) and (max-height: 620px) {
+            #screen-kiosk {
+                padding: 12px 14px;
+                justify-content: center;
+                overflow: hidden;
+                overscroll-behavior: none;
+                touch-action: manipulation;
+            }
+            .kiosk-logo-wrap { width: 74px; height: 74px; margin-bottom: 6px; }
+            .kiosk-logo { width: 62px; height: 62px; }
+            .kiosk-title { font-size: clamp(28px, 4.4vw, 44px); }
+            .kiosk-subtitle { margin: 6px 0 14px; font-size: clamp(12px, 1.8vw, 16px); }
+            .kiosk-scan-hint { margin-bottom: 12px; font-size: clamp(20px, 3vw, 28px); }
+            .kiosk-search-btn { min-height: 48px; font-size: clamp(16px, 2.2vw, 22px); }
+            .kiosk-tools { margin-top: 10px; flex-wrap: wrap; gap: 8px; }
+            .kiosk-tool-btn { min-height: 38px; font-size: 14px; flex: 1 1 30%; }
+            #kiosk-a4-status { margin-top: 8px; font-size: 12px; }
+            .kiosk-a4-subtext { display: none; }
+        }
 
         /* КНОПКИ */
         button {
@@ -369,9 +391,41 @@
 
         /* ПЛАНШЕТНАЯ СЕТКА */
         .work-layout { display: flex; flex-direction: column; gap: 16px; }
+        #screen-list,
+        #screen-work {
+            height: var(--app-height);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
         @media (min-width: 900px) {
             .work-layout { display: grid; grid-template-columns: 420px 1fr; align-items: start; }
             .sticky-form { position: sticky; top: 110px; }
+        }
+        @media (orientation: landscape) and (max-height: 760px) {
+            .work-layout { gap: 10px; }
+            #screen-work .header-fixed { position: sticky; top: 0; z-index: 8; }
+            #screen-work .p-4 { padding: 10px 12px calc(var(--tab-height) + 14px + env(safe-area-inset-bottom, 0px)); }
+            #screen-work .card { padding: 10px; margin-bottom: 8px; }
+        }
+        @media (min-width: 900px) and (orientation: landscape) and (max-height: 760px) {
+            .work-layout { grid-template-columns: minmax(320px, 42%) minmax(0, 1fr); }
+            .sticky-form { position: static; }
+        }
+        @media (orientation: landscape) and (max-height: 900px) {
+            #screen-work .header-fixed { padding: 2px 10px 2px; }
+            #screen-work .work-topbar { margin-bottom: 2px !important; }
+            #screen-work .work-topbar .btn-icon { min-width: 32px; min-height: 32px; font-size: 19px; border-radius: 10px; }
+            #screen-work .work-badge-row { justify-content: center; margin-bottom: 0 !important; }
+            #screen-work #work-title { font-size: 30px; line-height: 1.02; margin: 0; text-align: center; }
+            #screen-work .work-meta-row { margin-top: 0 !important; }
+            #screen-work #work-status { font-size: 11px; }
+            #screen-work #work-counter { font-size: 11px; }
+            #screen-work .p-4 { padding-top: 2px; }
+            #form-container input,
+            #form-container select { min-height: 38px; padding: 8px 10px; font-size: 14px; }
+            #form-container .input-group { margin-bottom: 4px; }
+            #form-container label { margin-bottom: 2px; font-size: 10px; }
+            #rows-container { max-height: calc(var(--app-height) - 210px); overflow-y: auto; }
         }
 
         /* МОДАЛКИ */
@@ -790,6 +844,20 @@
         .a4-progress-bar { height:4px; border-radius:2px; background:var(--border); margin-bottom:10px; overflow:hidden; }
         .a4-progress-fill { height:100%; border-radius:2px; background:var(--primary); transition:width .2s; }
         .a4-count-label { font-size:12px; color:var(--text-sec); font-weight:600; margin-bottom:6px; }
+        @media (orientation: landscape) and (max-height: 900px) {
+            #modal-a4-preview { align-items: flex-start; padding-top: 8px; }
+            #modal-a4-preview .modal-content {
+                width: min(860px, 96vw);
+                max-height: min(56vh, 360px);
+                padding: 12px;
+                border-radius: 12px;
+            }
+            #modal-a4-preview .a4-scan-row { margin-bottom: 6px; gap: 6px; }
+            #modal-a4-preview .a4-slots { gap: 6px; margin: 6px 0; }
+            #modal-a4-preview .a4-slot { min-height: 46px; padding: 4px 3px; }
+            #modal-a4-preview .a4-count-label { margin-bottom: 4px; font-size: 11px; }
+            #modal-a4-preview button { min-height: 34px; }
+        }
 
         .photo-preview-box { border: 1px dashed #cfd8e3; border-radius: 10px; padding: 8px; margin-top: 8px; background: #fafcff; }
         .photo-preview-box img { width: 100%; max-height: 180px; object-fit: contain; border-radius: 8px; background: #f2f2f2; }
@@ -1353,7 +1421,7 @@ body {
             <div id="kiosk-a4-status" class="text-sm">A4 буфер: 0/10</div>
             <div class="text-sm kiosk-a4-subtext">A4 — печать 10 товарных позиций на одном листе офиса</div>
         </div>
-        <input type="text" id="kiosk-scanner-input" style="position:fixed;top:0;left:0;width:1px;height:1px;font-size:16px;border:none;outline:none;padding:0;margin:0;background:transparent;color:transparent;caret-color:transparent;opacity:0.01;z-index:-1;pointer-events:none;" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters" inputmode="none" enterkeyhint="done" tabindex="-1" aria-hidden="true">
+        <input type="text" id="kiosk-scanner-input" style="position:fixed;left:6px;bottom:6px;width:2px;height:2px;opacity:0.02;font-size:16px;border:none;outline:none;padding:0;margin:0;background:transparent;color:transparent;caret-color:transparent;z-index:3;pointer-events:auto;" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="off" inputmode="none" enterkeyhint="done" tabindex="-1" aria-label="scanner input">
     </div>
 
     <!-- КАРТОЧКА КЛИЕНТА -->
@@ -1439,18 +1507,18 @@ body {
 
         <div id="screen-work" class="hidden">
             <div class="header-fixed">
-                <div class="flex justify-between items-center mb-2">
+                <div class="flex justify-between items-center mb-2 work-topbar">
                     <button class="btn-icon" aria-label="Вернуться назад" onclick="exitWork()">← Назад</button>
                     <div class="flex gap-2">
                         <button class="btn-icon text-danger" aria-label="Удалить документ" onclick="deleteFullDoc()">🗑️</button>
                         <button class="btn-icon text-success" id="btn-complete-doc" onclick="completeDoc()">✅ Готово</button>
                     </div>
                 </div>
-                <div class="flex items-center gap-2 mb-1">
+                <div class="flex items-center gap-2 mb-1 work-badge-row">
                     <span id="work-type-badge" class="doc-type-badge"></span>
                 </div>
-                <h2 id="work-title">Документ</h2>
-                <div class="flex justify-between items-center mt-1">
+                <h2 id="work-title" class="work-doc-title">Документ</h2>
+                <div class="flex justify-between items-center mt-1 work-meta-row">
                     <span id="work-status" class="monospace text-sm font-bold">АКТИВЕН</span>
                     <span id="work-counter" class="text-sm font-bold text-primary">Записей: 0</span>
                 </div>
@@ -1721,8 +1789,9 @@ body {
                 placeholder="Артикул или штрихкод → Enter"
                 onkeydown="if(event.key==='Enter'){ event.stopPropagation(); addA4ItemManual(); }"
                 oninput="this.value=this.value.toUpperCase(); scheduleA4AutoAdd()"
-                autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters"
-                inputmode="text">
+                autocomplete="new-password" autocorrect="off" spellcheck="false" autocapitalize="off"
+                inputmode="none" enterkeyhint="done" name="a4_manual_art_noautofill"
+                data-lpignore="true" data-form-type="other">
             <button class="btn-primary" type="button" onclick="addA4ItemManual()" style="min-width:44px;padding:0 12px;">+</button>
         </div>
         <div id="a4-slots-grid" class="a4-slots"></div>
@@ -1882,9 +1951,13 @@ body {
         let logs = safeLoad('app_error_logs', []);
         /* Каждая запись: { date, time, text } */
         logs.unshift({ date, time, text: String(text) });
-        if (logs.length > 200) logs = logs.slice(0, 200);
+        if (logs.length > 400) logs = logs.slice(0, 400);
         localStorage.setItem('app_error_logs', JSON.stringify(logs));
         console.error(`[${time}] ${text}`);
+    }
+
+    function logScan(text) {
+        logError(`[SCAN] ${text}`);
     }
 
     function openLogsModal() {
@@ -2486,7 +2559,11 @@ body {
                 return;
             }
             if (root.requestFullscreen) {
-                await root.requestFullscreen({ navigationUI: 'hide' });
+                try {
+                    await root.requestFullscreen({ navigationUI: 'hide' });
+                } catch (_) {
+                    await root.requestFullscreen();
+                }
                 showToast('Полноэкранный режим включен');
             } else {
                 showToast('Браузер не поддерживает полноэкранный режим', 'danger');
@@ -2514,6 +2591,15 @@ body {
         document.documentElement.style.setProperty('--keyboard-offset', `${val}px`);
     }
 
+    function safeScrollIntoViewCenter(el) {
+        if (!el || typeof el.scrollIntoView !== 'function') return;
+        try {
+            el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+        } catch (_) {
+            try { el.scrollIntoView(false); } catch (__){}
+        }
+    }
+
     function setupInputAssistancePolicy() {
         document.querySelectorAll('input, textarea').forEach(el => {
             if (el.id === 'login-pass') return;
@@ -2525,22 +2611,27 @@ body {
 
     function setupKeyboardAvoidance() {
         const vv = window.visualViewport;
-        if (!vv) return;
 
         const applyViewport = rafThrottle(() => {
             syncAppViewportHeight();
+            if (!vv) {
+                setKeyboardOffset(0);
+                return;
+            }
             const keyboard = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
             setKeyboardOffset(keyboard > 80 ? keyboard : 0);
         });
 
-        vv.addEventListener('resize', applyViewport);
-        vv.addEventListener('scroll', applyViewport);
+        if (vv) {
+            vv.addEventListener('resize', applyViewport);
+            vv.addEventListener('scroll', applyViewport);
+        }
 
         document.addEventListener('focusin', (e) => {
             const t = e.target;
             if (!(t instanceof HTMLElement)) return;
             if (!t.matches('input, textarea, select')) return;
-            setTimeout(() => t.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' }), 80);
+            setTimeout(() => safeScrollIntoViewCenter(t), 80);
         }, true);
 
         document.addEventListener('focusout', () => {
@@ -2710,7 +2801,17 @@ body {
 
         function submitScan(raw) {
             const code = normalizeScanCode(raw);
-            if (code.length >= SCANNER_MIN_LEN) handleScan(code);
+            if (!code) { logScan('ignored: empty payload'); return; }
+            if (code.length < SCANNER_MIN_LEN) { logScan(`ignored: too short (len=${code.length}) value="${code}"`); return; }
+            logScan(`accepted: "${code}" modal=${activeModalId || '-'} mgr=${isMgr ? 1 : 0} a4=${kioskA4CollectMode ? 1 : 0}`);
+            handleScan(code);
+        }
+
+        function scanCharFromEvent(e) {
+            if (typeof e.key === 'string' && e.key.length === 1) return e.key;
+            const kc = Number(e.keyCode || e.which || 0);
+            if (kc >= 32 && kc <= 126) return String.fromCharCode(kc);
+            return '';
         }
 
         const scannerInpEl = document.getElementById('kiosk-scanner-input');
@@ -2719,11 +2820,25 @@ body {
             scannerInpEl.addEventListener('keydown', e => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    const code = scannerInpEl.value;
+                    e.stopPropagation();
+                    const code = scannerInpEl.value || scanBuf;
                     scannerInpEl.value = '';
+                    scanBuf = '';
                     if (scanBufResetTimer) { clearTimeout(scanBufResetTimer); scanBufResetTimer = null; }
                     submitScan(code);
+                    return;
                 }
+
+                const ch = scanCharFromEvent(e);
+                if (!ch) return;
+                scanBuf += ch;
+                if (scanBufResetTimer) clearTimeout(scanBufResetTimer);
+                scanBufResetTimer = setTimeout(() => {
+                    const code = scanBuf;
+                    scanBuf = '';
+                    submitScan(code);
+                }, SCANNER_TIMEOUT_MS);
+                e.stopPropagation();
             });
             /* Таймаут: если Enter не пришёл — сбрасываем буфер */
             scannerInpEl.addEventListener('input', () => {
@@ -2771,8 +2886,10 @@ body {
                 submitScan(scanBuf);
                 scanBuf = '';
                 if (scanBufResetTimer) { clearTimeout(scanBufResetTimer); scanBufResetTimer = null; }
-            } else if (e.key.length === 1) {
-                scanBuf += e.key;
+            } else {
+                const ch = scanCharFromEvent(e);
+                if (!ch) return;
+                scanBuf += ch;
                 if (scanBufResetTimer) clearTimeout(scanBufResetTimer);
                 scanBufResetTimer = setTimeout(() => {
                     const code = scanBuf;
@@ -2823,7 +2940,7 @@ body {
         updateTabBadges();
         /* SW не регистрируем в srcdoc/blob-контекстах и на file:// */
         if ('serviceWorker' in navigator && location.protocol !== 'about:' && location.protocol !== 'blob:' && location.protocol !== 'file:') {
-            navigator.serviceWorker.register('./sw.js').catch(err => logError(`sw: ${err.message}`));
+            navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch(err => logError(`sw: ${err.message}`));
         }
         ensureScannerFocus();
         if (scannerFocusInterval) clearInterval(scannerFocusInterval);
@@ -2891,13 +3008,23 @@ body {
         return kioskVisible || (customerVisible && !isCustomerManagerModeActive()) || (isMgr && managerVisible);
     }
 
+    function focusScannerInput(el) {
+        if (!el || typeof el.focus !== 'function') return false;
+        try {
+            el.focus({ preventScroll: true });
+        } catch (_) {
+            try { el.focus(); } catch (__){}
+        }
+        return document.activeElement === el;
+    }
+
     function ensureScannerFocus() {
         /* Если открыта модалка A4 — держим фокус на поле ввода артикула */
         if (activeModalId === 'modal-a4-preview') {
             const a4inp = document.getElementById('a4-manual-art');
             if (a4inp && document.activeElement !== a4inp
                       && document.activeElement?.tagName !== 'BUTTON') {
-                a4inp.focus({ preventScroll: true });
+                focusScannerInput(a4inp);
             }
             return;
         }
@@ -2906,7 +3033,7 @@ body {
         const activeEl = document.activeElement;
         const activeTag = activeEl?.tagName;
         if ((activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') && activeEl?.id !== 'kiosk-scanner-input') return;
-        scannerInp.focus({ preventScroll: true });
+        focusScannerInput(scannerInp);
     }
 
     function isCustomerManagerModeActive() { return isMgr || tempCustomerManagerMode; }
@@ -2947,15 +3074,31 @@ body {
         lastScanAt = now;
         const manualSearchOpen = document.getElementById('modal-search')?.classList.contains('open');
         const customerOpen = !document.getElementById('customer-view')?.classList.contains('hidden');
-        if (kioskA4CollectMode && !isMgr && !customerOpen && activeModalId !== 'modal-a4-preview') {
-            /* В режиме A4 добавляем в буфер, но НЕ блокируем обычный поиск в киоске */
+        if (kioskA4CollectMode && !isMgr && !customerOpen && !manualSearchOpen && activeModalId !== 'modal-a4-preview') {
+            /* В режиме A4 скан работает как "сбор листа":
+               добавляем в буфер и НЕ уводим пользователя в карточку товара. */
+            logScan(`route: collectA4ItemByCode(${code})`);
             collectA4ItemByCode(code);
+            return;
         }
         if (customerOpen && !isCustomerManagerModeActive()) {
+            logScan(`route: customerOverlay code=${code}`);
             searchAndShowCustomerOverlay(code);
             return;
         }
-        if (!isMgr || manualSearchOpen) search1C(code, { type: 'barcode' });
+
+        const kioskVisible = !document.getElementById('screen-kiosk')?.classList.contains('hidden');
+        if (kioskVisible && !manualSearchOpen) {
+            /* Самообслуживание: в киоске скан всегда должен запускать поиск без кнопок */
+            logScan(`route: kioskAutoSearch code=${code}`);
+            search1C(code, { type: 'barcode', fromScan: true });
+            return;
+        }
+
+        if (!isMgr || manualSearchOpen) {
+            logScan(`route: search1C barcode code=${code} manualSearchOpen=${manualSearchOpen ? 1 : 0}`);
+            search1C(code, { type: 'barcode', fromScan: true });
+        }
         else {
             const inp = document.querySelector('input[data-art-field]');
             if (inp) {
@@ -2968,7 +3111,8 @@ body {
                 if (curTab === 'move') loadMoveStockPreview();
             } else {
                 /* Менеджер в списке/карточке без активного поля — не теряем скан */
-                search1C(code, { type: 'barcode' });
+                logScan(`route: search1C fallback (manager/no-input) code=${code}`);
+                search1C(code, { type: 'barcode', fromScan: true });
             }
         }
     }
@@ -3286,8 +3430,9 @@ body {
     }
 
     async function search1C(id, opts = {}) {
-        if (isSearchPending) return;
+        if (isSearchPending) { if (opts.fromScan) logScan(`search1C skipped: pending id=${id}`); return; }
         setSearchLock(true);
+        if (opts.fromScan) logScan(`search1C start id=${id} type=${opts.type || 'auto'}`);
         showToast("Поиск...");
         if (!sets.url || isDemoMode || isKioskClientDemoMode()) {
             isProductDirty = false;
@@ -3353,14 +3498,16 @@ body {
             }
 
             if (res) {
-                isProductDirty = false; const _p = await safeJson(res); if (_p) resolveAndShowProduct(_p); else showApiError({ endpoint: '/product', status: 'net', msg: 'Пустой ответ от сервера' });
+                isProductDirty = false; const _p = await safeJson(res); if (_p) { if (opts.fromScan) logScan(`search1C success id=${id}`); resolveAndShowProduct(_p); } else showApiError({ endpoint: '/product', status: 'net', msg: 'Пустой ответ от сервера' });
             } else {
+                if (opts.fromScan) logScan(`search1C not found id=${id} status=${lastStatus}`);
                 showApiError({ endpoint: '/product', status: lastStatus,
                     msg: lastStatus === 404 ? 'Товар не найден' : 'Ошибка поиска' });
             }
         } catch (e) {
             showApiError({ endpoint: '/product', status: e.name === 'AbortError' ? 'timeout' : 'net',
                 msg: 'Сервер 1С недоступен', retryFn: () => search1C(id, opts) });
+            if (opts.fromScan) logScan(`search1C error id=${id} err=${e.message}`);
             logError(`Поиск 1С: ${e.message}`);
         }
         finally { setSearchLock(false); }
@@ -5190,6 +5337,28 @@ body {
         });
     }
 
+    function setupReceiveEnterNavigation() {
+        if (curTab !== 'receive') return;
+        const ids = ['f-art', 'f-name-print', 'f-full-name', 'f-width', 'f-density', 'f-brand', 'f-comp']
+            .filter(id => !!document.getElementById(id));
+        ids.forEach((id, idx) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener('keydown', (event) => {
+                if (event.key !== 'Enter' || event.shiftKey) return;
+                event.preventDefault();
+                event.stopPropagation();
+                const nextId = ids[idx + 1];
+                if (nextId) {
+                    const next = document.getElementById(nextId);
+                    if (next && typeof next.focus === 'function') next.focus();
+                    return;
+                }
+                saveLine();
+            });
+        });
+    }
+
     function renderForm() {
         const cont = document.getElementById('form-container'); const d = db[curTab]?.find(x=>x.id===curDocId);
         if(!d || d.status !== 'active') return;
@@ -5233,6 +5402,7 @@ body {
         clearAllFieldErrors();
         _selectedStockRowIdx = { writeoff: -1, move: -1, stockin: -1 };
         setupInputAssistancePolicy();
+        setupReceiveEnterNavigation();
     }
 
     function renderCuts() {
@@ -6280,7 +6450,8 @@ body {
     async function syncWith1C() { return queueAndSync(); }
 
     async function test1CConnection() {
-        const url    = document.getElementById('set-url').value;
+        const rawUrl = document.getElementById('set-url').value;
+        const url    = String(rawUrl || '').trim().replace(/\/+$/, '');
         const user   = document.getElementById('set-user').value;
         const pass   = document.getElementById('set-pass').value;
         const apiKey = document.getElementById('set-api-key').value;
@@ -6289,6 +6460,24 @@ body {
             showToast('DEV-режим: связь с 1С не требуется', 'success'); return;
         }
         if (!url) { showToast("Сначала введите URL", "danger"); return; }
+        let parsed;
+        try {
+            parsed = new URL(url);
+        } catch (_) {
+            updateConnStatus('error', 'Некорректный URL сервера');
+            showToast('URL должен быть в формате http(s)://host:port', 'danger');
+            return;
+        }
+        const isMixedHttp = location.protocol === 'https:' && parsed.protocol === 'http:' && parsed.hostname !== 'localhost' && parsed.hostname !== '127.0.0.1';
+        if (isMixedHttp) {
+            updateConnStatus('error', 'Блокировка mixed content: HTTPS → HTTP');
+            showApiError({
+                endpoint: '/health',
+                status: 'net',
+                msg: 'Страница открыта по HTTPS, а 1С указан как HTTP. Используйте HTTPS URL для 1С или откройте приложение по HTTP в локальной сети.'
+            });
+            return;
+        }
         updateConnStatus('unknown', 'Проверяем связь...');
         showToast("Проверка связи...");
         try {
@@ -6306,8 +6495,12 @@ body {
                 showApiError({ endpoint: '/health', status: res.status, msg: 'Проверьте URL и учётные данные' });
             }
         } catch (e) {
-            updateConnStatus('error', 'Сервер недоступен · проверьте сеть и URL');
-            showApiError({ endpoint: '/health', status: 'net', msg: 'Нет ответа от сервера' });
+            const errMsg = String(e && e.message || '');
+            const netHint = errMsg.includes('Failed to fetch')
+                ? 'Нет ответа от сервера (возможны: CORS, mixed content, VPN/сеть, блокировка порта)'
+                : 'Нет ответа от сервера';
+            updateConnStatus('error', 'Сервер недоступен · проверьте сеть, URL и протокол');
+            showApiError({ endpoint: '/health', status: 'net', msg: netHint });
             logError(`Тест связи: ${e.message}`);
         }
     }
