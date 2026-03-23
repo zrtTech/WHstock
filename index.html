@@ -3579,40 +3579,99 @@ body {
         const before = sumByKey(normalizeStockRowsForDiff(beforeRows));
         const after = sumByKey(normalizeStockRowsForDiff(afterRows));
         const keys = new Set([...before.keys(), ...after.keys()]);
-        const writeoffItems = [];
-        const stockinItems = [];
+        const deficits = [];
+        const surpluses = [];
         keys.forEach(key => {
             const b = toNumber(before.get(key) || 0);
             const a = toNumber(after.get(key) || 0);
             const delta = +(a - b).toFixed(3);
             if (Math.abs(delta) < 0.001) return;
             const [warehouse, cell] = key.split('||');
-            if (delta < 0) writeoffItems.push({ warehouse, cell, meters: Math.abs(delta) });
-            else stockinItems.push({ warehouse, cell, meters: delta });
+            if (delta < 0) deficits.push({ warehouse, cell, meters: Math.abs(delta) });
+            else surpluses.push({ warehouse, cell, meters: delta });
         });
-        return { writeoffItems, stockinItems };
+
+        /* Пытаемся собрать «перемещения» как пары минус/плюс.
+           Это позволяет при смене ячейки/склада генерировать MOVE,
+           а остаток дельты (если есть) превращать в writeoff/stockin. */
+        const moveItems = [];
+        for (const from of deficits) {
+            for (const to of surpluses) {
+                if (from.meters < 0.001 || to.meters < 0.001) continue;
+                const transferable = Math.min(from.meters, to.meters);
+                if (transferable < 0.001) continue;
+                moveItems.push({
+                    fromWarehouse: from.warehouse,
+                    fromCell: from.cell,
+                    toWarehouse: to.warehouse,
+                    toCell: to.cell,
+                    meters: +transferable.toFixed(3)
+                });
+                from.meters = +(from.meters - transferable).toFixed(3);
+                to.meters = +(to.meters - transferable).toFixed(3);
+            }
+        }
+
+        const writeoffItems = deficits
+            .filter(x => x.meters >= 0.001)
+            .map(x => ({ warehouse: x.warehouse, cell: x.cell, meters: x.meters }));
+        const stockinItems = surpluses
+            .filter(x => x.meters >= 0.001)
+            .map(x => ({ warehouse: x.warehouse, cell: x.cell, meters: x.meters }));
+
+        return { writeoffItems, stockinItems, moveItems };
+    }
+
+    function logAutoStockAdjust(articul, autoDelta) {
+        const move = autoDelta?.moveItems?.length || 0;
+        const wr = autoDelta?.writeoffItems?.length || 0;
+        const st = autoDelta?.stockinItems?.length || 0;
+        if (!move && !wr && !st) return;
+        logError(`[AUTO-STOCK] ${articul || '-'} move=${move} writeoff=${wr} stockin=${st}`);
+        if (move) logError(`[AUTO-STOCK] MOVE ${move}: ` + autoDelta.moveItems.map(x => `${x.fromWarehouse}/${x.fromCell} -> ${x.toWarehouse}/${x.toCell} (${x.meters})`).join('; '));
+        if (wr) logError(`[AUTO-STOCK] WRITEOFF ${wr}: ` + autoDelta.writeoffItems.map(x => `${x.warehouse}/${x.cell} (${x.meters})`).join('; '));
+        if (st) logError(`[AUTO-STOCK] STOCKIN ${st}: ` + autoDelta.stockinItems.map(x => `${x.warehouse}/${x.cell} (${x.meters})`).join('; '));
     }
 
     function createAutoDoc(tab, articul, items, uid, charUid, charName) {
         if (!Array.isArray(items) || !items.length) return null;
         const now = new Date();
-        const itemRows = items.map((x, idx) => ({
-            id: `${now.getTime().toString(36)}-${idx}`,
-            art: articul,
-            m: String(toNumber(x.meters)),
-            wh: x.warehouse || '',
-            cell: x.cell || '',
-            ts: now.toISOString(),
-            ...(uid ? { uid } : {}),
-            ...(charUid ? { charUid } : {}),
-            ...(charName ? { charName } : {})
-        }));
+        const itemRows = items.map((x, idx) => {
+            const base = {
+                id: `${now.getTime().toString(36)}-${idx}`,
+                art: articul,
+                ts: now.toISOString(),
+                ...(uid ? { uid } : {}),
+                ...(charUid ? { charUid } : {}),
+                ...(charName ? { charName } : {})
+            };
+            if (tab === 'move') {
+                return {
+                    ...base,
+                    m: String(toNumber(x.meters)),
+                    fromWh: x.fromWarehouse || '',
+                    fromCell: x.fromCell || '',
+                    toWh: x.toWarehouse || '',
+                    toCell: x.toCell || ''
+                };
+            }
+            return {
+                ...base,
+                m: String(toNumber(x.meters)),
+                wh: x.warehouse || '',
+                cell: x.cell || ''
+            };
+        });
+        const title =
+            tab === 'writeoff' ? 'Авто-списание' :
+            tab === 'stockin' ? 'Авто-оприходование' :
+            'Авто-перемещение';
         return {
             id: `${tab}-${now.getTime().toString(36)}`,
-            name: `${tab === 'writeoff' ? 'Авто-списание' : 'Авто-оприходование'} ${now.toLocaleDateString()}`,
+            name: `${title} ${now.toLocaleDateString()}`,
             status: 'closed',
             createdAt: now.toISOString(),
-            docWarehouse: itemRows[0]?.wh || '',
+            docWarehouse: tab === 'move' ? (itemRows[0]?.fromWh || '') : (itemRows[0]?.wh || ''),
             items: itemRows
         };
     }
@@ -4239,9 +4298,11 @@ body {
         const charUid = currentProduct?.charUid || '';
         const charName = currentProduct?.charName || '';
         const autoDocs = [
+            ['move', createAutoDoc('move', currentProduct.articul || '', autoDelta.moveItems, uid, charUid, charName)],
             ['writeoff', createAutoDoc('writeoff', currentProduct.articul || '', autoDelta.writeoffItems, uid, charUid, charName)],
             ['stockin', createAutoDoc('stockin', currentProduct.articul || '', autoDelta.stockinItems, uid, charUid, charName)]
         ].filter(([, d]) => !!d);
+        logAutoStockAdjust(currentProduct.articul || '', autoDelta);
 
         if (isDemoMode) {
             autoDocs.forEach(([tab, doc]) => {
