@@ -2257,6 +2257,8 @@ body {
     let modalStack = [];
     let isSearchPending = false;
     let currentProduct = null;
+    let productStockBaseline = [];
+    let productStockBaselineKey = '';
     let isProductDirty = false;
     let lastSavedItemId = null;
     let priceLookupResult = null;
@@ -3559,6 +3561,64 @@ body {
         return [];
     }
 
+    function normalizeStockRowsForDiff(rows) {
+        return (rows || []).map(r => ({
+            warehouse: String(r.warehouse || r.wh || '').trim(),
+            cell: normalizeCellValue(r.cell || r.shelf || ''),
+            meters: toNumber(r.meters ?? r.m ?? r.qty ?? 0)
+        })).filter(r => r.warehouse && r.meters >= 0);
+    }
+
+    function buildAutoStockAdjustItems(beforeRows, afterRows) {
+        const sumByKey = (arr) => {
+            const map = new Map();
+            arr.forEach(r => {
+                const key = `${r.warehouse}||${r.cell}`;
+                map.set(key, (map.get(key) || 0) + toNumber(r.meters));
+            });
+            return map;
+        };
+        const before = sumByKey(normalizeStockRowsForDiff(beforeRows));
+        const after = sumByKey(normalizeStockRowsForDiff(afterRows));
+        const keys = new Set([...before.keys(), ...after.keys()]);
+        const writeoffItems = [];
+        const stockinItems = [];
+        keys.forEach(key => {
+            const b = toNumber(before.get(key) || 0);
+            const a = toNumber(after.get(key) || 0);
+            const delta = +(a - b).toFixed(3);
+            if (Math.abs(delta) < 0.001) return;
+            const [warehouse, cell] = key.split('||');
+            if (delta < 0) writeoffItems.push({ warehouse, cell, meters: Math.abs(delta) });
+            else stockinItems.push({ warehouse, cell, meters: delta });
+        });
+        return { writeoffItems, stockinItems };
+    }
+
+    function createAutoDoc(tab, articul, items, uid, charUid, charName) {
+        if (!Array.isArray(items) || !items.length) return null;
+        const now = new Date();
+        const itemRows = items.map((x, idx) => ({
+            id: `${now.getTime().toString(36)}-${idx}`,
+            art: articul,
+            m: String(toNumber(x.meters)),
+            wh: x.warehouse || '',
+            cell: x.cell || '',
+            ts: now.toISOString(),
+            ...(uid ? { uid } : {}),
+            ...(charUid ? { charUid } : {}),
+            ...(charName ? { charName } : {})
+        }));
+        return {
+            id: `${tab}-${now.getTime().toString(36)}`,
+            name: `${tab === 'writeoff' ? 'Авто-списание' : 'Авто-оприходование'} ${now.toLocaleDateString()}`,
+            status: 'closed',
+            createdAt: now.toISOString(),
+            docWarehouse: itemRows[0]?.wh || '',
+            items: itemRows
+        };
+    }
+
     /* Накапливаем ячейки из ответа 1С в sets.knownCells и обновляем datalist */
     function collectCellsFromRows(rows) {
         if (!Array.isArray(rows) || !rows.length) return;
@@ -3951,6 +4011,11 @@ body {
         currentProduct = p;
         customerGalleryIndex = 0;
         const rows = buildStockRows(p);
+        const baseKey = `${p.uid || p.id || ''}|${p.charUid || ''}|${p.articul || ''}`;
+        if (!isProductDirty || baseKey !== productStockBaselineKey) {
+            productStockBaseline = normalizeStockRowsForDiff(rows);
+            productStockBaselineKey = baseKey;
+        }
         const allImages = p.images || p.photos || p.gallery || [];
         const images = Array.isArray(allImages) ? allImages : [];
         document.getElementById('c-name').textContent = p.name || 'Товар';
@@ -4254,6 +4319,7 @@ body {
                 qty: toNumber(r.meters ?? r.m ?? r.qty)
             }))
         };
+        const autoDelta = buildAutoStockAdjustItems(productStockBaseline, payload.stockRows);
 
         if (!sets.url) { showToast('Демо режим: изменения оставлены локально'); return; }
         try {
@@ -4263,7 +4329,23 @@ body {
                 body: JSON.stringify(payload)
             });
             if (res.ok) {
+                const uid = payload.uid || '';
+                const charUid = currentProduct?.charUid || '';
+                const charName = currentProduct?.charName || '';
+                const writeoffDoc = createAutoDoc('writeoff', payload.articul, autoDelta.writeoffItems, uid, charUid, charName);
+                const stockinDoc = createAutoDoc('stockin', payload.articul, autoDelta.stockinItems, uid, charUid, charName);
+                const autoDocs = [['writeoff', writeoffDoc], ['stockin', stockinDoc]].filter(([, d]) => !!d);
+                autoDocs.forEach(([tab, doc]) => {
+                    db[tab].unshift(doc);
+                    outboxAdd(doc.id, tab);
+                });
+
+                if (autoDocs.length) {
+                    showToast(`Созданы авто-документы: ${autoDocs.map(([,d]) => d.name).join(', ')}`, 'success');
+                    await flushOutbox();
+                }
                 isProductDirty = false;
+                productStockBaseline = normalizeStockRowsForDiff(payload.stockRows);
                 updateProductSyncButton();
                 showToast('Изменения отправлены в 1С', 'success');
             } else {
