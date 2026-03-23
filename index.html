@@ -2938,9 +2938,19 @@ body {
         updateDataLists();
         updateKioskA4Status();
         updateTabBadges();
-        /* SW не регистрируем в srcdoc/blob-контекстах и на file:// */
-        if ('serviceWorker' in navigator && location.protocol !== 'about:' && location.protocol !== 'blob:' && location.protocol !== 'file:') {
-            navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch(err => logError(`sw: ${err.message}`));
+        /* SW/установка PWA работают только в secure context (HTTPS или localhost).
+           На http://IP будет открываться обычная вкладка/ярлык без полноценной установки. */
+        const host = (location.hostname || '').toLowerCase();
+        const isLocalHost = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+        const canUsePwaInstall = window.isSecureContext || isLocalHost;
+        if ('serviceWorker' in navigator && canUsePwaInstall && location.protocol !== 'about:' && location.protocol !== 'blob:' && location.protocol !== 'file:') {
+            navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch(err => {
+                showToast(`PWA: ${err.message}`, 'warning');
+                logError(`sw: ${err.message}`);
+            });
+        } else if (!canUsePwaInstall && location.protocol.startsWith('http')) {
+            showToast('Установка PWA недоступна на HTTP по IP. Используйте HTTPS (или localhost).', 'warning');
+            logError('PWA install blocked: insecure context (http + non-localhost)');
         }
         ensureScannerFocus();
         if (scannerFocusInterval) clearInterval(scannerFocusInterval);
