@@ -3072,71 +3072,98 @@ body {
         showToast('Возврат в клиентский режим');
     }
 
-    async function handleScan(code) {
-        if (String(code).startsWith("STAFF:")) {
-            const pass = String(code).slice(6);
-            const customerOpen = !document.getElementById('customer-view')?.classList.contains('hidden');
-            if (await verifyManagerPassword(pass)) {
-                if (customerOpen && !isMgr) enterCustomerManagerMode();
-                else loginSuccess();
-            } else showToast('Неверный QR сотрудника', 'danger');
-            return;
-        }
-        if (code === "ADMIN") {
-            const customerOpen = !document.getElementById('customer-view')?.classList.contains('hidden');
-            if (customerOpen && !isMgr) { openLogin('customer'); return; }
-            loginSuccess();
-            return;
-        }
-        if (isSearchPending) { showToast("Идёт поиск...", "danger"); return; }
-        const now = Date.now();
-        if (code === lastScanCode && (now - lastScanAt) < SCAN_COOLDOWN_MS) return;
-        if ((now - lastScanAt) < 250) return;
-        lastScanCode = code;
-        lastScanAt = now;
+    function getScanUiState() {
         const manualSearchOpen = document.getElementById('modal-search')?.classList.contains('open');
         const customerOpen = !document.getElementById('customer-view')?.classList.contains('hidden');
-        if (kioskA4CollectMode && !isMgr && !customerOpen && !manualSearchOpen && activeModalId !== 'modal-a4-preview') {
-            /* В режиме A4 скан работает как "сбор листа":
-               добавляем в буфер и НЕ уводим пользователя в карточку товара. */
+        const kioskVisible = !document.getElementById('screen-kiosk')?.classList.contains('hidden');
+        return { manualSearchOpen, customerOpen, kioskVisible };
+    }
+
+    async function handleStaffOrAdminScan(code, uiState) {
+        if (String(code).startsWith("STAFF:")) {
+            const pass = String(code).slice(6);
+            if (await verifyManagerPassword(pass)) {
+                if (uiState.customerOpen && !isMgr) enterCustomerManagerMode();
+                else loginSuccess();
+            } else showToast('Неверный QR сотрудника', 'danger');
+            return true;
+        }
+        if (code === "ADMIN") {
+            if (uiState.customerOpen && !isMgr) { openLogin('customer'); return true; }
+            loginSuccess();
+            return true;
+        }
+        return false;
+    }
+
+    function shouldSkipScanByCooldown(code) {
+        const now = Date.now();
+        if (code === lastScanCode && (now - lastScanAt) < SCAN_COOLDOWN_MS) return true;
+        if ((now - lastScanAt) < 250) return true;
+        lastScanCode = code;
+        lastScanAt = now;
+        return false;
+    }
+
+    function tryRouteA4Collect(code, uiState) {
+        if (kioskA4CollectMode && !isMgr && !uiState.customerOpen && !uiState.manualSearchOpen && activeModalId !== 'modal-a4-preview') {
             logScan(`route: collectA4ItemByCode(${code})`);
             collectA4ItemByCode(code);
-            return;
+            return true;
         }
-        if (customerOpen && !isCustomerManagerModeActive()) {
+        return false;
+    }
+
+    function tryRouteCustomerOverlay(code, uiState) {
+        if (uiState.customerOpen && !isCustomerManagerModeActive()) {
             logScan(`route: customerOverlay code=${code}`);
             searchAndShowCustomerOverlay(code);
-            return;
+            return true;
         }
+        return false;
+    }
 
-        const kioskVisible = !document.getElementById('screen-kiosk')?.classList.contains('hidden');
-        if (kioskVisible && !manualSearchOpen) {
-            /* Самообслуживание: в киоске скан всегда должен запускать поиск без кнопок */
+    function tryRouteKioskAutoSearch(code, uiState) {
+        if (uiState.kioskVisible && !uiState.manualSearchOpen) {
             logScan(`route: kioskAutoSearch code=${code}`);
             search1C(code, { type: 'barcode', fromScan: true });
+            return true;
+        }
+        return false;
+    }
+
+    async function routeManagerScanIntoForm(code) {
+        const inp = document.querySelector('input[data-art-field]');
+        if (inp) {
+            inp.value = code;
+            inp.dispatchEvent(new Event('input'));
+            await resolveFormArtInput(inp);
+            if (curTab === 'price') loadPriceItemPreview();
+            if (curTab === 'writeoff') loadWriteoffStockPreview();
+            if (curTab === 'stockin') loadStockinStockPreview();
+            if (curTab === 'move') loadMoveStockPreview();
             return;
         }
+        /* Менеджер в списке/карточке без активного поля — не теряем скан */
+        logScan(`route: search1C fallback (manager/no-input) code=${code}`);
+        search1C(code, { type: 'barcode', fromScan: true });
+    }
 
-        if (!isMgr || manualSearchOpen) {
-            logScan(`route: search1C barcode code=${code} manualSearchOpen=${manualSearchOpen ? 1 : 0}`);
+    async function handleScan(code) {
+        const uiState = getScanUiState();
+        if (await handleStaffOrAdminScan(code, uiState)) return;
+        if (isSearchPending) { showToast("Идёт поиск...", "danger"); return; }
+        if (shouldSkipScanByCooldown(code)) return;
+        if (tryRouteA4Collect(code, uiState)) return;
+        if (tryRouteCustomerOverlay(code, uiState)) return;
+        if (tryRouteKioskAutoSearch(code, uiState)) return;
+
+        if (!isMgr || uiState.manualSearchOpen) {
+            logScan(`route: search1C barcode code=${code} manualSearchOpen=${uiState.manualSearchOpen ? 1 : 0}`);
             search1C(code, { type: 'barcode', fromScan: true });
+            return;
         }
-        else {
-            const inp = document.querySelector('input[data-art-field]');
-            if (inp) {
-                inp.value = code;
-                inp.dispatchEvent(new Event('input'));
-                await resolveFormArtInput(inp);
-                if (curTab === 'price') loadPriceItemPreview();
-                if (curTab === 'writeoff') loadWriteoffStockPreview();
-                if (curTab === 'stockin') loadStockinStockPreview();
-                if (curTab === 'move') loadMoveStockPreview();
-            } else {
-                /* Менеджер в списке/карточке без активного поля — не теряем скан */
-                logScan(`route: search1C fallback (manager/no-input) code=${code}`);
-                search1C(code, { type: 'barcode', fromScan: true });
-            }
-        }
+        await routeManagerScanIntoForm(code);
     }
 
     async function resolveCodeToArt(code) {
