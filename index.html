@@ -1709,6 +1709,17 @@ body {
                 </div>
                 <p class="text-sm mt-2" style="color:var(--text-sec)">Пример: R26-0001 — автоматически подставляется в форму приёмки</p>
             </div>
+            <div class="light-block mt-3">
+                <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:8px">АВТОКОРРЕКЦИЯ ОСТАТКОВ</strong>
+                <div class="input-group" style="margin:0">
+                    <label>Режим автодокументов при правке складской строки</label>
+                    <select id="set-auto-stock-mode" onchange="saveSets()">
+                        <option value="move_first">MOVE-first (сначала перемещение, остаток split)</option>
+                        <option value="split_first">Split-first (только списание + оприходование)</option>
+                    </select>
+                </div>
+                <p class="text-sm mt-2" style="color:var(--text-sec)">MOVE-first уменьшает шум документов при переносе между ячейками.</p>
+            </div>
         </div>
 
         <!-- ══ ВКЛАДКА 4: Доступ ══ -->
@@ -2202,7 +2213,7 @@ body {
     }
 
     /* ДАННЫЕ */
-    const defSets = { url:"", user:"", pass:"", apiKey:"", mgr:"1234", warehouses:[], prefix:"R26", nextNum:1, showWidth:true, showDensity:true, showBrand:true, showComp:true, showFullName:false, printNameDefault:"", printMethod: "server", pnKey:"", pnPrinter:"", printerClient:"", printerWarehouse:"", printerHanger:"", printerA4:"", mgrHash:"", kioskDemoMode:false, devOfflineMode:false, allowNewCells:false, sessionHours:8, knownCells:[] };
+    const defSets = { url:"", user:"", pass:"", apiKey:"", mgr:"1234", warehouses:[], prefix:"R26", nextNum:1, showWidth:true, showDensity:true, showBrand:true, showComp:true, showFullName:false, printNameDefault:"", printMethod: "server", pnKey:"", pnPrinter:"", printerClient:"", printerWarehouse:"", printerHanger:"", printerA4:"", mgrHash:"", kioskDemoMode:false, devOfflineMode:false, allowNewCells:false, sessionHours:8, autoStockMode:"move_first", knownCells:[] };
     let sets = { ...defSets, ...safeLoad('tsd_final_sets', defSets) };
     /* Склады берутся из 1С через syncWarehousesFrom1С в настройках.
        Если пустые — пользователь увидит подсказку в секции «Склады». */
@@ -3568,6 +3579,7 @@ body {
     }
 
     function buildAutoStockAdjustItems(beforeRows, afterRows) {
+        const autoMode = (sets.autoStockMode === 'split_first') ? 'split_first' : 'move_first';
         const sumByKey = (arr) => {
             const map = new Map();
             arr.forEach(r => {
@@ -3591,24 +3603,26 @@ body {
             else surpluses.push({ warehouse, cell, meters: delta });
         });
 
-        /* Пытаемся собрать «перемещения» как пары минус/плюс.
-           Это позволяет при смене ячейки/склада генерировать MOVE,
-           а остаток дельты (если есть) превращать в writeoff/stockin. */
         const moveItems = [];
-        for (const from of deficits) {
-            for (const to of surpluses) {
-                if (from.meters < 0.001 || to.meters < 0.001) continue;
-                const transferable = Math.min(from.meters, to.meters);
-                if (transferable < 0.001) continue;
-                moveItems.push({
-                    fromWarehouse: from.warehouse,
-                    fromCell: from.cell,
-                    toWarehouse: to.warehouse,
-                    toCell: to.cell,
-                    meters: +transferable.toFixed(3)
-                });
-                from.meters = +(from.meters - transferable).toFixed(3);
-                to.meters = +(to.meters - transferable).toFixed(3);
+        if (autoMode === 'move_first') {
+            /* MOVE-first: сначала пытаемся собрать «перемещения» как пары минус/плюс.
+               Это позволяет при смене ячейки/склада генерировать MOVE,
+               а остаток дельты (если есть) превращать в writeoff/stockin. */
+            for (const from of deficits) {
+                for (const to of surpluses) {
+                    if (from.meters < 0.001 || to.meters < 0.001) continue;
+                    const transferable = Math.min(from.meters, to.meters);
+                    if (transferable < 0.001) continue;
+                    moveItems.push({
+                        fromWarehouse: from.warehouse,
+                        fromCell: from.cell,
+                        toWarehouse: to.warehouse,
+                        toCell: to.cell,
+                        meters: +transferable.toFixed(3)
+                    });
+                    from.meters = +(from.meters - transferable).toFixed(3);
+                    to.meters = +(to.meters - transferable).toFixed(3);
+                }
             }
         }
 
@@ -6087,7 +6101,7 @@ body {
         /* Сбрасываем на первую вкладку при каждом открытии */
         switchSettingsTab('tab-1c', document.querySelector('.settings-tab-btn'));
         updateConnStatus('unknown', 'Статус подключения к 1С не проверен');
-        document.getElementById('set-show-width').checked = sets.showWidth !== false; document.getElementById('set-show-density').checked = sets.showDensity !== false; document.getElementById('set-show-brand').checked = sets.showBrand !== false; document.getElementById('set-show-comp').checked = sets.showComp !== false; document.getElementById('set-show-fullname').checked = sets.showFullName === true; document.getElementById('set-print-name-default').value = sets.printNameDefault || ''; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-api-key').value = sets.apiKey || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "server"; document.getElementById('set-kiosk-demo').checked = sets.kioskDemoMode !== false; document.getElementById('set-dev-offline').checked = isDemoMode; document.getElementById('set-allow-new-cells').checked = sets.allowNewCells === true; togglePrintSettingsUI(); renderSettingsWh(); renderSettingsInfoPanel(); validateUrlField(); await loadServerPrinters();
+        document.getElementById('set-show-width').checked = sets.showWidth !== false; document.getElementById('set-show-density').checked = sets.showDensity !== false; document.getElementById('set-show-brand').checked = sets.showBrand !== false; document.getElementById('set-show-comp').checked = sets.showComp !== false; document.getElementById('set-show-fullname').checked = sets.showFullName === true; document.getElementById('set-print-name-default').value = sets.printNameDefault || ''; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-api-key').value = sets.apiKey || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "server"; document.getElementById('set-kiosk-demo').checked = sets.kioskDemoMode !== false; document.getElementById('set-dev-offline').checked = isDemoMode; document.getElementById('set-allow-new-cells').checked = sets.allowNewCells === true; document.getElementById('set-auto-stock-mode').value = sets.autoStockMode || 'move_first'; togglePrintSettingsUI(); renderSettingsWh(); renderSettingsInfoPanel(); validateUrlField(); await loadServerPrinters();
         const shEl = document.getElementById('set-session-hours');
         if (shEl) shEl.value = sets.sessionHours ?? MGR_SESSION_DEFAULT_HOURS;
         renderKnownCellsSettings();
@@ -6101,7 +6115,7 @@ body {
         }
         openModal('modal-settings'); }
     function togglePrintSettingsUI() { const method = document.getElementById('set-print-method').value; const block = document.getElementById('printnode-block'); const serverBlock = document.getElementById('server-printers-block'); if (block) block.style.display = (method === 'printnode') ? 'block' : 'none'; if (serverBlock) serverBlock.style.display = (method === 'server') ? 'block' : 'none'; }
-    function saveSets() { sets.showWidth = document.getElementById('set-show-width').checked; sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.showFullName = document.getElementById('set-show-fullname').checked; sets.printNameDefault = document.getElementById('set-print-name-default').value; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.apiKey = document.getElementById('set-api-key').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; sets.kioskDemoMode = document.getElementById('set-kiosk-demo').checked; sets.allowNewCells = document.getElementById('set-allow-new-cells').checked; isDemoMode = document.getElementById('set-dev-offline').checked; sets.devOfflineMode = isDemoMode; const _sh = parseFloat(document.getElementById('set-session-hours')?.value); sets.sessionHours = isFinite(_sh) && _sh > 0 ? _sh : MGR_SESSION_DEFAULT_HOURS; sets.printerClient = document.getElementById('set-printer-client')?.value || ''; sets.printerWarehouse = document.getElementById('set-printer-warehouse')?.value || ''; sets.printerHanger = document.getElementById('set-printer-hanger')?.value || ''; sets.printerA4 = document.getElementById('set-printer-a4')?.value || ''; validateUrlField(); save(); saveAppState(); renderSettingsInfoPanel(); }
+    function saveSets() { sets.showWidth = document.getElementById('set-show-width').checked; sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.showFullName = document.getElementById('set-show-fullname').checked; sets.printNameDefault = document.getElementById('set-print-name-default').value; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.apiKey = document.getElementById('set-api-key').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; sets.kioskDemoMode = document.getElementById('set-kiosk-demo').checked; sets.allowNewCells = document.getElementById('set-allow-new-cells').checked; sets.autoStockMode = document.getElementById('set-auto-stock-mode')?.value || 'move_first'; isDemoMode = document.getElementById('set-dev-offline').checked; sets.devOfflineMode = isDemoMode; const _sh = parseFloat(document.getElementById('set-session-hours')?.value); sets.sessionHours = isFinite(_sh) && _sh > 0 ? _sh : MGR_SESSION_DEFAULT_HOURS; sets.printerClient = document.getElementById('set-printer-client')?.value || ''; sets.printerWarehouse = document.getElementById('set-printer-warehouse')?.value || ''; sets.printerHanger = document.getElementById('set-printer-hanger')?.value || ''; sets.printerA4 = document.getElementById('set-printer-a4')?.value || ''; validateUrlField(); save(); saveAppState(); renderSettingsInfoPanel(); }
     function renderSettingsWh() { const root = document.getElementById('settings-warehouses'); if (!root) return; root.innerHTML = ''; (sets.warehouses || []).forEach((w, idx) => { const row = document.createElement('div'); row.className = 'wh-item'; const label = document.createElement('span'); label.textContent = w; const actions = document.createElement('div'); actions.className = 'wh-actions'; const up = document.createElement('button'); up.className = 'btn-outline wh-move-btn'; up.textContent = '↑'; up.disabled = idx === 0; up.addEventListener('click', () => moveWh(idx, -1)); const down = document.createElement('button'); down.className = 'btn-outline wh-move-btn'; down.textContent = '↓'; down.disabled = idx === (sets.warehouses.length - 1); down.addEventListener('click', () => moveWh(idx, 1)); const btn = document.createElement('button'); btn.className = 'btn-icon text-danger'; btn.textContent = '🗑️'; btn.addEventListener('click', () => delWh(w)); actions.append(up, down, btn); row.append(label, actions); root.appendChild(row); }); }
     function moveWh(idx, dir) { const arr = sets.warehouses || []; const to = idx + dir; if (to < 0 || to >= arr.length) return; [arr[idx], arr[to]] = [arr[to], arr[idx]]; renderSettingsWh(); saveSets(); }
     /* Синхронизация складов из 1С
