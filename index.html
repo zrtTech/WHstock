@@ -1462,6 +1462,7 @@ body {
                             <button class="btn-outline w-full" style="min-height:58px;font-size:18px;" onclick="openProductEditModal()">✏️ Массовая правка полей</button>
                             <button class="btn-outline w-full" style="min-height:58px;font-size:18px;" onclick="openStockRowEditModal(-1)">➕ Добавить склад</button>
                         </div>
+                        <button id="btn-quick-writeoff" class="btn-danger w-full mt-2" style="min-height:58px;font-size:18px;" onclick="quickWriteoffFromCard()">📋 Создать списание</button>
                         <button id="btn-sync-product" class="btn-primary w-full mt-2" style="min-height:58px;font-size:18px;" onclick="pushProductChangesTo1C()">🚀 Отправить изменения товара в 1С</button>
                         <button id="btn-exit-customer-manager" class="btn-outline w-full mt-2 hidden" style="min-height:52px;font-size:16px;" onclick="exitCustomerManagerMode()">✅ Завершить правку (клиентский режим)</button>
                     </div>
@@ -3991,6 +3992,58 @@ body {
         startCustomerCountdown(CUSTOMER_AUTOCLOSE_SECONDS);
     }
     function closeCustomerView() { customerGalleryExpanded = false; tempCustomerManagerMode = false; clearCustomerAutoClose(); closeCustomerScanOverlay(); document.getElementById('customer-view').classList.add('hidden'); }
+
+    async function quickWriteoffFromCard() {
+        if (!currentProduct) return;
+        if (!isMgr) {
+            showToast('Сначала войдите как менеджер', 'warning');
+            return;
+        }
+
+        const art = String(currentProduct.articul || '').trim();
+        const rows = buildStockRows(currentProduct);
+
+        closeCustomerView();
+        switchTab('writeoff');
+
+        let doc = db.writeoff.find(x => x.status === 'active');
+        if (!doc) {
+            doc = {
+                id: Date.now().toString(36),
+                name: 'Документ ' + new Date().toLocaleDateString(),
+                status: 'active',
+                createdAt: new Date().toISOString(),
+                items: []
+            };
+            db.writeoff.unshift(doc);
+            save();
+        }
+        openDoc(doc.id);
+
+        if (rows.length === 1) {
+            writeoffPrefillSource = { wh: rows[0].warehouse || '', cell: rows[0].cell || '' };
+        } else {
+            writeoffPrefillSource = null;
+        }
+
+        setTimeout(async () => {
+            const artField = document.getElementById('f-art');
+            if (artField && art) {
+                artField.value = art;
+                await resolveFormArtInput(artField);
+                await loadWriteoffStockPreview();
+            }
+            if (rows.length === 1) {
+                const whSel = document.getElementById('f-wh-doc');
+                const cellInp = document.getElementById('f-cell');
+                if (whSel && rows[0].warehouse) whSel.value = rows[0].warehouse;
+                if (cellInp) cellInp.value = rows[0].cell || '';
+            }
+            document.getElementById('f-m')?.focus();
+        }, 60);
+
+        showToast(`Артикул ${art || '—'} готов к списанию`, 'success');
+    }
 
     function openInlineEditModal(el) {
         if (!isCustomerManagerModeActive() || !currentProduct) return;
