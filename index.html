@@ -1460,9 +1460,10 @@ body {
                     <div id="product-admin-row" class="product-admin-row hidden">
                         <div class="flex gap-2">
                             <button class="btn-outline w-full" style="min-height:58px;font-size:18px;" onclick="openProductEditModal()">✏️ Массовая правка полей</button>
-                            <button class="btn-outline w-full" style="min-height:58px;font-size:18px;" onclick="openStockRowEditModal(-1)">➕ Добавить склад</button>
+                            <button class="btn-outline w-full" style="min-height:58px;font-size:18px;" onclick="quickStockinFromCard()">📥 Оприходовать</button>
                         </div>
                         <button id="btn-quick-writeoff" class="btn-danger w-full mt-2" style="min-height:58px;font-size:18px;" onclick="quickWriteoffFromCard()">📋 Создать списание</button>
+                        <button class="btn-outline w-full mt-2" style="min-height:58px;font-size:18px;" onclick="quickMoveFromCard()">🔄 Переместить</button>
                         <button id="btn-sync-product" class="btn-primary w-full mt-2" style="min-height:58px;font-size:18px;" onclick="pushProductChangesTo1C()">🚀 Отправить изменения товара в 1С</button>
                         <button id="btn-exit-customer-manager" class="btn-outline w-full mt-2 hidden" style="min-height:52px;font-size:16px;" onclick="exitCustomerManagerMode()">✅ Завершить правку (клиентский режим)</button>
                     </div>
@@ -1870,7 +1871,7 @@ body {
 <div id="modal-product-edit" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modal-product-edit-title">
     <div class="modal-content">
         <h2 id="modal-product-edit-title">Изменение номенклатуры</h2>
-        <p class="text-sm" style="color:var(--text-sec);margin-bottom:10px;">Изменения применяются в мобильном приложении и отправляются в 1С.</p>
+        <p class="text-sm" style="color:var(--text-sec);margin-bottom:10px;">Изменяются только поля карточки. Остатки меняйте документами: Списание / Оприходование / Перемещение.</p>
         <div class="input-group"><label>Артикул</label><input type="text" id="pe-art" readonly></div>
         <div class="input-group"><label>Наименование (для печати)</label><input type="text" id="pe-name-print"></div>
         <div class="input-group" id="pe-full-name-group"><label>Полное наименование</label><input type="text" id="pe-full-name"></div>
@@ -1884,7 +1885,6 @@ body {
         </div>
         <div class="input-group"><label>Бренд</label><input type="text" id="pe-brand"></div>
         <div class="input-group"><label>Плотность (г/м²)</label><input type="text" id="pe-density" inputmode="numeric"></div>
-        <div class="input-group"><label>Количество</label><input type="text" id="pe-qty" inputmode="decimal"></div>
         <div class="input-group"><label>Фото товара</label><input type="file" id="pe-photo-camera" accept="image/*" capture="environment" class="hidden" onchange="applyProductPhoto(this, true)"><input type="file" id="pe-photo-file" accept="image/*" class="hidden" onchange="applyProductPhoto(this, false)"><div class="flex gap-2"><button class="btn-outline w-full" type="button" onclick="document.getElementById('pe-photo-camera').click()">📷 Камера</button><button class="btn-outline w-full" type="button" onclick="document.getElementById('pe-photo-file').click()">🖼️ Файл</button></div><div id="pe-photo-preview" class="photo-preview-box hidden"><img id="pe-photo-preview-img" alt="Предпросмотр фото товара"><div class="flex gap-2 mt-2"><button class="btn-outline w-full" type="button" onclick="clearProductPhoto()">🗑️ Удалить фото</button><button class="btn-outline w-full" type="button" onclick="document.getElementById('pe-photo-camera').click()">🔁 Переснять</button></div></div></div>
         <p class="manager-field-note">Склад/ячейку/метраж меняйте нажатием на строку нужного склада в таблице остатков.</p>
         <div class="flex gap-2 mt-3">
@@ -1908,22 +1908,15 @@ body {
 
 <div id="modal-stock-row-edit" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="sr-title">
     <div class="modal-content">
-        <h2 id="sr-title">Редактирование склада</h2>
-        <div class="input-group"><label>Склад</label><select id="sr-wh"></select></div>
-        <div class="input-group"><label>Ячейка <span style="font-size:11px;color:var(--text-sec);font-weight:400">(необязательно)</span></label>
-            <input type="text" id="sr-cell" list="list-cells"
-                autocomplete="off" autocorrect="off" spellcheck="false"
-                autocapitalize="characters"
-                placeholder="Не указана — товар на складе без ячейки"
-                oninput="this.value=this.value.toUpperCase(); srValidateCell(this.value)"
-                onfocus="this.select()">
-            <span id="sr-cell-hint" class="field-error-msg" style="display:none"></span>
-        </div>
-        <div class="input-group"><label>Количество (метров)</label><input type="text" id="sr-meters" inputmode="decimal" onfocus="this.select()"></div>
+        <h2 id="sr-title">Складская строка</h2>
+        <div class="input-group"><label>Склад</label><input type="text" id="sr-wh" readonly></div>
+        <div class="input-group"><label>Ячейка</label><input type="text" id="sr-cell" readonly></div>
+        <div class="input-group"><label>Остаток (метров)</label><input type="text" id="sr-meters" readonly></div>
         <div class="flex gap-2 mt-3">
             <button class="btn-outline w-full" onclick="closeModal('modal-stock-row-edit')">Отмена</button>
-            <button class="btn-danger w-full" onclick="removeStockRow()">Удалить</button>
-            <button class="btn-success w-full" onclick="applyStockRowEdit()">Сохранить</button>
+            <button class="btn-danger w-full" onclick="quickWriteoffFromStockRow()">📋 Списание</button>
+            <button class="btn-success w-full" onclick="quickStockinFromStockRow()">📥 Оприходование</button>
+            <button class="btn-primary w-full" onclick="quickMoveFromStockRow()">🔄 Перемещение</button>
         </div>
     </div>
 </div>
@@ -2257,8 +2250,6 @@ body {
     let modalStack = [];
     let isSearchPending = false;
     let currentProduct = null;
-    let productStockBaseline = [];
-    let productStockBaselineKey = '';
     let isProductDirty = false;
     let lastSavedItemId = null;
     let priceLookupResult = null;
@@ -2269,6 +2260,7 @@ body {
     let _selectedStockRowIdx = { writeoff: -1, move: -1, stockin: -1 };
     let writeoffPrefillSource = null;
     let movePrefillSource = null;
+    let stockinPrefillSource = null;
     let stockinStockRowsCache = [];
     let isDemoMode = sets.devOfflineMode === true;
     let lastScanAt = 0;
@@ -3561,64 +3553,6 @@ body {
         return [];
     }
 
-    function normalizeStockRowsForDiff(rows) {
-        return (rows || []).map(r => ({
-            warehouse: String(r.warehouse || r.wh || '').trim(),
-            cell: normalizeCellValue(r.cell || r.shelf || ''),
-            meters: toNumber(r.meters ?? r.m ?? r.qty ?? 0)
-        })).filter(r => r.warehouse && r.meters >= 0);
-    }
-
-    function buildAutoStockAdjustItems(beforeRows, afterRows) {
-        const sumByKey = (arr) => {
-            const map = new Map();
-            arr.forEach(r => {
-                const key = `${r.warehouse}||${r.cell}`;
-                map.set(key, (map.get(key) || 0) + toNumber(r.meters));
-            });
-            return map;
-        };
-        const before = sumByKey(normalizeStockRowsForDiff(beforeRows));
-        const after = sumByKey(normalizeStockRowsForDiff(afterRows));
-        const keys = new Set([...before.keys(), ...after.keys()]);
-        const writeoffItems = [];
-        const stockinItems = [];
-        keys.forEach(key => {
-            const b = toNumber(before.get(key) || 0);
-            const a = toNumber(after.get(key) || 0);
-            const delta = +(a - b).toFixed(3);
-            if (Math.abs(delta) < 0.001) return;
-            const [warehouse, cell] = key.split('||');
-            if (delta < 0) writeoffItems.push({ warehouse, cell, meters: Math.abs(delta) });
-            else stockinItems.push({ warehouse, cell, meters: delta });
-        });
-        return { writeoffItems, stockinItems };
-    }
-
-    function createAutoDoc(tab, articul, items, uid, charUid, charName) {
-        if (!Array.isArray(items) || !items.length) return null;
-        const now = new Date();
-        const itemRows = items.map((x, idx) => ({
-            id: `${now.getTime().toString(36)}-${idx}`,
-            art: articul,
-            m: String(toNumber(x.meters)),
-            wh: x.warehouse || '',
-            cell: x.cell || '',
-            ts: now.toISOString(),
-            ...(uid ? { uid } : {}),
-            ...(charUid ? { charUid } : {}),
-            ...(charName ? { charName } : {})
-        }));
-        return {
-            id: `${tab}-${now.getTime().toString(36)}`,
-            name: `${tab === 'writeoff' ? 'Авто-списание' : 'Авто-оприходование'} ${now.toLocaleDateString()}`,
-            status: 'closed',
-            createdAt: now.toISOString(),
-            docWarehouse: itemRows[0]?.wh || '',
-            items: itemRows
-        };
-    }
-
     /* Накапливаем ячейки из ответа 1С в sets.knownCells и обновляем datalist */
     function collectCellsFromRows(rows) {
         if (!Array.isArray(rows) || !rows.length) return;
@@ -4011,11 +3945,6 @@ body {
         currentProduct = p;
         customerGalleryIndex = 0;
         const rows = buildStockRows(p);
-        const baseKey = `${p.uid || p.id || ''}|${p.charUid || ''}|${p.articul || ''}`;
-        if (!isProductDirty || baseKey !== productStockBaselineKey) {
-            productStockBaseline = normalizeStockRowsForDiff(rows);
-            productStockBaselineKey = baseKey;
-        }
         const allImages = p.images || p.photos || p.gallery || [];
         const images = Array.isArray(allImages) ? allImages : [];
         document.getElementById('c-name').textContent = p.name || 'Товар';
@@ -4110,6 +4039,52 @@ body {
         showToast(`Артикул ${art || '—'} готов к списанию`, 'success');
     }
 
+    async function quickStockinFromCard() {
+        if (!currentProduct) return;
+        if (!isMgr) { showToast('Сначала войдите как менеджер', 'warning'); return; }
+        const art = String(currentProduct.articul || '').trim();
+        const rows = buildStockRows(currentProduct);
+        closeCustomerView();
+        switchTab('stockin');
+        let doc = db.stockin.find(x => x.status === 'active');
+        if (!doc) {
+            doc = { id: Date.now().toString(36), name: 'Документ ' + new Date().toLocaleDateString(), status: 'active', createdAt: new Date().toISOString(), items: [] };
+            db.stockin.unshift(doc); save();
+        }
+        openDoc(doc.id);
+        if (rows.length === 1) stockinPrefillSource = { wh: rows[0].warehouse || '', cell: rows[0].cell || '' };
+        else stockinPrefillSource = null;
+        setTimeout(async () => {
+            const artField = document.getElementById('f-art');
+            if (artField && art) { artField.value = art; await resolveFormArtInput(artField); await loadStockinStockPreview(); }
+            document.getElementById('f-m')?.focus();
+        }, 60);
+        showToast(`Артикул ${art || '—'} готов к оприходованию`, 'success');
+    }
+
+    async function quickMoveFromCard() {
+        if (!currentProduct) return;
+        if (!isMgr) { showToast('Сначала войдите как менеджер', 'warning'); return; }
+        const art = String(currentProduct.articul || '').trim();
+        const rows = buildStockRows(currentProduct);
+        closeCustomerView();
+        switchTab('move');
+        let doc = db.move.find(x => x.status === 'active');
+        if (!doc) {
+            doc = { id: Date.now().toString(36), name: 'Документ ' + new Date().toLocaleDateString(), status: 'active', createdAt: new Date().toISOString(), items: [] };
+            db.move.unshift(doc); save();
+        }
+        openDoc(doc.id);
+        if (rows.length) movePrefillSource = { wh: rows[0].warehouse || '', cell: rows[0].cell || '' };
+        else movePrefillSource = null;
+        setTimeout(async () => {
+            const artField = document.getElementById('f-art');
+            if (artField && art) { artField.value = art; await resolveFormArtInput(artField); await loadMoveStockPreview(); }
+            document.getElementById('f-m')?.focus();
+        }, 60);
+        showToast(`Артикул ${art || '—'} готов к перемещению`, 'success');
+    }
+
     function openInlineEditModal(el) {
         if (!isCustomerManagerModeActive() || !currentProduct) return;
         inlineEditField = el.dataset.editField;
@@ -4153,93 +4128,42 @@ body {
         activeStockRowIndex = index;
         const list = currentProduct.stockRows || [];
         const row = index >= 0 ? (list[index] || {}) : {};
-        const whSel = document.getElementById('sr-wh');
-        fillWarehouseSelect('sr-wh', sets.warehouses, row.warehouse || row.wh || '');
-        document.getElementById('sr-title').textContent = index >= 0 ? 'Редактирование склада' : 'Добавить склад';
-        const delBtn = document.querySelector('#modal-stock-row-edit .btn-danger');
-        if (delBtn) delBtn.style.display = index >= 0 ? 'inline-flex' : 'none';
-        document.getElementById('sr-cell').value = row.cell || '';
-        document.getElementById('sr-cell').classList.remove('input-error');
-        const srHint = document.getElementById('sr-cell-hint');
-        if (srHint) srHint.style.display = 'none';
-        document.getElementById('sr-meters').value = row.meters ?? row.m ?? row.qty ?? '';
+        document.getElementById('sr-title').textContent = 'Складская строка';
+        document.getElementById('sr-wh').value = row.warehouse || row.wh || '—';
+        document.getElementById('sr-cell').value = row.cell || '—';
+        document.getElementById('sr-meters').value = toNumber(row.meters ?? row.m ?? row.qty ?? 0).toFixed(2);
         openModal('modal-stock-row-edit');
-        setTimeout(() => {
-            const metersInput = document.getElementById('sr-meters');
-            metersInput.focus();
-            metersInput.select();
-        }, 50);
     }
 
-    /* Живая проверка ячейки в модалке — показывает предупреждение под полем */
-    function srValidateCell(value) {
-        const hint = document.getElementById('sr-cell-hint');
-        if (!hint) return;
-        const cell = normalizeCellValue(value);
-        if (!cell) { hint.style.display = 'none'; return; }
-        if (!isKnownCell(cell)) {
-            hint.textContent = sets.allowNewCells
-                ? `Ячейка «${cell}» новая — будет добавлена в базу`
-                : `Ячейка «${cell}» не найдена в базе. Включите «Разрешить новые ячейки» в настройках.`;
-            hint.style.color  = sets.allowNewCells ? 'var(--warning)' : 'var(--danger)';
-            hint.style.display = 'block';
-        } else {
-            hint.style.display = 'none';
-        }
+    function getActiveStockRowContext() {
+        const rows = buildStockRows(currentProduct || {});
+        const row = activeStockRowIndex >= 0 ? rows[activeStockRowIndex] : (rows[0] || {});
+        return {
+            wh: row?.warehouse || row?.wh || '',
+            cell: normalizeCellValue(row?.cell || row?.shelf || ''),
+            art: String(currentProduct?.articul || '').trim()
+        };
     }
 
-    function applyStockRowEdit() {
-        if (!currentProduct) return;
-        if (!Array.isArray(currentProduct.stockRows)) currentProduct.stockRows = [];
-
-        const metersValue = toNumber(document.getElementById('sr-meters').value);
-        const cell = normalizeCellValue(document.getElementById('sr-cell').value);
-        const warehouse = document.getElementById('sr-wh').value;
-
-        /* Проверка метража */
-        if (!(metersValue >= 0)) {
-            fieldError('sr-meters', 'Укажите количество метров');
-            return;
-        }
-
-        /* Проверка ячейки — только если указана */
-        if (cell && !isKnownCell(cell)) {
-            if (!sets.allowNewCells) {
-                const hint = document.getElementById('sr-cell-hint');
-                if (hint) {
-                    hint.textContent = `Ячейка «${cell}» не найдена. Включите «Разрешить новые ячейки» в настройках.`;
-                    hint.style.color   = 'var(--danger)';
-                    hint.style.display = 'block';
-                }
-                document.getElementById('sr-cell')?.classList.add('input-error');
-                document.getElementById('sr-cell')?.focus();
-                return;
-            }
-            /* allowNewCells = true — добавляем ячейку в knownCells */
-            if (!Array.isArray(sets.knownCells)) sets.knownCells = [];
-            if (!sets.knownCells.includes(cell)) {
-                sets.knownCells.push(cell);
-                sets.knownCells.sort();
-                save();
-                updateDataLists();
-            }
-        }
-
-        const row = { warehouse, cell, meters: metersValue, qty: metersValue };
-        if (activeStockRowIndex >= 0) currentProduct.stockRows[activeStockRowIndex] = row;
-        else currentProduct.stockRows.push(row);
-
-        markProductDirty();
-        showProduct(currentProduct);
+    function quickWriteoffFromStockRow() {
+        const { wh, cell } = getActiveStockRowContext();
+        writeoffPrefillSource = { wh, cell };
         closeModal('modal-stock-row-edit');
+        quickWriteoffFromCard();
     }
 
-    function removeStockRow() {
-        if (!currentProduct || activeStockRowIndex < 0 || !Array.isArray(currentProduct.stockRows)) return;
-        currentProduct.stockRows.splice(activeStockRowIndex, 1);
-        markProductDirty();
-        showProduct(currentProduct);
+    function quickStockinFromStockRow() {
+        const { wh, cell } = getActiveStockRowContext();
+        stockinPrefillSource = { wh, cell };
         closeModal('modal-stock-row-edit');
+        quickStockinFromCard();
+    }
+
+    function quickMoveFromStockRow() {
+        const { wh, cell } = getActiveStockRowContext();
+        movePrefillSource = { wh, cell };
+        closeModal('modal-stock-row-edit');
+        quickMoveFromCard();
     }
 
     function openProductEditModal() {
@@ -4255,8 +4179,6 @@ body {
         updateCompSumHint('pe-comp', 'pe-comp-hint');
         document.getElementById('pe-brand').value = currentProduct.brand || '';
         document.getElementById('pe-density').value = currentProduct.density || currentProduct.dens || '';
-        const row = Array.isArray(currentProduct.stockRows) && currentProduct.stockRows.length ? currentProduct.stockRows[0] : {};
-        document.getElementById('pe-qty').value = currentProduct.qty ?? row.qty ?? '';
         openModal('modal-product-edit');
     }
 
@@ -4284,7 +4206,6 @@ body {
         currentProduct.composition = composition;
         currentProduct.brand = brand;
         currentProduct.density = density;
-        currentProduct.qty = toNumber(document.getElementById('pe-qty')?.value || currentProduct.qty || 0);
         markProductDirty();
         showProduct(currentProduct);
         closeModal('modal-product-edit');
@@ -4310,16 +4231,8 @@ body {
             width: currentProduct.width || '',
             composition: currentProduct.composition || '',
             brand: currentProduct.brand || '',
-            density: currentProduct.density || currentProduct.dens || '',
-            qty: toNumber(currentProduct.qty || 0),
-            stockRows: (currentProduct.stockRows || []).map(r => ({
-                warehouse: r.warehouse || r.wh || '',
-                cell: r.cell || '',
-                meters: toNumber(r.meters ?? r.m),
-                qty: toNumber(r.meters ?? r.m ?? r.qty)
-            }))
+            density: currentProduct.density || currentProduct.dens || ''
         };
-        const autoDelta = buildAutoStockAdjustItems(productStockBaseline, payload.stockRows);
 
         if (!sets.url) { showToast('Демо режим: изменения оставлены локально'); return; }
         try {
@@ -4329,23 +4242,7 @@ body {
                 body: JSON.stringify(payload)
             });
             if (res.ok) {
-                const uid = payload.uid || '';
-                const charUid = currentProduct?.charUid || '';
-                const charName = currentProduct?.charName || '';
-                const writeoffDoc = createAutoDoc('writeoff', payload.articul, autoDelta.writeoffItems, uid, charUid, charName);
-                const stockinDoc = createAutoDoc('stockin', payload.articul, autoDelta.stockinItems, uid, charUid, charName);
-                const autoDocs = [['writeoff', writeoffDoc], ['stockin', stockinDoc]].filter(([, d]) => !!d);
-                autoDocs.forEach(([tab, doc]) => {
-                    db[tab].unshift(doc);
-                    outboxAdd(doc.id, tab);
-                });
-
-                if (autoDocs.length) {
-                    showToast(`Созданы авто-документы: ${autoDocs.map(([,d]) => d.name).join(', ')}`, 'success');
-                    await flushOutbox();
-                }
                 isProductDirty = false;
-                productStockBaseline = normalizeStockRowsForDiff(payload.stockRows);
                 updateProductSyncButton();
                 showToast('Изменения отправлены в 1С', 'success');
             } else {
@@ -5540,6 +5437,12 @@ body {
             cont.innerHTML = `<div class="input-group"><label>СКЛАД ДОКУМЕНТА</label><select id="f-wh-doc" onchange="setDocWarehouse(this.value)"></select></div><div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" placeholder="Артикул → Enter для поиска" onblur="resolveFormArtInput(this); loadStockinStockPreview();" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this); loadStockinStockPreview();}"></div><div id="stockin-stock-preview" class="writeoff-stock-preview">Введите артикул, чтобы увидеть остатки по складам</div><div class="input-group"><label>ЯЧЕЙКА</label><input type="text" id="f-cell" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div><div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-success w-full" id="btn-save-line" onclick="saveLine()">ОПРИХОДОВАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
             fillWarehouseSelect('f-wh-doc', sets.warehouses, d.docWarehouse || sets.warehouses[0] || '');
             loadStockinStockPreview();
+            if (stockinPrefillSource) {
+                const wh = document.getElementById('f-wh-doc');
+                const cell = document.getElementById('f-cell');
+                if (wh && [...wh.options].some(o => o.value === stockinPrefillSource.wh)) wh.value = stockinPrefillSource.wh;
+                if (cell) cell.value = stockinPrefillSource.cell || '';
+            }
         } else if(curTab === 'price'){
             cont.innerHTML = `<label>Артикул</label><div class="flex gap-2"><input type="text" id="f-art" data-art-field list="list-arts" oninput="clearPriceLookupState()" onblur="resolveFormArtInput(this); loadPriceItemPreview();" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this); loadPriceItemPreview();}"><button class="btn-outline" type="button" onclick="loadPriceItemPreview()">🔎 Найти</button></div><div id="price-item-preview" class="text-sm text-sec" style="margin:6px 0 6px;">Нажмите «Найти товар», чтобы подтянуть данные из 1С</div><label>Текущая цена (из 1С)</label><input type="text" id="f-p-current" readonly><label>Новая цена (у.е.)</label><input type="text" id="f-p" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"><button class="btn-primary w-full" style="background:var(--price-color)" id="btn-save-line" onclick="saveLine()">Провести изменение цены</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
             if (!editingItemId) clearPriceLookupState();
