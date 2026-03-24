@@ -5733,7 +5733,27 @@ body {
         if (_charName) item.charName = _charName;
 
         if (curTab === 'receive') {
-            const v = activeCuts.filter(c => !isNaN(parseFloat(c.m)) && parseFloat(c.m) > 0);
+            if (!Array.isArray(sets.warehouses) || !sets.warehouses.length) {
+                showToast('Добавьте хотя бы один склад в настройках', 'danger');
+                return;
+            }
+            const v = [];
+            for (let i = 0; i < activeCuts.length; i++) {
+                const cut = activeCuts[i];
+                const meters = parseFloat(cut.m);
+                if (!(meters > 0)) continue;
+                const wh = normalizeWhValue(cut.wh || cut.warehouse || '');
+                if (!wh || wh === '-') {
+                    showToast('Укажите склад для каждого отреза', 'danger');
+                    const whSelect = document.querySelectorAll('#receive-cuts .cut-row select')[i];
+                    if (whSelect) {
+                        whSelect.classList.add('input-error');
+                        whSelect.focus();
+                    }
+                    return;
+                }
+                v.push({ ...cut, wh });
+            }
             if (!v.length) {
                 showToast('Добавьте хотя бы один отрез с метражом > 0', 'danger');
                 /* Подсвечиваем первый пустой m-инпут в нарезках */
@@ -5853,7 +5873,10 @@ body {
         save(); renderForm(); renderRows();
         showToast('Записано', 'success');
         const artField = document.getElementById('f-art');
-        if (artField) { artField.value = ''; setTimeout(() => artField.focus(), 30); }
+        if (artField) {
+            if (curTab !== 'receive') artField.value = '';
+            setTimeout(() => artField.focus(), 30);
+        }
     }
 
     function editItem(id) {
