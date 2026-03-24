@@ -4068,6 +4068,41 @@ body {
         return hasCharacteristics(p) && p.characteristics.length === 1;
     }
 
+    function isKioskA4CollectContext() {
+        const kioskVisible = !document.getElementById('screen-kiosk')?.classList.contains('hidden');
+        const customerOpen = !document.getElementById('customer-view')?.classList.contains('hidden');
+        return kioskA4CollectMode && kioskVisible && !customerOpen && !isMgr;
+    }
+
+    function tryAddProductToA4Buffer(product, preferredCode = '') {
+        if (!isKioskA4CollectContext()) return false;
+        const art = String(
+            preferredCode ||
+            product?.charArticul ||
+            product?.articul ||
+            product?.article ||
+            ''
+        ).trim().toUpperCase();
+
+        if (!art) {
+            showToast('Не удалось определить артикул для A4', 'danger');
+            return true;
+        }
+        if (kioskA4Buffer.includes(art)) {
+            flashA4Duplicate(art);
+            showToast(`${art} уже в листе`, 'warning');
+            return true;
+        }
+        if (kioskA4Buffer.length >= 10) {
+            showToast('Лист заполнен (10/10)', 'warning');
+            return true;
+        }
+        kioskA4Buffer.push(art);
+        updateKioskA4Status();
+        showToast(`Добавлено в A4: ${art}`, 'success');
+        return true;
+    }
+
     /* Применяем характеристику к продукту — подменяем цену и остатки */
     function applyCharacteristic(baseProduct, char) {
         return {
@@ -4088,17 +4123,23 @@ body {
     function resolveAndShowProduct(p) {
         /* Вариант 3: в ответе уже charUid — штрихкод был уникальным */
         if (p.charUid && !hasCharacteristics(p)) {
+            if (tryAddProductToA4Buffer(p, p.articul || p.article || '')) return;
             showProduct(p);
             return;
         }
         /* Нет характеристик вообще — обычный товар */
         if (!hasCharacteristics(p)) {
+            if (tryAddProductToA4Buffer(p, p.articul || p.article || '')) return;
             showProduct(p);
             return;
         }
         /* Одна характеристика — выбор пропускаем, применяем сразу */
         if (hasSingleChar(p)) {
-            showProduct(applyCharacteristic(p, p.characteristics[0]));
+            const selected = p.characteristics[0] || {};
+            const withChar = applyCharacteristic(p, selected);
+            const selectedArt = selected.articul || selected.article || p.articul || p.article || '';
+            if (tryAddProductToA4Buffer(withChar, selectedArt)) return;
+            showProduct(withChar);
             return;
         }
         /* Несколько характеристик — показываем модалку выбора */
@@ -4161,6 +4202,8 @@ body {
 
             item.onclick = () => {
                 closeModal('modal-char-select');
+                const selectedArt = char.articul || char.article || p.articul || p.article || '';
+                if (tryAddProductToA4Buffer(applyCharacteristic(p, char), selectedArt)) return;
                 isProductDirty = false;
                 showProduct(applyCharacteristic(p, char));
             };
