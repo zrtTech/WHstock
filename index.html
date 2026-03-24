@@ -242,6 +242,84 @@
             justify-content: center;
             flex-wrap: nowrap;
         }
+        .kiosk-main-layout {
+            width: min(1120px, 100%);
+            display: flex;
+            gap: 18px;
+            align-items: stretch;
+            justify-content: center;
+            z-index: 1;
+        }
+        .kiosk-a4-panel {
+            width: min(30%, 340px);
+            min-width: 260px;
+            border-radius: 16px;
+            padding: 14px;
+            text-align: left;
+            color: #e9f3ff;
+            border: 1px solid rgba(163, 209, 255, 0.34);
+            background: rgba(6, 28, 54, 0.44);
+            box-shadow: 0 10px 30px rgba(3, 14, 26, 0.35);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+        .kiosk-a4-panel-title {
+            margin: 0 0 8px;
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: .01em;
+        }
+        .kiosk-a4-list {
+            max-height: 270px;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 10px;
+            padding-right: 2px;
+        }
+        .kiosk-a4-list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            border: 1px solid rgba(167, 212, 255, 0.32);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.07);
+            padding: 8px 10px;
+        }
+        .kiosk-a4-list-empty {
+            opacity: .78;
+            font-size: 13px;
+            border: 1px dashed rgba(167, 212, 255, 0.32);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+        }
+        .kiosk-a4-list-art {
+            font-size: 14px;
+            font-weight: 700;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .kiosk-a4-list-del {
+            min-height: 36px;
+            min-width: 36px;
+            padding: 0;
+            border-radius: 8px;
+            border: 1px solid rgba(255,150,150,0.58);
+            background: rgba(255,105,105,0.12);
+            color: #ffd0d0;
+            font-size: 18px;
+            line-height: 1;
+            font-weight: 900;
+        }
+        .kiosk-a4-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
         .kiosk-tool-btn {
             color: #e8f3ff;
             border: 1px solid rgba(153, 202, 248, 0.42);
@@ -293,6 +371,9 @@
             .kiosk-search-btn { min-height: 58px; font-size: 22px; }
             .kiosk-tools { flex-wrap: wrap; }
             .kiosk-tool-btn { flex: 1 1 180px; }
+            .kiosk-main-layout { flex-direction: column; }
+            .kiosk-a4-panel { width: min(520px, 100%); min-width: 0; }
+            .kiosk-a4-list { max-height: 170px; }
         }
         @media (orientation: landscape) and (max-height: 620px) {
             #screen-kiosk {
@@ -312,6 +393,9 @@
             .kiosk-tool-btn { min-height: 38px; font-size: 14px; flex: 1 1 30%; }
             #kiosk-a4-status { margin-top: 8px; font-size: 12px; }
             .kiosk-a4-subtext { display: none; }
+            .kiosk-main-layout { gap: 10px; }
+            .kiosk-a4-panel { min-width: 240px; padding: 10px; }
+            .kiosk-a4-list { max-height: 136px; }
         }
 
         /* КНОПКИ */
@@ -835,9 +919,10 @@
         .a4-slot.dup-flash { animation:a4DupFlash .4s ease; border-color:var(--warning); background:#fff8e1; }
         @keyframes a4DupFlash { 0%,100%{transform:scale(1)} 40%{transform:scale(1.06)} }
         .a4-slot-num { font-size:10px; color:var(--text-sec); font-weight:600; margin-bottom:2px; }
-        .a4-slot-del { position:absolute; top:2px; right:3px; background:none; border:none;
-                       color:var(--danger); font-size:13px; cursor:pointer; padding:0; min-height:0;
-                       line-height:1; opacity:.6; }
+        .a4-slot-del { position:absolute; top:0; right:0; border:1px solid rgba(255,120,120,0.45);
+                       background:rgba(255,235,235,0.96); color:var(--danger); font-size:18px;
+                       font-weight:800; cursor:pointer; padding:0; min-height:30px; min-width:30px;
+                       line-height:1; opacity:.95; border-radius:0 10px 0 10px; }
         .a4-slot-del:hover { opacity:1; }
         .a4-scan-row { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
         .a4-scan-row input { flex:1; font-size:15px; }
@@ -1403,23 +1488,33 @@ body {
         </div>
         <h1 class="kiosk-title">СКЛАД-ЦЕНТР</h1>
         <p class="kiosk-subtitle">информационный терминал</p>
-        <div class="kiosk-inner">
-            <div class="kiosk-scan-hint"><span class="scan-ring"></span>ПОДНЕСИТЕ ШТРИХКОД<span class="scan-ring delay"></span></div>
-            <button class="btn-main btn-search-wide w-full mb-4 kiosk-search-btn" onclick="openManualSearch()" aria-label="Поиск товара по артикулу">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="2"></circle>
-                    <path d="M16 16L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-                </svg>
-                <span>Поиск товара по артикулу</span>
-            </button>
-            <div id="search-loading" class="search-loading text-sm hidden skeleton" aria-live="polite">Поиск товара...</div>
-            <div class="kiosk-tools">
-                <button class="btn-outline kiosk-tool-btn" onclick="enterKioskFullscreen()">⛶ Полный экран</button>
-                <button id="btn-a4-collect-toggle" class="btn-outline kiosk-tool-btn" onclick="toggleKioskA4CollectMode()">📋 Собрать лист</button>
-                <button id="btn-a4-print" class="btn-outline kiosk-tool-btn" onclick="openA4PreviewModal()">🖨️ Печать листа</button>
+        <div class="kiosk-main-layout">
+            <div class="kiosk-inner">
+                <div class="kiosk-scan-hint"><span class="scan-ring"></span>ПОДНЕСИТЕ ШТРИХКОД<span class="scan-ring delay"></span></div>
+                <button class="btn-main btn-search-wide w-full mb-4 kiosk-search-btn" onclick="openManualSearch()" aria-label="Поиск товара по артикулу">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="2"></circle>
+                        <path d="M16 16L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                    </svg>
+                    <span>Поиск товара по артикулу</span>
+                </button>
+                <div id="search-loading" class="search-loading text-sm hidden skeleton" aria-live="polite">Поиск товара...</div>
+                <div class="kiosk-tools">
+                    <button class="btn-outline kiosk-tool-btn" onclick="enterKioskFullscreen()">⛶ Полный экран</button>
+                    <button id="btn-a4-collect-toggle" class="btn-outline kiosk-tool-btn" onclick="toggleKioskA4CollectMode()">📋 Собрать лист</button>
+                    <button id="btn-a4-print" class="btn-outline kiosk-tool-btn" onclick="openA4PreviewModal()">🖨️ Печать листа</button>
+                </div>
             </div>
-            <div id="kiosk-a4-status" class="text-sm">A4 буфер: 0/10</div>
-            <div class="text-sm kiosk-a4-subtext">A4 — печать 10 товарных позиций на одном листе офиса</div>
+            <aside class="kiosk-a4-panel">
+                <h3 class="kiosk-a4-panel-title">📄 Сборка A4</h3>
+                <div id="kiosk-a4-status" class="text-sm">A4 буфер: 0/10</div>
+                <div class="text-sm kiosk-a4-subtext">Товары для печати листа можно удалять прямо здесь.</div>
+                <div id="kiosk-a4-list" class="kiosk-a4-list"></div>
+                <div class="kiosk-a4-actions">
+                    <button class="btn-outline w-full" type="button" onclick="clearA4Buffer()">Очистить</button>
+                    <button class="btn-primary w-full" type="button" onclick="openA4PreviewModal()">Открыть A4</button>
+                </div>
+            </aside>
         </div>
         <input type="text" id="kiosk-scanner-input" style="position:fixed;left:6px;bottom:6px;width:2px;height:2px;opacity:0.02;font-size:16px;border:none;outline:none;padding:0;margin:0;background:transparent;color:transparent;caret-color:transparent;z-index:3;pointer-events:auto;" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="off" inputmode="none" enterkeyhint="done" tabindex="-1" aria-label="scanner input">
     </div>
@@ -1799,7 +1894,7 @@ body {
             <input type="text" id="a4-manual-art"
                 placeholder="Артикул или штрихкод → Enter"
                 onkeydown="if(event.key==='Enter'){ event.stopPropagation(); addA4ItemManual(); }"
-                oninput="this.value=this.value.toUpperCase(); scheduleA4AutoAdd()"
+                oninput="this.value=this.value.toUpperCase()"
                 autocomplete="new-password" autocorrect="off" spellcheck="false" autocapitalize="off"
                 inputmode="none" enterkeyhint="done" name="a4_manual_art_noautofill"
                 data-lpignore="true" data-form-type="other">
@@ -2347,7 +2442,6 @@ body {
     let scannerFocusInterval = null;
     let customerScanOverlayTimer = null;
     let scanBufResetTimer = null;
-    let a4AutoAddTimer = null;
     let serverPrinters = [];
     let kioskA4CollectMode = false;
     let kioskA4Buffer = [];
@@ -5012,6 +5106,36 @@ body {
         if (status) status.textContent = `A4 буфер: ${kioskA4Buffer.length}/10${kioskA4CollectMode ? ' (режим сбора включён)' : ''}`;
         if (btn) btn.textContent = kioskA4CollectMode ? '✅ Режим сбора включен' : '📋 Собрать лист этикеток';
         renderA4PreviewModal();
+        renderKioskA4List();
+    }
+
+    function renderKioskA4List() {
+        const list = document.getElementById('kiosk-a4-list');
+        if (!list) return;
+        if (!kioskA4Buffer.length) {
+            list.innerHTML = '<div class="kiosk-a4-list-empty">Список пуст. Добавляйте позиции сканером, Enter или кнопкой «+».</div>';
+            return;
+        }
+        list.innerHTML = '';
+        kioskA4Buffer.forEach((art, idx) => {
+            const row = document.createElement('div');
+            row.className = 'kiosk-a4-list-item';
+
+            const label = document.createElement('div');
+            label.className = 'kiosk-a4-list-art';
+            label.textContent = `${idx + 1}. ${art}`;
+
+            const del = document.createElement('button');
+            del.className = 'kiosk-a4-list-del';
+            del.type = 'button';
+            del.textContent = '✕';
+            del.title = `Удалить ${art}`;
+            del.setAttribute('aria-label', `Удалить ${art}`);
+            del.onclick = () => removeA4Item(idx);
+
+            row.append(label, del);
+            list.appendChild(row);
+        });
     }
 
     function renderA4PreviewModal() {
@@ -5092,20 +5216,7 @@ body {
         }, 80);
     }
 
-    function scheduleA4AutoAdd() {
-        const inp = document.getElementById('a4-manual-art');
-        if (!inp) return;
-        if (a4AutoAddTimer) clearTimeout(a4AutoAddTimer);
-        a4AutoAddTimer = setTimeout(() => {
-            if (activeModalId !== 'modal-a4-preview') return;
-            const val = (inp.value || '').trim();
-            if (val.length < 3) return;
-            addA4ItemManual();
-        }, 220);
-    }
-
     async function addA4ItemManual() {
-        if (a4AutoAddTimer) { clearTimeout(a4AutoAddTimer); a4AutoAddTimer = null; }
         const inp = document.getElementById('a4-manual-art');
         const raw = (inp?.value || '').trim().toUpperCase();
         if (!raw) return;
