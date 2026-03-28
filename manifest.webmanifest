@@ -6,10 +6,13 @@
   "start_url": "/index.html",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
   "orientation": "any",
   "theme_color": "#2563eb",
   "background_color": "#f6f8fb",
   "lang": "ru",
+  "dir": "ltr",
+  "prefer_related_applications": false,
   "categories": ["business", "productivity"],
   "icons": [
     {
@@ -31,16 +34,17 @@
   ],
   "screenshots": [
     {
-      "src": "/screenshots/desktop-home.png",
-      "sizes": "1366x768",
+      "src": "/screenshots/screenshot1.png",
+      "sizes": "1876x985",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Главный экран приложения"
     },
     {
-      "src": "/screenshots/mobile-work.png",
-      "sizes": "540x1200",
+      "src": "/screenshots/screenshot2.png",
+      "sizes": "400x942",
       "type": "image/png",
+      "form_factor": "narrow",
       "label": "Рабочий экран на мобильном устройстве"
     }
   ],
