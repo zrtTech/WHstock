@@ -243,27 +243,28 @@
             flex-wrap: nowrap;
         }
         .kiosk-main-layout {
-            width: min(760px, 100%);
+            width: min(1400px, 100%);
             flex: 1;
-            display: flex;
-            gap: 18px;
-            align-items: flex-start;
+            display: grid;
+            grid-template-columns: minmax(520px, 1fr) clamp(320px, 33vw, 380px);
+            gap: 20px;
+            align-items: stretch;
             justify-content: center;
             z-index: 1;
         }
         .kiosk-inner {
+            width: min(760px, 100%);
+            margin: 0 auto;
             display: flex;
             flex-direction: column;
             justify-content: center;
             min-height: 100%;
         }
         .kiosk-a4-panel {
-            position: absolute;
-            top: 14px;
-            right: 14px;
-            width: min(33vw, 360px);
-            min-width: 300px;
-            height: calc(var(--app-height) - 28px);
+            position: static;
+            width: 100%;
+            min-width: 0;
+            height: calc(var(--app-height) - 56px);
             max-height: none;
             display: flex;
             flex-direction: column;
@@ -378,7 +379,7 @@
             100% { content: ' ....'; }
         }
 
-        @media (max-width: 680px) {
+        @media (max-width: 900px) {
             .kiosk-logo-wrap { width: 94px; height: 94px; margin-bottom: 10px; }
             .kiosk-logo { width: 80px; height: 80px; }
             .kiosk-title { font-size: 42px; }
@@ -387,17 +388,9 @@
             .kiosk-search-btn { min-height: 58px; font-size: 22px; }
             .kiosk-tools { flex-wrap: wrap; }
             .kiosk-tool-btn { flex: 1 1 180px; }
-            .kiosk-main-layout { flex-direction: column; flex: 0 1 auto; }
+            .kiosk-main-layout { grid-template-columns: 1fr; flex: 0 1 auto; }
             .kiosk-a4-panel { position: static; width: min(520px, 100%); min-width: 0; height: auto; max-height: 48vh; }
             .kiosk-a4-list { max-height: none; }
-        }
-        @media (min-width: 900px) {
-            #screen-kiosk {
-                padding-right: clamp(340px, 35vw, 430px);
-            }
-            .kiosk-main-layout {
-                margin-right: auto;
-            }
         }
         @media (orientation: landscape) and (max-height: 620px) {
             #screen-kiosk {
@@ -418,7 +411,7 @@
             #kiosk-a4-status { margin-top: 8px; font-size: 12px; }
             .kiosk-a4-subtext { display: none; }
             .kiosk-main-layout { gap: 10px; }
-            .kiosk-a4-panel { position: absolute; top: 8px; right: 8px; min-width: 260px; width: min(36vw, 330px); padding: 10px; height: calc(var(--app-height) - 16px); max-height: none; }
+            .kiosk-a4-panel { min-width: 260px; width: 100%; padding: 10px; height: calc(var(--app-height) - 28px); max-height: none; }
             .kiosk-a4-list { max-height: none; }
         }
 
