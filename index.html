@@ -391,6 +391,14 @@
             .kiosk-a4-panel { position: static; width: min(520px, 100%); min-width: 0; height: auto; max-height: 48vh; }
             .kiosk-a4-list { max-height: none; }
         }
+        @media (min-width: 900px) {
+            #screen-kiosk {
+                padding-right: clamp(340px, 35vw, 430px);
+            }
+            .kiosk-main-layout {
+                margin-right: auto;
+            }
+        }
         @media (orientation: landscape) and (max-height: 620px) {
             #screen-kiosk {
                 padding: 12px 14px;
