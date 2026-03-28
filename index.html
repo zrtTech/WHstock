@@ -268,11 +268,12 @@
             position: static;
             width: 100%;
             min-width: 0;
-            height: 100%;
+            height: min(74vh, 700px);
             min-height: 0;
             max-height: none;
             display: flex;
             flex-direction: column;
+            align-self: center;
             border-radius: 16px;
             padding: 12px;
             text-align: left;
@@ -394,7 +395,7 @@
             .kiosk-tools { flex-wrap: wrap; }
             .kiosk-tool-btn { flex: 1 1 180px; }
             .kiosk-main-layout { grid-template-columns: 1fr; flex: 0 1 auto; }
-            .kiosk-a4-panel { position: static; width: min(520px, 100%); min-width: 0; height: auto; max-height: 48vh; }
+            .kiosk-a4-panel { position: static; width: min(520px, 100%); min-width: 0; height: auto; max-height: 48vh; align-self: auto; }
             .kiosk-a4-list { max-height: none; }
         }
         @media (orientation: landscape) and (max-height: 620px) {
