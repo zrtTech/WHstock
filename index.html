@@ -257,14 +257,15 @@
             margin: 0 auto;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start;
             min-height: 100%;
+            padding-top: 10px;
         }
         .kiosk-a4-panel {
             position: static;
             width: 100%;
             min-width: 0;
-            height: calc(var(--app-height) - 56px);
+            height: 100%;
             max-height: none;
             display: flex;
             flex-direction: column;
@@ -1494,19 +1495,19 @@ body {
     <!-- ЭКРАН КИОСКА -->
     <div id="screen-kiosk">
         <button class="kiosk-staff-entry" onclick="openLogin()" aria-label="Вход персонала">🔒 Персонал</button>
-        <div class="kiosk-logo-wrap" aria-hidden="true">
-            <svg class="kiosk-logo" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="13" y="22" width="38" height="31" rx="6" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.62)" stroke-width="1.7"/>
-                <path d="M11.6 22L32 8L52.4 22" stroke="rgba(216,239,255,0.9)" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
-                <rect x="24" y="33" width="16" height="14" rx="2.3" fill="rgba(126,232,255,0.2)" stroke="rgba(126,232,255,0.68)" stroke-width="1.1"/>
-                <path d="M32 33V47M24 40H40" stroke="rgba(126,232,255,0.7)" stroke-width="1.1"/>
-                <circle cx="32" cy="16" r="2.4" fill="#5de4ff"/>
-            </svg>
-        </div>
-        <h1 class="kiosk-title">СКЛАД-ЦЕНТР</h1>
-        <p class="kiosk-subtitle">информационный терминал</p>
         <div class="kiosk-main-layout">
             <div class="kiosk-inner">
+                <div class="kiosk-logo-wrap" aria-hidden="true">
+                    <svg class="kiosk-logo" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="13" y="22" width="38" height="31" rx="6" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.62)" stroke-width="1.7"/>
+                        <path d="M11.6 22L32 8L52.4 22" stroke="rgba(216,239,255,0.9)" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+                        <rect x="24" y="33" width="16" height="14" rx="2.3" fill="rgba(126,232,255,0.2)" stroke="rgba(126,232,255,0.68)" stroke-width="1.1"/>
+                        <path d="M32 33V47M24 40H40" stroke="rgba(126,232,255,0.7)" stroke-width="1.1"/>
+                        <circle cx="32" cy="16" r="2.4" fill="#5de4ff"/>
+                    </svg>
+                </div>
+                <h1 class="kiosk-title">СКЛАД-ЦЕНТР</h1>
+                <p class="kiosk-subtitle">информационный терминал</p>
                 <div class="kiosk-scan-hint"><span class="scan-ring"></span>ПОДНЕСИТЕ ШТРИХКОД<span class="scan-ring delay"></span></div>
                 <button class="btn-main btn-search-wide w-full mb-4 kiosk-search-btn" onclick="openManualSearch()" aria-label="Поиск товара по артикулу">
                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
