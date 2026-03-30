@@ -4349,6 +4349,11 @@ body {
         inlineEditField = el.dataset.editField;
         document.getElementById('ie-title').textContent = `Изменить: ${el.dataset.editLabel || 'Поле'}`;
         const input = document.getElementById('ie-input');
+        const compHint = document.getElementById('ie-comp-hint');
+        if (compHint) {
+            compHint.style.display = 'none';
+            compHint.textContent = '';
+        }
         const upperMode = inlineEditField === 'composition' || inlineEditField === 'articul' || inlineEditField === 'brand';
         input.setAttribute('autocapitalize', upperMode ? 'characters' : 'none');
         input.value = (inlineEditField === 'priceRub' ? toNumber(currentProduct.priceRub || currentProduct.price || 0).toFixed(2) : (currentProduct[inlineEditField] ?? '').toString());
