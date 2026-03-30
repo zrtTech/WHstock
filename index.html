@@ -6315,6 +6315,7 @@ body {
     }
     function showToast(m, t, durationMs = 2500) {
         const c = document.getElementById('toast-container');
+        applyToastContainerPosition(c);
         if (c.children.length > 3) c.removeChild(c.firstChild);
         const d = document.createElement('div');
         d.className = 'toast';
@@ -6328,6 +6329,19 @@ body {
         setTimeout(() => d.remove(), durationMs);
     }
 
+    function applyToastContainerPosition(containerEl) {
+        const c = containerEl || document.getElementById('toast-container');
+        if (!c) return;
+        const customerOpen = !document.getElementById('customer-view')?.classList.contains('hidden');
+        if (customerOpen) {
+            c.style.top = 'auto';
+            c.style.bottom = '16px';
+        } else {
+            c.style.bottom = 'auto';
+            c.style.top = '84px';
+        }
+    }
+
     /* ─── showApiError ───────────────────────────────────────────────────
        Показывает детальную ошибку сетевого/API вызова с кнопкой «Повторить».
 
@@ -6339,6 +6353,7 @@ body {
     ────────────────────────────────────────────────────────────────── */
     function showApiError({ endpoint = '', status = '', retryFn = null, msg = '' } = {}) {
         const c = document.getElementById('toast-container');
+        applyToastContainerPosition(c);
         if (c.children.length > 3) c.removeChild(c.firstChild);
 
         const statusStr = status === 'net'     ? 'Нет связи'
