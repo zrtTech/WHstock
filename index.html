@@ -341,14 +341,13 @@
             padding-right: 2px;
         }
         .kiosk-a4-list-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px 12px;
             border: 1px solid rgba(167, 212, 255, 0.32);
-            border-radius: 10px;
-            background: rgba(255,255,255,0.07);
-            padding: 4px 8px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.05);
+            padding: 10px 12px;
         }
         .kiosk-a4-list-empty {
             opacity: .78;
@@ -359,15 +358,16 @@
             text-align: center;
         }
         .kiosk-a4-list-art {
-            font-size: 13px;
+            font-size: 16px;
             font-weight: 700;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
         }
         .kiosk-a4-list-del {
-            min-height: 36px;
-            min-width: 36px;
+            min-height: 38px;
+            min-width: 38px;
             padding: 0;
             border-radius: 8px;
             border: 1px solid rgba(255,150,150,0.58);
@@ -377,6 +377,42 @@
             line-height: 1;
             font-weight: 900;
         }
+        .kiosk-a4-item-main { min-width: 0; }
+        .kiosk-a4-item-head {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            margin-bottom: 2px;
+            min-width: 0;
+        }
+        .kiosk-a4-item-num { font-size: 12px; color: rgba(188, 221, 255, 0.78); font-weight: 800; }
+        .kiosk-a4-item-brand { font-size: 12px; color: rgba(156, 204, 255, 0.72); font-weight: 700; }
+        .kiosk-a4-item-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #dceeff;
+            line-height: 1.25;
+            margin-bottom: 8px;
+        }
+        .kiosk-a4-tags, .kiosk-a4-stocks {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .kiosk-a4-tag, .kiosk-a4-stock-chip {
+            border-radius: 999px;
+            border: 1px solid rgba(170, 215, 255, 0.35);
+            background: rgba(29, 48, 84, 0.75);
+            color: #d5e8ff;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 2px 8px;
+            line-height: 1.3;
+        }
+        .kiosk-a4-tag.price { background: rgba(47, 107, 240, 0.45); border-color: rgba(86, 147, 255, 0.65); }
+        .kiosk-a4-tag.qty { background: rgba(23, 128, 83, 0.48); border-color: rgba(66, 190, 125, 0.65); }
+        .kiosk-a4-tag.comp { background: rgba(147, 106, 18, 0.36); border-color: rgba(245, 189, 61, 0.48); color: #ffe4a7; }
+        .kiosk-a4-stocks { margin-top: 6px; }
         .kiosk-a4-actions {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -2544,6 +2580,7 @@ body {
     let serverPrinters = [];
     let kioskA4CollectMode = false;
     let kioskA4Buffer = [];
+    let kioskA4Meta = {};
     let kioskPane = 'main';
 
     function isCompactKioskLayout() {
@@ -2576,6 +2613,34 @@ body {
     }
 
     function syncKioskPaneByViewport() { applyKioskPaneState(); }
+
+    function escapeHtml(text) {
+        return String(text ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+    }
+
+    function rememberA4Meta(art, product) {
+        if (!art || !product) return;
+        const rows = Array.isArray(product.stockRows) ? product.stockRows : (Array.isArray(product.stocks) ? product.stocks : []);
+        kioskA4Meta[art] = {
+            name: product.namePrint || product.printName || product.fullName || product.name || '',
+            brand: product.brand || '',
+            priceRub: toNumber(product.priceRub ?? product.price ?? 0),
+            width: product.width || '',
+            density: product.density || product.dens || '',
+            composition: product.composition || '',
+            qty: rows.reduce((sum, row) => sum + toNumber(row?.meters ?? row?.m ?? 0), 0),
+            stocks: rows.slice(0, 3).map(row => ({
+                warehouse: row?.warehouse || row?.wh || '',
+                cell: row?.cell || '',
+                meters: toNumber(row?.meters ?? row?.m ?? 0)
+            }))
+        };
+    }
 
     function setSearchLock(locked) {
         isSearchPending = locked;
@@ -4231,6 +4296,7 @@ body {
             showToast('Лист заполнен (10/10)', 'warning');
             return true;
         }
+        rememberA4Meta(art, product);
         kioskA4Buffer.push(art);
         updateKioskA4Status();
         showToast(`Добавлено в A4: ${art}`, 'success');
@@ -5305,12 +5371,58 @@ body {
         }
         list.innerHTML = '';
         kioskA4Buffer.forEach((art, idx) => {
+            const meta = kioskA4Meta[art] || null;
             const row = document.createElement('div');
             row.className = 'kiosk-a4-list-item';
 
+            const main = document.createElement('div');
+            main.className = 'kiosk-a4-item-main';
+
+            const head = document.createElement('div');
+            head.className = 'kiosk-a4-item-head';
+            const num = document.createElement('span');
+            num.className = 'kiosk-a4-item-num';
+            num.textContent = `#${idx + 1}`;
             const label = document.createElement('div');
             label.className = 'kiosk-a4-list-art';
-            label.textContent = `${idx + 1}. ${art}`;
+            label.textContent = art;
+            head.append(num, label);
+            if (meta?.brand) {
+                const brand = document.createElement('span');
+                brand.className = 'kiosk-a4-item-brand';
+                brand.textContent = meta.brand;
+                head.appendChild(brand);
+            }
+            main.appendChild(head);
+
+            if (meta?.name) {
+                const name = document.createElement('div');
+                name.className = 'kiosk-a4-item-name';
+                name.textContent = meta.name;
+                main.appendChild(name);
+            }
+
+            const tags = [];
+            if (meta?.priceRub > 0) tags.push(`<span class="kiosk-a4-tag price">цена ${escapeHtml(meta.priceRub.toFixed(0))} ₽</span>`);
+            if (meta?.qty > 0) tags.push(`<span class="kiosk-a4-tag qty">остаток ${escapeHtml(meta.qty.toFixed(1))} м</span>`);
+            if (meta?.width) tags.push(`<span class="kiosk-a4-tag">ширина ${escapeHtml(meta.width)} см</span>`);
+            if (meta?.density) tags.push(`<span class="kiosk-a4-tag">плотн. ${escapeHtml(meta.density)} г/м²</span>`);
+            if (meta?.composition) tags.push(`<span class="kiosk-a4-tag comp">${escapeHtml(meta.composition)}</span>`);
+            if (tags.length) {
+                const tagWrap = document.createElement('div');
+                tagWrap.className = 'kiosk-a4-tags';
+                tagWrap.innerHTML = tags.join('');
+                main.appendChild(tagWrap);
+            }
+
+            if (Array.isArray(meta?.stocks) && meta.stocks.length) {
+                const stocks = document.createElement('div');
+                stocks.className = 'kiosk-a4-stocks';
+                stocks.innerHTML = meta.stocks
+                    .map((stock) => `<span class="kiosk-a4-stock-chip">${escapeHtml(stock.warehouse || 'Склад')}${stock.cell ? ` · ${escapeHtml(stock.cell)}` : ''} — ${escapeHtml(stock.meters.toFixed(1))} м</span>`)
+                    .join('');
+                main.appendChild(stocks);
+            }
 
             const del = document.createElement('button');
             del.className = 'kiosk-a4-list-del';
@@ -5320,7 +5432,7 @@ body {
             del.setAttribute('aria-label', `Удалить ${art}`);
             del.onclick = () => removeA4Item(idx);
 
-            row.append(label, del);
+            row.append(main, del);
             list.appendChild(row);
         });
     }
@@ -5366,7 +5478,9 @@ body {
     }
 
     function removeA4Item(idx) {
+        const removed = kioskA4Buffer[idx];
         kioskA4Buffer.splice(idx, 1);
+        if (removed) delete kioskA4Meta[removed];
         updateKioskA4Status();
         /* Возвращаем фокус на поле ввода */
         setTimeout(() => document.getElementById('a4-manual-art')?.focus(), 30);
@@ -5374,6 +5488,7 @@ body {
 
     function clearA4Buffer() {
         kioskA4Buffer = [];
+        kioskA4Meta = {};
         updateKioskA4Status();
     }
 
@@ -5468,6 +5583,7 @@ body {
         });
         if (result.ok) {
             kioskA4Buffer = [];
+            kioskA4Meta = {};
             updateKioskA4Status();
             if (closeAfter) closeModal('modal-a4-preview');
         }
@@ -5477,6 +5593,7 @@ body {
         const d = db[curTab].find(x=>x.id===curDocId);
         if (!d || !Array.isArray(d.items) || !d.items.length) { showToast('Документ пуст', 'danger'); return; }
         kioskA4Buffer = d.items.map(i => i.art).filter(Boolean).slice(0, 10);
+        kioskA4Meta = {};
         updateKioskA4Status();
         openA4PreviewModal();
     }
