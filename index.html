@@ -244,25 +244,38 @@
         }
         .kiosk-pane-tabs {
             display: flex;
-            gap: 8px;
-            margin: 0 auto 10px;
-            width: min(900px, 100%);
+            gap: 0;
+            margin: 0 0 10px;
+            width: 100%;
+            border-bottom: 1px solid rgba(97, 151, 219, 0.28);
+            background: rgba(3, 14, 30, 0.65);
+            backdrop-filter: blur(8px);
         }
         .kiosk-pane-tab {
             flex: 1 1 50%;
-            min-height: 42px;
-            border-radius: 999px;
-            border: 1px solid rgba(153, 202, 248, 0.42);
-            background: rgba(255,255,255,0.08);
-            color: #d9ebff;
+            min-height: 50px;
+            border-radius: 0;
+            border: none;
+            border-right: 1px solid rgba(97, 151, 219, 0.16);
+            background: transparent;
+            color: #9cb9dc;
             font-weight: 700;
             font-size: 14px;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
+            position: relative;
         }
         .kiosk-pane-tab.active {
-            background: linear-gradient(180deg, rgba(122, 225, 255, 0.30), rgba(70, 174, 255, 0.32));
-            border-color: rgba(130, 217, 255, 0.82);
+            background: rgba(17, 38, 69, 0.45);
             color: #fff;
+        }
+        .kiosk-pane-tab.active::after {
+            content: '';
+            position: absolute;
+            left: 10px;
+            right: 10px;
+            bottom: 0;
+            height: 2px;
+            border-radius: 2px;
+            background: #3de8ff;
         }
         .kiosk-tab-count {
             margin-left: 4px;
@@ -290,7 +303,7 @@
         #screen-kiosk.pane-a4 .kiosk-inner { display: none; }
         #screen-kiosk.pane-main .kiosk-main-layout,
         #screen-kiosk.pane-a4 .kiosk-main-layout { grid-template-columns: minmax(0, 1fr); }
-        #screen-kiosk.pane-a4 .kiosk-a4-panel { width: min(900px, 100%); max-height: none; }
+        #screen-kiosk.pane-a4 .kiosk-a4-panel { width: 100%; max-height: none; }
         .kiosk-inner {
             width: min(900px, 100%);
             margin: 0 auto;
@@ -442,6 +455,18 @@
             gap: 8px;
             margin-top: 10px;
         }
+        .kiosk-a4-progress {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(10, minmax(0, 1fr));
+            gap: 4px;
+        }
+        .kiosk-a4-progress-dot {
+            height: 4px;
+            border-radius: 999px;
+            background: rgba(155, 178, 214, 0.25);
+        }
+        .kiosk-a4-progress-dot.active { background: #2f7dff; }
         /* DEBUG: включите class="debug-layout" у body для визуальной проверки 2 колонок */
         body.debug-layout .kiosk-main-layout { outline: 2px dashed rgba(255, 214, 0, 0.55); }
         body.debug-layout .kiosk-inner { outline: 2px dashed rgba(80, 255, 200, 0.55); }
@@ -1673,6 +1698,7 @@ body {
                     <div id="kiosk-a4-list" class="kiosk-a4-list"></div>
                 </div>
                 <div class="kiosk-a4-actions kiosk-a4-foot">
+                    <div id="kiosk-a4-progress" class="kiosk-a4-progress" aria-hidden="true"></div>
                     <button class="btn-outline w-full" type="button" onclick="clearA4Buffer()">Очистить</button>
                     <button class="btn-primary w-full" type="button" onclick="openA4PreviewModal()">Открыть A4</button>
                 </div>
@@ -5385,8 +5411,20 @@ body {
             tabCount.textContent = String(kioskA4Buffer.length);
             tabCount.classList.toggle('hidden', kioskA4Buffer.length === 0);
         }
+        renderKioskA4Progress();
         renderA4PreviewModal();
         renderKioskA4List();
+    }
+
+    function renderKioskA4Progress() {
+        const wrap = document.getElementById('kiosk-a4-progress');
+        if (!wrap) return;
+        wrap.innerHTML = '';
+        for (let i = 0; i < 10; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'kiosk-a4-progress-dot' + (i < kioskA4Buffer.length ? ' active' : '');
+            wrap.appendChild(dot);
+        }
     }
 
     function renderKioskA4List() {
