@@ -243,10 +243,10 @@
             flex-wrap: nowrap;
         }
         .kiosk-pane-tabs {
-            display: none;
+            display: flex;
             gap: 8px;
             margin: 0 auto 10px;
-            width: min(640px, 100%);
+            width: min(900px, 100%);
         }
         .kiosk-pane-tab {
             flex: 1 1 50%;
@@ -264,6 +264,16 @@
             border-color: rgba(130, 217, 255, 0.82);
             color: #fff;
         }
+        .kiosk-tab-count {
+            margin-left: 4px;
+            background: rgba(37,99,235,0.92);
+            color: #fff;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 800;
+            min-width: 18px;
+            padding: 1px 6px;
+        }
         .kiosk-main-layout {
             width: 100%;
             max-width: 100%;
@@ -276,6 +286,11 @@
             min-height: 0;
             z-index: 1;
         }
+        #screen-kiosk.pane-main .kiosk-a4-panel { display: none; }
+        #screen-kiosk.pane-a4 .kiosk-inner { display: none; }
+        #screen-kiosk.pane-main .kiosk-main-layout,
+        #screen-kiosk.pane-a4 .kiosk-main-layout { grid-template-columns: minmax(0, 1fr); }
+        #screen-kiosk.pane-a4 .kiosk-a4-panel { width: min(900px, 100%); max-height: none; }
         .kiosk-inner {
             width: min(900px, 100%);
             margin: 0 auto;
@@ -418,7 +433,6 @@
            - tablet/mobile (<900): stacked blocks, A4 as compact card
            - desktop (>=1200): 70/30 split with equal block heights */
         @media (max-width: 900px) {
-            .kiosk-pane-tabs { display: flex; }
             .kiosk-logo-wrap { width: 94px; height: 94px; margin-bottom: 10px; }
             .kiosk-logo { width: 80px; height: 80px; }
             .kiosk-title { font-size: 42px; }
@@ -430,8 +444,6 @@
             .kiosk-main-layout { grid-template-columns: 1fr; flex: 0 1 auto; gap: 14px; }
             .kiosk-a4-panel { width: min(520px, 100%); min-width: 0; height: auto; max-height: 48vh; align-self: auto; margin: 0 auto; }
             .kiosk-a4-list { max-height: none; }
-            #screen-kiosk.pane-main .kiosk-a4-panel { display: none; }
-            #screen-kiosk.pane-a4 .kiosk-inner { display: none; }
         }
         @media (min-width: 1200px) {
             .kiosk-main-layout {
@@ -1558,7 +1570,7 @@ body {
         <button class="kiosk-staff-entry" onclick="openLogin()" aria-label="Вход персонала">🔒 Персонал</button>
         <div class="kiosk-pane-tabs" role="tablist" aria-label="Панели киоска">
             <button id="kiosk-tab-main" class="kiosk-pane-tab active" type="button" role="tab" aria-selected="true" onclick="setKioskPane('main')">🔎 Поиск</button>
-            <button id="kiosk-tab-a4" class="kiosk-pane-tab" type="button" role="tab" aria-selected="false" onclick="setKioskPane('a4')">📄 Сборка A4</button>
+            <button id="kiosk-tab-a4" class="kiosk-pane-tab" type="button" role="tab" aria-selected="false" onclick="setKioskPane('a4')">📄 Сборка A4 <span id="kiosk-tab-a4-count" class="kiosk-tab-count hidden">0</span></button>
         </div>
         <div class="kiosk-main-layout">
             <div id="kiosk-main-pane" class="kiosk-inner">
@@ -2563,10 +2575,7 @@ body {
         applyKioskPaneState();
     }
 
-    function syncKioskPaneByViewport() {
-        if (!isCompactKioskLayout() && kioskPane !== 'main') kioskPane = 'main';
-        applyKioskPaneState();
-    }
+    function syncKioskPaneByViewport() { applyKioskPaneState(); }
 
     function setSearchLock(locked) {
         isSearchPending = locked;
@@ -5276,8 +5285,13 @@ body {
     function updateKioskA4Status() {
         const status = document.getElementById('kiosk-a4-status');
         const btn = document.getElementById('btn-a4-collect-toggle');
+        const tabCount = document.getElementById('kiosk-tab-a4-count');
         if (status) status.textContent = `A4 буфер: ${kioskA4Buffer.length}/10${kioskA4CollectMode ? ' (режим сбора включён)' : ''}`;
         if (btn) btn.textContent = kioskA4CollectMode ? '✅ Режим сбора включен' : '📋 Собрать лист этикеток';
+        if (tabCount) {
+            tabCount.textContent = String(kioskA4Buffer.length);
+            tabCount.classList.toggle('hidden', kioskA4Buffer.length === 0);
+        }
         renderA4PreviewModal();
         renderKioskA4List();
     }
