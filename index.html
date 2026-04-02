@@ -16,8 +16,8 @@
     <meta name="application-name" content="Складской Терминал">
 
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="96x96" href="icons/favicon-96x96.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/web-app-manifest-192x192.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="icons/web-app-manifest-192x192.png">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,8 +46,11 @@
             --shadow-popup: 0 20px 50px rgba(15, 23, 42, 0.14);
             --ease: 180ms ease;
             --tab-height: 52px;
-            --app-height: 100dvh;
+            --app-height: 100vh;
             --keyboard-offset: 0px;
+        }
+        @supports (height: 100dvh) {
+            :root { --app-height: 100dvh; }
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -95,7 +98,7 @@
             color: white;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start;
             align-items: center;
             padding: 24px;
             text-align: center;
@@ -141,7 +144,7 @@
         .kiosk-staff-entry:focus-visible { opacity: .88; }
 
         .product-admin-row { margin-top: 12px; }
-        .kiosk-inner { width: min(520px, 100%); position: relative; z-index: 1; }
+        .kiosk-inner { width: min(520px, 100%); max-width: 100%; position: relative; z-index: 1; }
         .kiosk-logo-wrap {
             width: 112px;
             height: 112px;
@@ -239,6 +242,136 @@
             justify-content: center;
             flex-wrap: nowrap;
         }
+        .kiosk-pane-tabs {
+            display: none;
+            gap: 8px;
+            margin: 0 auto 10px;
+            width: min(640px, 100%);
+        }
+        .kiosk-pane-tab {
+            flex: 1 1 50%;
+            min-height: 42px;
+            border-radius: 999px;
+            border: 1px solid rgba(153, 202, 248, 0.42);
+            background: rgba(255,255,255,0.08);
+            color: #d9ebff;
+            font-weight: 700;
+            font-size: 14px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
+        }
+        .kiosk-pane-tab.active {
+            background: linear-gradient(180deg, rgba(122, 225, 255, 0.30), rgba(70, 174, 255, 0.32));
+            border-color: rgba(130, 217, 255, 0.82);
+            color: #fff;
+        }
+        .kiosk-main-layout {
+            width: 100%;
+            max-width: 100%;
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            align-items: start;
+            justify-content: center;
+            min-height: 0;
+            z-index: 1;
+        }
+        .kiosk-inner {
+            width: min(900px, 100%);
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: auto;
+            min-height: 0;
+            padding-top: 0;
+        }
+        .kiosk-a4-panel {
+            position: static;
+            width: min(620px, 100%);
+            min-width: 0;
+            height: auto;
+            min-height: 0;
+            max-height: 52vh;
+            display: grid;
+            grid-template-rows: auto minmax(0, 1fr) auto;
+            align-self: auto;
+            margin: 0 auto;
+            border-radius: 16px;
+            padding: 12px;
+            text-align: left;
+            color: #e9f3ff;
+            border: 1px solid rgba(163, 209, 255, 0.34);
+            background: rgba(6, 28, 54, 0.44);
+            box-shadow: 0 10px 30px rgba(3, 14, 26, 0.35);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+        .kiosk-a4-panel-title {
+            margin: 0 0 8px;
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: .01em;
+        }
+        .kiosk-a4-head { margin-bottom: 8px; }
+        .kiosk-a4-body { min-height: 0; display: flex; flex-direction: column; }
+        .kiosk-a4-list {
+            flex: 1;
+            min-height: 0;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 0;
+            padding-right: 2px;
+        }
+        .kiosk-a4-list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            border: 1px solid rgba(167, 212, 255, 0.32);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.07);
+            padding: 4px 8px;
+        }
+        .kiosk-a4-list-empty {
+            opacity: .78;
+            font-size: 13px;
+            border: 1px dashed rgba(167, 212, 255, 0.32);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+        }
+        .kiosk-a4-list-art {
+            font-size: 13px;
+            font-weight: 700;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .kiosk-a4-list-del {
+            min-height: 36px;
+            min-width: 36px;
+            padding: 0;
+            border-radius: 8px;
+            border: 1px solid rgba(255,150,150,0.58);
+            background: rgba(255,105,105,0.12);
+            color: #ffd0d0;
+            font-size: 18px;
+            line-height: 1;
+            font-weight: 900;
+        }
+        .kiosk-a4-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        /* DEBUG: включите class="debug-layout" у body для визуальной проверки 2 колонок */
+        body.debug-layout .kiosk-main-layout { outline: 2px dashed rgba(255, 214, 0, 0.55); }
+        body.debug-layout .kiosk-inner { outline: 2px dashed rgba(80, 255, 200, 0.55); }
+        body.debug-layout .kiosk-a4-panel { outline: 2px dashed rgba(80, 160, 255, 0.65); }
         .kiosk-tool-btn {
             color: #e8f3ff;
             border: 1px solid rgba(153, 202, 248, 0.42);
@@ -281,7 +414,11 @@
             100% { content: ' ....'; }
         }
 
-        @media (max-width: 680px) {
+        /* Layout contract:
+           - tablet/mobile (<900): stacked blocks, A4 as compact card
+           - desktop (>=1200): 70/30 split with equal block heights */
+        @media (max-width: 900px) {
+            .kiosk-pane-tabs { display: flex; }
             .kiosk-logo-wrap { width: 94px; height: 94px; margin-bottom: 10px; }
             .kiosk-logo { width: 80px; height: 80px; }
             .kiosk-title { font-size: 42px; }
@@ -290,6 +427,54 @@
             .kiosk-search-btn { min-height: 58px; font-size: 22px; }
             .kiosk-tools { flex-wrap: wrap; }
             .kiosk-tool-btn { flex: 1 1 180px; }
+            .kiosk-main-layout { grid-template-columns: 1fr; flex: 0 1 auto; gap: 14px; }
+            .kiosk-a4-panel { width: min(520px, 100%); min-width: 0; height: auto; max-height: 48vh; align-self: auto; margin: 0 auto; }
+            .kiosk-a4-list { max-height: none; }
+            #screen-kiosk.pane-main .kiosk-a4-panel { display: none; }
+            #screen-kiosk.pane-a4 .kiosk-inner { display: none; }
+        }
+        @media (min-width: 1200px) {
+            .kiosk-main-layout {
+                grid-template-columns: minmax(0, 7fr) minmax(0, 3fr);
+                align-items: stretch;
+                gap: 24px;
+            }
+            .kiosk-inner {
+                width: 100%;
+                height: 100%;
+                min-height: 0;
+                margin: 0;
+                justify-content: center;
+            }
+            .kiosk-a4-panel {
+                width: 100%;
+                height: 100%;
+                max-height: none;
+                margin: 0;
+                align-self: stretch;
+            }
+        }
+        @media (orientation: landscape) and (max-height: 620px) {
+            #screen-kiosk {
+                padding: 12px 14px;
+                justify-content: flex-start;
+                overflow: hidden;
+                overscroll-behavior: none;
+                touch-action: manipulation;
+            }
+            .kiosk-logo-wrap { width: 74px; height: 74px; margin-bottom: 6px; }
+            .kiosk-logo { width: 62px; height: 62px; }
+            .kiosk-title { font-size: clamp(28px, 4.4vw, 44px); }
+            .kiosk-subtitle { margin: 6px 0 14px; font-size: clamp(12px, 1.8vw, 16px); }
+            .kiosk-scan-hint { margin-bottom: 12px; font-size: clamp(20px, 3vw, 28px); }
+            .kiosk-search-btn { min-height: 48px; font-size: clamp(16px, 2.2vw, 22px); }
+            .kiosk-tools { margin-top: 10px; flex-wrap: wrap; gap: 8px; }
+            .kiosk-tool-btn { min-height: 38px; font-size: 14px; flex: 1 1 30%; }
+            #kiosk-a4-status { margin-top: 8px; font-size: 12px; }
+            .kiosk-a4-subtext { display: none; }
+            .kiosk-main-layout { gap: 10px; }
+            .kiosk-a4-panel { min-width: 260px; width: 100%; padding: 10px; }
+            .kiosk-a4-list { max-height: none; }
         }
 
         /* КНОПКИ */
@@ -369,9 +554,41 @@
 
         /* ПЛАНШЕТНАЯ СЕТКА */
         .work-layout { display: flex; flex-direction: column; gap: 16px; }
+        #screen-list,
+        #screen-work {
+            height: var(--app-height);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
         @media (min-width: 900px) {
             .work-layout { display: grid; grid-template-columns: 420px 1fr; align-items: start; }
             .sticky-form { position: sticky; top: 110px; }
+        }
+        @media (orientation: landscape) and (max-height: 760px) {
+            .work-layout { gap: 10px; }
+            #screen-work .header-fixed { position: sticky; top: 0; z-index: 8; }
+            #screen-work .p-4 { padding: 10px 12px calc(var(--tab-height) + 14px + env(safe-area-inset-bottom, 0px)); }
+            #screen-work .card { padding: 10px; margin-bottom: 8px; }
+        }
+        @media (min-width: 900px) and (orientation: landscape) and (max-height: 760px) {
+            .work-layout { grid-template-columns: minmax(320px, 42%) minmax(0, 1fr); }
+            .sticky-form { position: static; }
+        }
+        @media (orientation: landscape) and (max-height: 900px) {
+            #screen-work .header-fixed { padding: 2px 10px 2px; }
+            #screen-work .work-topbar { margin-bottom: 2px !important; }
+            #screen-work .work-topbar .btn-icon { min-width: 32px; min-height: 32px; font-size: 19px; border-radius: 10px; }
+            #screen-work .work-badge-row { justify-content: center; margin-bottom: 0 !important; }
+            #screen-work #work-title { font-size: 30px; line-height: 1.02; margin: 0; text-align: center; }
+            #screen-work .work-meta-row { margin-top: 0 !important; }
+            #screen-work #work-status { font-size: 11px; }
+            #screen-work #work-counter { font-size: 11px; }
+            #screen-work .p-4 { padding-top: 2px; }
+            #form-container input,
+            #form-container select { min-height: 38px; padding: 8px 10px; font-size: 14px; }
+            #form-container .input-group { margin-bottom: 4px; }
+            #form-container label { margin-bottom: 2px; font-size: 10px; }
+            #rows-container { max-height: calc(var(--app-height) - 210px); overflow-y: auto; }
         }
 
         /* МОДАЛКИ */
@@ -781,15 +998,30 @@
         .a4-slot.dup-flash { animation:a4DupFlash .4s ease; border-color:var(--warning); background:#fff8e1; }
         @keyframes a4DupFlash { 0%,100%{transform:scale(1)} 40%{transform:scale(1.06)} }
         .a4-slot-num { font-size:10px; color:var(--text-sec); font-weight:600; margin-bottom:2px; }
-        .a4-slot-del { position:absolute; top:2px; right:3px; background:none; border:none;
-                       color:var(--danger); font-size:13px; cursor:pointer; padding:0; min-height:0;
-                       line-height:1; opacity:.6; }
+        .a4-slot-del { position:absolute; top:0; right:0; border:1px solid rgba(255,120,120,0.45);
+                       background:rgba(255,235,235,0.96); color:var(--danger); font-size:18px;
+                       font-weight:800; cursor:pointer; padding:0; min-height:30px; min-width:30px;
+                       line-height:1; opacity:.95; border-radius:0 10px 0 10px; }
         .a4-slot-del:hover { opacity:1; }
         .a4-scan-row { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
         .a4-scan-row input { flex:1; font-size:15px; }
         .a4-progress-bar { height:4px; border-radius:2px; background:var(--border); margin-bottom:10px; overflow:hidden; }
         .a4-progress-fill { height:100%; border-radius:2px; background:var(--primary); transition:width .2s; }
         .a4-count-label { font-size:12px; color:var(--text-sec); font-weight:600; margin-bottom:6px; }
+        @media (orientation: landscape) and (max-height: 900px) {
+            #modal-a4-preview { align-items: flex-start; padding-top: 8px; }
+            #modal-a4-preview .modal-content {
+                width: min(860px, 96vw);
+                max-height: min(56vh, 360px);
+                padding: 12px;
+                border-radius: 12px;
+            }
+            #modal-a4-preview .a4-scan-row { margin-bottom: 6px; gap: 6px; }
+            #modal-a4-preview .a4-slots { gap: 6px; margin: 6px 0; }
+            #modal-a4-preview .a4-slot { min-height: 46px; padding: 4px 3px; }
+            #modal-a4-preview .a4-count-label { margin-bottom: 4px; font-size: 11px; }
+            #modal-a4-preview button { min-height: 34px; }
+        }
 
         .photo-preview-box { border: 1px dashed #cfd8e3; border-radius: 10px; padding: 8px; margin-top: 8px; background: #fafcff; }
         .photo-preview-box img { width: 100%; max-height: 180px; object-fit: contain; border-radius: 8px; background: #f2f2f2; }
@@ -1324,36 +1556,54 @@ body {
     <!-- ЭКРАН КИОСКА -->
     <div id="screen-kiosk">
         <button class="kiosk-staff-entry" onclick="openLogin()" aria-label="Вход персонала">🔒 Персонал</button>
-        <div class="kiosk-logo-wrap" aria-hidden="true">
-            <svg class="kiosk-logo" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="13" y="22" width="38" height="31" rx="6" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.62)" stroke-width="1.7"/>
-                <path d="M11.6 22L32 8L52.4 22" stroke="rgba(216,239,255,0.9)" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
-                <rect x="24" y="33" width="16" height="14" rx="2.3" fill="rgba(126,232,255,0.2)" stroke="rgba(126,232,255,0.68)" stroke-width="1.1"/>
-                <path d="M32 33V47M24 40H40" stroke="rgba(126,232,255,0.7)" stroke-width="1.1"/>
-                <circle cx="32" cy="16" r="2.4" fill="#5de4ff"/>
-            </svg>
+        <div class="kiosk-pane-tabs" role="tablist" aria-label="Панели киоска">
+            <button id="kiosk-tab-main" class="kiosk-pane-tab active" type="button" role="tab" aria-selected="true" onclick="setKioskPane('main')">🔎 Поиск</button>
+            <button id="kiosk-tab-a4" class="kiosk-pane-tab" type="button" role="tab" aria-selected="false" onclick="setKioskPane('a4')">📄 Сборка A4</button>
         </div>
-        <h1 class="kiosk-title">СКЛАД-ЦЕНТР</h1>
-        <p class="kiosk-subtitle">информационный терминал</p>
-        <div class="kiosk-inner">
-            <div class="kiosk-scan-hint"><span class="scan-ring"></span>ПОДНЕСИТЕ ШТРИХКОД<span class="scan-ring delay"></span></div>
-            <button class="btn-main btn-search-wide w-full mb-4 kiosk-search-btn" onclick="openManualSearch()" aria-label="Поиск товара по артикулу">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="2"></circle>
-                    <path d="M16 16L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-                </svg>
-                <span>Поиск товара по артикулу</span>
-            </button>
-            <div id="search-loading" class="search-loading text-sm hidden skeleton" aria-live="polite">Поиск товара...</div>
-            <div class="kiosk-tools">
-                <button class="btn-outline kiosk-tool-btn" onclick="enterKioskFullscreen()">⛶ Полный экран</button>
-                <button id="btn-a4-collect-toggle" class="btn-outline kiosk-tool-btn" onclick="toggleKioskA4CollectMode()">📋 Собрать лист</button>
-                <button id="btn-a4-print" class="btn-outline kiosk-tool-btn" onclick="openA4PreviewModal()">🖨️ Печать листа</button>
+        <div class="kiosk-main-layout">
+            <div id="kiosk-main-pane" class="kiosk-inner">
+                <div class="kiosk-logo-wrap" aria-hidden="true">
+                    <svg class="kiosk-logo" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="13" y="22" width="38" height="31" rx="6" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.62)" stroke-width="1.7"/>
+                        <path d="M11.6 22L32 8L52.4 22" stroke="rgba(216,239,255,0.9)" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+                        <rect x="24" y="33" width="16" height="14" rx="2.3" fill="rgba(126,232,255,0.2)" stroke="rgba(126,232,255,0.68)" stroke-width="1.1"/>
+                        <path d="M32 33V47M24 40H40" stroke="rgba(126,232,255,0.7)" stroke-width="1.1"/>
+                        <circle cx="32" cy="16" r="2.4" fill="#5de4ff"/>
+                    </svg>
+                </div>
+                <h1 class="kiosk-title">СКЛАД-ЦЕНТР</h1>
+                <p class="kiosk-subtitle">информационный терминал</p>
+                <div class="kiosk-scan-hint"><span class="scan-ring"></span>ПОДНЕСИТЕ ШТРИХКОД<span class="scan-ring delay"></span></div>
+                <button class="btn-main btn-search-wide w-full mb-4 kiosk-search-btn" onclick="openManualSearch()" aria-label="Поиск товара по артикулу">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="2"></circle>
+                        <path d="M16 16L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                    </svg>
+                    <span>Поиск товара по артикулу</span>
+                </button>
+                <div id="search-loading" class="search-loading text-sm hidden skeleton" aria-live="polite">Поиск товара...</div>
+                <div class="kiosk-tools">
+                    <button class="btn-outline kiosk-tool-btn" onclick="enterKioskFullscreen()">⛶ Полный экран</button>
+                    <button id="btn-a4-collect-toggle" class="btn-outline kiosk-tool-btn" onclick="toggleKioskA4CollectMode()">📋 Собрать лист</button>
+                    <button id="btn-a4-print" class="btn-outline kiosk-tool-btn" onclick="openA4PreviewModal()">🖨️ Печать листа</button>
+                </div>
             </div>
-            <div id="kiosk-a4-status" class="text-sm">A4 буфер: 0/10</div>
-            <div class="text-sm kiosk-a4-subtext">A4 — печать 10 товарных позиций на одном листе офиса</div>
+            <aside id="kiosk-a4-pane" class="kiosk-a4-panel">
+                <div class="kiosk-a4-head">
+                    <h3 class="kiosk-a4-panel-title">📄 Сборка A4</h3>
+                    <div id="kiosk-a4-status" class="text-sm">A4 буфер: 0/10</div>
+                    <div class="text-sm kiosk-a4-subtext">Товары для печати листа можно удалять прямо здесь.</div>
+                </div>
+                <div class="kiosk-a4-body">
+                    <div id="kiosk-a4-list" class="kiosk-a4-list"></div>
+                </div>
+                <div class="kiosk-a4-actions kiosk-a4-foot">
+                    <button class="btn-outline w-full" type="button" onclick="clearA4Buffer()">Очистить</button>
+                    <button class="btn-primary w-full" type="button" onclick="openA4PreviewModal()">Открыть A4</button>
+                </div>
+            </aside>
         </div>
-        <input type="text" id="kiosk-scanner-input" style="position: absolute; opacity: 0; pointer-events: none;" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters">
+        <input type="text" id="kiosk-scanner-input" style="position:fixed;left:6px;bottom:6px;width:2px;height:2px;opacity:0.02;font-size:16px;border:none;outline:none;padding:0;margin:0;background:transparent;color:transparent;caret-color:transparent;z-index:3;pointer-events:auto;" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="off" inputmode="none" enterkeyhint="done" tabindex="-1" aria-label="scanner input">
     </div>
 
     <!-- КАРТОЧКА КЛИЕНТА -->
@@ -1439,18 +1689,18 @@ body {
 
         <div id="screen-work" class="hidden">
             <div class="header-fixed">
-                <div class="flex justify-between items-center mb-2">
+                <div class="flex justify-between items-center mb-2 work-topbar">
                     <button class="btn-icon" aria-label="Вернуться назад" onclick="exitWork()">← Назад</button>
                     <div class="flex gap-2">
                         <button class="btn-icon text-danger" aria-label="Удалить документ" onclick="deleteFullDoc()">🗑️</button>
                         <button class="btn-icon text-success" id="btn-complete-doc" onclick="completeDoc()">✅ Готово</button>
                     </div>
                 </div>
-                <div class="flex items-center gap-2 mb-1">
+                <div class="flex items-center gap-2 mb-1 work-badge-row">
                     <span id="work-type-badge" class="doc-type-badge"></span>
                 </div>
-                <h2 id="work-title">Документ</h2>
-                <div class="flex justify-between items-center mt-1">
+                <h2 id="work-title" class="work-doc-title">Документ</h2>
+                <div class="flex justify-between items-center mt-1 work-meta-row">
                     <span id="work-status" class="monospace text-sm font-bold">АКТИВЕН</span>
                     <span id="work-counter" class="text-sm font-bold text-primary">Записей: 0</span>
                 </div>
@@ -1641,6 +1891,17 @@ body {
                 </div>
                 <p class="text-sm mt-2" style="color:var(--text-sec)">Пример: R26-0001 — автоматически подставляется в форму приёмки</p>
             </div>
+            <div class="light-block mt-3">
+                <strong style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:8px">АВТОКОРРЕКЦИЯ ОСТАТКОВ</strong>
+                <div class="input-group" style="margin:0">
+                    <label>Режим автодокументов при правке складской строки</label>
+                    <select id="set-auto-stock-mode" onchange="saveSets()">
+                        <option value="move_first">MOVE-first (сначала перемещение, остаток split)</option>
+                        <option value="split_first">Split-first (только списание + оприходование)</option>
+                    </select>
+                </div>
+                <p class="text-sm mt-2" style="color:var(--text-sec)">MOVE-first уменьшает шум документов при переносе между ячейками.</p>
+            </div>
         </div>
 
         <!-- ══ ВКЛАДКА 4: Доступ ══ -->
@@ -1721,8 +1982,9 @@ body {
                 placeholder="Артикул или штрихкод → Enter"
                 onkeydown="if(event.key==='Enter'){ event.stopPropagation(); addA4ItemManual(); }"
                 oninput="this.value=this.value.toUpperCase()"
-                autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters"
-                inputmode="text">
+                autocomplete="new-password" autocorrect="off" spellcheck="false" autocapitalize="off"
+                inputmode="none" enterkeyhint="done" name="a4_manual_art_noautofill"
+                data-lpignore="true" data-form-type="other">
             <button class="btn-primary" type="button" onclick="addA4ItemManual()" style="min-width:44px;padding:0 12px;">+</button>
         </div>
         <div id="a4-slots-grid" class="a4-slots"></div>
@@ -1800,7 +2062,7 @@ body {
 <div id="modal-product-edit" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modal-product-edit-title">
     <div class="modal-content">
         <h2 id="modal-product-edit-title">Изменение номенклатуры</h2>
-        <p class="text-sm" style="color:var(--text-sec);margin-bottom:10px;">Изменения применяются в мобильном приложении и отправляются в 1С.</p>
+        <p class="text-sm" style="color:var(--text-sec);margin-bottom:10px;">Изменяются только поля карточки. Остатки меняйте документами: Списание / Оприходование / Перемещение.</p>
         <div class="input-group"><label>Артикул</label><input type="text" id="pe-art" readonly></div>
         <div class="input-group"><label>Наименование (для печати)</label><input type="text" id="pe-name-print"></div>
         <div class="input-group" id="pe-full-name-group"><label>Полное наименование</label><input type="text" id="pe-full-name"></div>
@@ -1814,7 +2076,6 @@ body {
         </div>
         <div class="input-group"><label>Бренд</label><input type="text" id="pe-brand"></div>
         <div class="input-group"><label>Плотность (г/м²)</label><input type="text" id="pe-density" inputmode="numeric"></div>
-        <div class="input-group"><label>Количество</label><input type="text" id="pe-qty" inputmode="decimal"></div>
         <div class="input-group"><label>Фото товара</label><input type="file" id="pe-photo-camera" accept="image/*" capture="environment" class="hidden" onchange="applyProductPhoto(this, true)"><input type="file" id="pe-photo-file" accept="image/*" class="hidden" onchange="applyProductPhoto(this, false)"><div class="flex gap-2"><button class="btn-outline w-full" type="button" onclick="document.getElementById('pe-photo-camera').click()">📷 Камера</button><button class="btn-outline w-full" type="button" onclick="document.getElementById('pe-photo-file').click()">🖼️ Файл</button></div><div id="pe-photo-preview" class="photo-preview-box hidden"><img id="pe-photo-preview-img" alt="Предпросмотр фото товара"><div class="flex gap-2 mt-2"><button class="btn-outline w-full" type="button" onclick="clearProductPhoto()">🗑️ Удалить фото</button><button class="btn-outline w-full" type="button" onclick="document.getElementById('pe-photo-camera').click()">🔁 Переснять</button></div></div></div>
         <p class="manager-field-note">Склад/ячейку/метраж меняйте нажатием на строку нужного склада в таблице остатков.</p>
         <div class="flex gap-2 mt-3">
@@ -1882,9 +2143,13 @@ body {
         let logs = safeLoad('app_error_logs', []);
         /* Каждая запись: { date, time, text } */
         logs.unshift({ date, time, text: String(text) });
-        if (logs.length > 200) logs = logs.slice(0, 200);
+        if (logs.length > 400) logs = logs.slice(0, 400);
         localStorage.setItem('app_error_logs', JSON.stringify(logs));
         console.error(`[${time}] ${text}`);
+    }
+
+    function logScan(text) {
+        logError(`[SCAN] ${text}`);
     }
 
     function openLogsModal() {
@@ -2130,7 +2395,7 @@ body {
     }
 
     /* ДАННЫЕ */
-    const defSets = { url:"", user:"", pass:"", apiKey:"", mgr:"1234", warehouses:[], prefix:"R26", nextNum:1, showWidth:true, showDensity:true, showBrand:true, showComp:true, showFullName:false, printNameDefault:"", printMethod: "server", pnKey:"", pnPrinter:"", printerClient:"", printerWarehouse:"", printerHanger:"", printerA4:"", mgrHash:"", kioskDemoMode:false, devOfflineMode:false, allowNewCells:false, sessionHours:8, knownCells:[] };
+    const defSets = { url:"", user:"", pass:"", apiKey:"", mgr:"1234", warehouses:[], prefix:"R26", nextNum:1, showWidth:true, showDensity:true, showBrand:true, showComp:true, showFullName:false, printNameDefault:"", printMethod: "server", pnKey:"", pnPrinter:"", printerClient:"", printerWarehouse:"", printerHanger:"", printerA4:"", mgrHash:"", kioskDemoMode:false, devOfflineMode:false, allowNewCells:false, sessionHours:8, autoStockMode:"move_first", knownCells:[] };
     let sets = { ...defSets, ...safeLoad('tsd_final_sets', defSets) };
     /* Склады берутся из 1С через syncWarehousesFrom1С в настройках.
        Если пустые — пользователь увидит подсказку в секции «Склады». */
@@ -2183,6 +2448,8 @@ body {
     let modalStack = [];
     let isSearchPending = false;
     let currentProduct = null;
+    let productStockBaseline = [];
+    let productStockBaselineKey = '';
     let isProductDirty = false;
     let lastSavedItemId = null;
     let priceLookupResult = null;
@@ -2265,6 +2532,41 @@ body {
     let serverPrinters = [];
     let kioskA4CollectMode = false;
     let kioskA4Buffer = [];
+    let kioskPane = 'main';
+
+    function isCompactKioskLayout() {
+        return window.matchMedia('(max-width: 900px)').matches;
+    }
+
+    function applyKioskPaneState() {
+        const kiosk = document.getElementById('screen-kiosk');
+        const tabMain = document.getElementById('kiosk-tab-main');
+        const tabA4 = document.getElementById('kiosk-tab-a4');
+        if (!kiosk) return;
+        kiosk.classList.remove('pane-main', 'pane-a4');
+        kiosk.classList.add(kioskPane === 'a4' ? 'pane-a4' : 'pane-main');
+        if (tabMain) {
+            const selectedMain = kioskPane !== 'a4';
+            tabMain.classList.toggle('active', selectedMain);
+            tabMain.setAttribute('aria-selected', selectedMain ? 'true' : 'false');
+        }
+        if (tabA4) {
+            const selectedA4 = kioskPane === 'a4';
+            tabA4.classList.toggle('active', selectedA4);
+            tabA4.setAttribute('aria-selected', selectedA4 ? 'true' : 'false');
+        }
+        if (kioskPane !== 'a4') ensureScannerFocus();
+    }
+
+    function setKioskPane(pane) {
+        kioskPane = pane === 'a4' ? 'a4' : 'main';
+        applyKioskPaneState();
+    }
+
+    function syncKioskPaneByViewport() {
+        if (!isCompactKioskLayout() && kioskPane !== 'main') kioskPane = 'main';
+        applyKioskPaneState();
+    }
 
     function setSearchLock(locked) {
         isSearchPending = locked;
@@ -2485,7 +2787,11 @@ body {
                 return;
             }
             if (root.requestFullscreen) {
-                await root.requestFullscreen({ navigationUI: 'hide' });
+                try {
+                    await root.requestFullscreen({ navigationUI: 'hide' });
+                } catch (_) {
+                    await root.requestFullscreen();
+                }
                 showToast('Полноэкранный режим включен');
             } else {
                 showToast('Браузер не поддерживает полноэкранный режим', 'danger');
@@ -2513,6 +2819,15 @@ body {
         document.documentElement.style.setProperty('--keyboard-offset', `${val}px`);
     }
 
+    function safeScrollIntoViewCenter(el) {
+        if (!el || typeof el.scrollIntoView !== 'function') return;
+        try {
+            el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+        } catch (_) {
+            try { el.scrollIntoView(false); } catch (__){}
+        }
+    }
+
     function setupInputAssistancePolicy() {
         document.querySelectorAll('input, textarea').forEach(el => {
             if (el.id === 'login-pass') return;
@@ -2524,22 +2839,27 @@ body {
 
     function setupKeyboardAvoidance() {
         const vv = window.visualViewport;
-        if (!vv) return;
 
         const applyViewport = rafThrottle(() => {
             syncAppViewportHeight();
+            if (!vv) {
+                setKeyboardOffset(0);
+                return;
+            }
             const keyboard = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
             setKeyboardOffset(keyboard > 80 ? keyboard : 0);
         });
 
-        vv.addEventListener('resize', applyViewport);
-        vv.addEventListener('scroll', applyViewport);
+        if (vv) {
+            vv.addEventListener('resize', applyViewport);
+            vv.addEventListener('scroll', applyViewport);
+        }
 
         document.addEventListener('focusin', (e) => {
             const t = e.target;
             if (!(t instanceof HTMLElement)) return;
             if (!t.matches('input, textarea, select')) return;
-            setTimeout(() => t.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' }), 80);
+            setTimeout(() => safeScrollIntoViewCenter(t), 80);
         }, true);
 
         document.addEventListener('focusout', () => {
@@ -2693,6 +3013,9 @@ body {
         const throttledViewportSync = rafThrottle(syncAppViewportHeight);
         window.addEventListener('resize', throttledViewportSync);
         window.addEventListener('orientationchange', throttledViewportSync);
+        window.addEventListener('resize', syncKioskPaneByViewport);
+        window.addEventListener('orientationchange', syncKioskPaneByViewport);
+        syncKioskPaneByViewport();
         /* ── Сканер: kiosk-scanner-input как основной канал ──────────────
            Сканер вводит символы в скрытый input, Enter = конец скана.
            Таймаут SCANNER_TIMEOUT_MS сбрасывает input если Enter не пришёл
@@ -2701,50 +3024,109 @@ body {
         const SCANNER_TIMEOUT_MS = 500;   /* мс — увеличьте для медленных сканеров */
         const SCANNER_MIN_LEN    = 3;     /* минимальная длина валидного скана */
 
+        function normalizeScanCode(raw) {
+            return String(raw || '')
+                .replace(/[\u0000-\u001F\u007F]/g, '') /* CR/LF/TAB и управляющие */
+                .trim();
+        }
+
+        function submitScan(raw) {
+            const code = normalizeScanCode(raw);
+            if (!code) { logScan('ignored: empty payload'); return; }
+            if (code.length < SCANNER_MIN_LEN) { logScan(`ignored: too short (len=${code.length}) value="${code}"`); return; }
+            logScan(`accepted: "${code}" modal=${activeModalId || '-'} mgr=${isMgr ? 1 : 0} a4=${kioskA4CollectMode ? 1 : 0}`);
+            handleScan(code);
+        }
+
+        function scanCharFromEvent(e) {
+            if (typeof e.key === 'string' && e.key.length === 1) return e.key;
+            const kc = Number(e.keyCode || e.which || 0);
+            if (kc >= 32 && kc <= 126) return String.fromCharCode(kc);
+            return '';
+        }
+
         const scannerInpEl = document.getElementById('kiosk-scanner-input');
         if (scannerInpEl) {
             /* Enter в скрытом input = завершение скана */
             scannerInpEl.addEventListener('keydown', e => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    const code = scannerInpEl.value.trim();
+                    e.stopPropagation();
+                    const code = scannerInpEl.value || scanBuf;
                     scannerInpEl.value = '';
+                    scanBuf = '';
                     if (scanBufResetTimer) { clearTimeout(scanBufResetTimer); scanBufResetTimer = null; }
-                    if (code.length >= SCANNER_MIN_LEN) handleScan(code);
+                    submitScan(code);
+                    return;
                 }
+
+                const ch = scanCharFromEvent(e);
+                if (!ch) return;
+                scanBuf += ch;
+                if (scanBufResetTimer) clearTimeout(scanBufResetTimer);
+                scanBufResetTimer = setTimeout(() => {
+                    const code = scanBuf;
+                    scanBuf = '';
+                    submitScan(code);
+                }, SCANNER_TIMEOUT_MS);
+                e.stopPropagation();
             });
             /* Таймаут: если Enter не пришёл — сбрасываем буфер */
             scannerInpEl.addEventListener('input', () => {
                 if (scanBufResetTimer) clearTimeout(scanBufResetTimer);
                 scanBufResetTimer = setTimeout(() => {
-                    const code = scannerInpEl.value.trim();
+                    const code = scannerInpEl.value;
                     scannerInpEl.value = '';
                     scanBuf = '';
                     /* Если накопилось достаточно символов — всё равно пробуем обработать */
-                    if (code.length >= SCANNER_MIN_LEN) handleScan(code);
+                    submitScan(code);
                 }, SCANNER_TIMEOUT_MS);
             });
+
+            /* Некоторые профили Zebra вставляют скан как Paste/Clipboard */
+            scannerInpEl.addEventListener('paste', e => {
+                const pasted = e.clipboardData?.getData('text') || '';
+                if (!pasted) return;
+                e.preventDefault();
+                scannerInpEl.value = '';
+                scanBuf = '';
+                submitScan(pasted);
+            });
         }
+
+        window.addEventListener('paste', e => {
+            if (activeModalId) return;
+            if (!shouldCaptureScannerInput()) return;
+            const pasted = e.clipboardData?.getData('text') || '';
+            if (!pasted) return;
+            e.preventDefault();
+            submitScan(pasted);
+        });
 
         /* Глобальный keydown — только Escape и резервный канал
            (если фокус ушёл со scanner-input, напр. на внешней клавиатуре) */
         window.addEventListener('keydown', e => {
             if (e.key === 'Escape' && activeModalId) { closeModal(activeModalId); return; }
-            /* Если уже в каком-то input (кроме scanner-input) — не перехватываем */
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            /* Если уже в редактируемом поле (кроме scanner-input) — не перехватываем */
+            const targetTag = e.target?.tagName;
+            const isEditable = targetTag === 'INPUT' || targetTag === 'TEXTAREA' || targetTag === 'SELECT' || e.target?.isContentEditable;
+            if (isEditable && e.target?.id !== 'kiosk-scanner-input') return;
             if (activeModalId) return;
+            if (!shouldCaptureScannerInput()) return;
             /* Резервный keydown-буфер — работает только если scanner-input не получил фокус */
             if (e.key === 'Enter') {
-                if (scanBuf.length >= SCANNER_MIN_LEN) handleScan(scanBuf);
+                submitScan(scanBuf);
                 scanBuf = '';
                 if (scanBufResetTimer) { clearTimeout(scanBufResetTimer); scanBufResetTimer = null; }
-            } else if (e.key.length === 1) {
-                scanBuf += e.key;
+            } else {
+                const ch = scanCharFromEvent(e);
+                if (!ch) return;
+                scanBuf += ch;
                 if (scanBufResetTimer) clearTimeout(scanBufResetTimer);
                 scanBufResetTimer = setTimeout(() => {
-                    const code = scanBuf.trim();
+                    const code = scanBuf;
                     scanBuf = '';
-                    if (code.length >= SCANNER_MIN_LEN) handleScan(code);
+                    submitScan(code);
                 }, SCANNER_TIMEOUT_MS);
             }
         });
@@ -2756,6 +3138,10 @@ body {
         window.addEventListener('hashchange', applyRouteFromHash);
         window.addEventListener('popstate', applyRouteFromHash);
         document.addEventListener('pointerdown', ensureScannerFocus, { passive: true });
+        window.addEventListener('focus', ensureScannerFocus);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') ensureScannerFocus();
+        });
         const customerView = document.getElementById('customer-view');
         if (customerView) {
             customerView.addEventListener('pointerdown', () => {
@@ -2784,13 +3170,24 @@ body {
         updateDataLists();
         updateKioskA4Status();
         updateTabBadges();
-        /* SW не регистрируем в srcdoc/blob-контекстах и на file:// */
-        if ('serviceWorker' in navigator && location.protocol !== 'about:' && location.protocol !== 'blob:' && location.protocol !== 'file:') {
-            navigator.serviceWorker.register('./sw.js').catch(err => logError(`sw: ${err.message}`));
+        /* SW/установка PWA работают только в secure context (HTTPS или localhost).
+           На http://IP будет открываться обычная вкладка/ярлык без полноценной установки. */
+        const host = (location.hostname || '').toLowerCase();
+        const isLocalHost = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+        const canUsePwaInstall = window.isSecureContext || isLocalHost;
+        if ('serviceWorker' in navigator && canUsePwaInstall && location.protocol !== 'about:' && location.protocol !== 'blob:' && location.protocol !== 'file:') {
+            navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch(err => {
+                showToast(`PWA: ${err.message}`, 'warning');
+                logError(`sw: ${err.message}`);
+            });
+        } else if (!canUsePwaInstall && location.protocol.startsWith('http')) {
+            showToast('Установка PWA недоступна на HTTP по IP. Используйте HTTPS (или localhost).', 'warning');
+            logError('PWA install blocked: insecure context (http + non-localhost)');
         }
         ensureScannerFocus();
         if (scannerFocusInterval) clearInterval(scannerFocusInterval);
-        scannerFocusInterval = setInterval(ensureScannerFocus, 1200);
+        scannerFocusInterval = setInterval(ensureScannerFocus, 1500);
+        setTimeout(ensureScannerFocus, 350);
     };
 
     function saveAppState() {
@@ -2842,23 +3239,43 @@ body {
         suppressRouteSync = false;
     }
 
+    function shouldCaptureScannerInput() {
+        if (activeModalId) return false;
+        const kioskVisible = !document.getElementById('screen-kiosk')?.classList.contains('hidden');
+        const customerVisible = !document.getElementById('customer-view')?.classList.contains('hidden');
+        const managerVisible = !document.getElementById('manager-view')?.classList.contains('hidden');
+        /* Для Zebra в PWA важно иметь стабильный фокус при keyboard wedge:
+           - в клиентском киоске/карточке (обычное поведение);
+           - в manager-режиме тоже (если нет активного поля, обработает fallback в handleScan). */
+        return kioskVisible || (customerVisible && !isCustomerManagerModeActive()) || (isMgr && managerVisible);
+    }
+
+    function focusScannerInput(el) {
+        if (!el || typeof el.focus !== 'function') return false;
+        try {
+            el.focus({ preventScroll: true });
+        } catch (_) {
+            try { el.focus(); } catch (__){}
+        }
+        return document.activeElement === el;
+    }
+
     function ensureScannerFocus() {
         /* Если открыта модалка A4 — держим фокус на поле ввода артикула */
         if (activeModalId === 'modal-a4-preview') {
             const a4inp = document.getElementById('a4-manual-art');
             if (a4inp && document.activeElement !== a4inp
                       && document.activeElement?.tagName !== 'BUTTON') {
-                a4inp.focus({ preventScroll: true });
+                focusScannerInput(a4inp);
             }
             return;
         }
         const scannerInp = document.getElementById('kiosk-scanner-input');
-        if (!scannerInp || activeModalId) return;
-        const activeTag = document.activeElement?.tagName;
-        if ((activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') && document.activeElement?.id !== 'kiosk-scanner-input') return;
-        const kioskVisible = !document.getElementById('screen-kiosk')?.classList.contains('hidden');
-        const workVisible  = !document.getElementById('screen-work')?.classList.contains('hidden');
-        if (kioskVisible || workVisible) scannerInp.focus({ preventScroll: true });
+        if (!scannerInp || !shouldCaptureScannerInput()) return;
+        const activeEl = document.activeElement;
+        const activeTag = activeEl?.tagName;
+        if ((activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') && activeEl?.id !== 'kiosk-scanner-input') return;
+        focusScannerInput(scannerInp);
     }
 
     function isCustomerManagerModeActive() { return isMgr || tempCustomerManagerMode; }
@@ -2875,51 +3292,98 @@ body {
         showToast('Возврат в клиентский режим');
     }
 
-    async function handleScan(code) {
-        if (String(code).startsWith("STAFF:")) {
-            const pass = String(code).slice(6);
-            const customerOpen = !document.getElementById('customer-view')?.classList.contains('hidden');
-            if (await verifyManagerPassword(pass)) {
-                if (customerOpen && !isMgr) enterCustomerManagerMode();
-                else loginSuccess();
-            } else showToast('Неверный QR сотрудника', 'danger');
-            return;
-        }
-        if (code === "ADMIN") {
-            const customerOpen = !document.getElementById('customer-view')?.classList.contains('hidden');
-            if (customerOpen && !isMgr) { openLogin('customer'); return; }
-            loginSuccess();
-            return;
-        }
-        if (isSearchPending) { showToast("Идёт поиск...", "danger"); return; }
-        const now = Date.now();
-        if (code === lastScanCode && (now - lastScanAt) < SCAN_COOLDOWN_MS) return;
-        if ((now - lastScanAt) < 250) return;
-        lastScanCode = code;
-        lastScanAt = now;
+    function getScanUiState() {
         const manualSearchOpen = document.getElementById('modal-search')?.classList.contains('open');
         const customerOpen = !document.getElementById('customer-view')?.classList.contains('hidden');
-        if (kioskA4CollectMode && !isMgr && !customerOpen) {
+        const kioskVisible = !document.getElementById('screen-kiosk')?.classList.contains('hidden');
+        return { manualSearchOpen, customerOpen, kioskVisible };
+    }
+
+    async function handleStaffOrAdminScan(code, uiState) {
+        if (String(code).startsWith("STAFF:")) {
+            const pass = String(code).slice(6);
+            if (await verifyManagerPassword(pass)) {
+                if (uiState.customerOpen && !isMgr) enterCustomerManagerMode();
+                else loginSuccess();
+            } else showToast('Неверный QR сотрудника', 'danger');
+            return true;
+        }
+        if (code === "ADMIN") {
+            if (uiState.customerOpen && !isMgr) { openLogin('customer'); return true; }
+            loginSuccess();
+            return true;
+        }
+        return false;
+    }
+
+    function shouldSkipScanByCooldown(code) {
+        const now = Date.now();
+        if (code === lastScanCode && (now - lastScanAt) < SCAN_COOLDOWN_MS) return true;
+        if ((now - lastScanAt) < 250) return true;
+        lastScanCode = code;
+        lastScanAt = now;
+        return false;
+    }
+
+    function tryRouteA4Collect(code, uiState) {
+        if (kioskA4CollectMode && !isMgr && !uiState.customerOpen && !uiState.manualSearchOpen && activeModalId !== 'modal-a4-preview') {
+            logScan(`route: collectA4ItemByCode(${code})`);
             collectA4ItemByCode(code);
-            return;
+            return true;
         }
-        if (customerOpen && !isCustomerManagerModeActive()) {
+        return false;
+    }
+
+    function tryRouteCustomerOverlay(code, uiState) {
+        if (uiState.customerOpen && !isCustomerManagerModeActive()) {
+            logScan(`route: customerOverlay code=${code}`);
             searchAndShowCustomerOverlay(code);
+            return true;
+        }
+        return false;
+    }
+
+    function tryRouteKioskAutoSearch(code, uiState) {
+        if (uiState.kioskVisible && !uiState.manualSearchOpen) {
+            logScan(`route: kioskAutoSearch code=${code}`);
+            search1C(code, { type: 'barcode', fromScan: true });
+            return true;
+        }
+        return false;
+    }
+
+    async function routeManagerScanIntoForm(code) {
+        const inp = document.querySelector('input[data-art-field]');
+        if (inp) {
+            inp.value = code;
+            inp.dispatchEvent(new Event('input'));
+            await resolveFormArtInput(inp);
+            if (curTab === 'price') loadPriceItemPreview();
+            if (curTab === 'writeoff') loadWriteoffStockPreview();
+            if (curTab === 'stockin') loadStockinStockPreview();
+            if (curTab === 'move') loadMoveStockPreview();
             return;
         }
-        if (!isMgr || manualSearchOpen) search1C(code, { type: 'barcode' });
-        else {
-            const inp = document.querySelector('input[data-art-field]');
-            if (inp) {
-                inp.value = code;
-                inp.dispatchEvent(new Event('input'));
-                await resolveFormArtInput(inp);
-                if (curTab === 'price') loadPriceItemPreview();
-                if (curTab === 'writeoff') loadWriteoffStockPreview();
-                if (curTab === 'stockin') loadStockinStockPreview();
-                if (curTab === 'move') loadMoveStockPreview();
-            }
+        /* Менеджер в списке/карточке без активного поля — не теряем скан */
+        logScan(`route: search1C fallback (manager/no-input) code=${code}`);
+        search1C(code, { type: 'barcode', fromScan: true });
+    }
+
+    async function handleScan(code) {
+        const uiState = getScanUiState();
+        if (await handleStaffOrAdminScan(code, uiState)) return;
+        if (isSearchPending) { showToast("Идёт поиск...", "danger"); return; }
+        if (shouldSkipScanByCooldown(code)) return;
+        if (tryRouteA4Collect(code, uiState)) return;
+        if (tryRouteCustomerOverlay(code, uiState)) return;
+        if (tryRouteKioskAutoSearch(code, uiState)) return;
+
+        if (!isMgr || uiState.manualSearchOpen) {
+            logScan(`route: search1C barcode code=${code} manualSearchOpen=${uiState.manualSearchOpen ? 1 : 0}`);
+            search1C(code, { type: 'barcode', fromScan: true });
+            return;
         }
+        await routeManagerScanIntoForm(code);
     }
 
     async function resolveCodeToArt(code) {
@@ -3235,8 +3699,9 @@ body {
     }
 
     async function search1C(id, opts = {}) {
-        if (isSearchPending) return;
+        if (isSearchPending) { if (opts.fromScan) logScan(`search1C skipped: pending id=${id}`); return; }
         setSearchLock(true);
+        if (opts.fromScan) logScan(`search1C start id=${id} type=${opts.type || 'auto'}`);
         showToast("Поиск...");
         if (!sets.url || isDemoMode || isKioskClientDemoMode()) {
             isProductDirty = false;
@@ -3302,14 +3767,16 @@ body {
             }
 
             if (res) {
-                isProductDirty = false; const _p = await safeJson(res); if (_p) resolveAndShowProduct(_p); else showApiError({ endpoint: '/product', status: 'net', msg: 'Пустой ответ от сервера' });
+                isProductDirty = false; const _p = await safeJson(res); if (_p) { if (opts.fromScan) logScan(`search1C success id=${id}`); resolveAndShowProduct(_p); } else showApiError({ endpoint: '/product', status: 'net', msg: 'Пустой ответ от сервера' });
             } else {
+                if (opts.fromScan) logScan(`search1C not found id=${id} status=${lastStatus}`);
                 showApiError({ endpoint: '/product', status: lastStatus,
                     msg: lastStatus === 404 ? 'Товар не найден' : 'Ошибка поиска' });
             }
         } catch (e) {
             showApiError({ endpoint: '/product', status: e.name === 'AbortError' ? 'timeout' : 'net',
                 msg: 'Сервер 1С недоступен', retryFn: () => search1C(id, opts) });
+            if (opts.fromScan) logScan(`search1C error id=${id} err=${e.message}`);
             logError(`Поиск 1С: ${e.message}`);
         }
         finally { setSearchLock(false); }
@@ -3348,6 +3815,126 @@ body {
             return [{ warehouse: 'Основной склад', cell: p.cell || '-', meters: toNumber(p.stock) }];
         }
         return [];
+    }
+
+    function normalizeStockRowsForDiff(rows) {
+        return (rows || []).map(r => ({
+            warehouse: String(r.warehouse || r.wh || '').trim(),
+            cell: normalizeCellValue(r.cell || r.shelf || ''),
+            meters: toNumber(r.meters ?? r.m ?? r.qty ?? 0)
+        })).filter(r => r.warehouse && r.meters >= 0);
+    }
+
+    function buildAutoStockAdjustItems(beforeRows, afterRows) {
+        const autoMode = (sets.autoStockMode === 'split_first') ? 'split_first' : 'move_first';
+        const sumByKey = (arr) => {
+            const map = new Map();
+            arr.forEach(r => {
+                const key = `${r.warehouse}||${r.cell}`;
+                map.set(key, (map.get(key) || 0) + toNumber(r.meters));
+            });
+            return map;
+        };
+        const before = sumByKey(normalizeStockRowsForDiff(beforeRows));
+        const after = sumByKey(normalizeStockRowsForDiff(afterRows));
+        const keys = new Set([...before.keys(), ...after.keys()]);
+        const deficits = [];
+        const surpluses = [];
+        keys.forEach(key => {
+            const b = toNumber(before.get(key) || 0);
+            const a = toNumber(after.get(key) || 0);
+            const delta = +(a - b).toFixed(3);
+            if (Math.abs(delta) < 0.001) return;
+            const [warehouse, cell] = key.split('||');
+            if (delta < 0) deficits.push({ warehouse, cell, meters: Math.abs(delta) });
+            else surpluses.push({ warehouse, cell, meters: delta });
+        });
+
+        const moveItems = [];
+        if (autoMode === 'move_first') {
+            /* MOVE-first: сначала пытаемся собрать «перемещения» как пары минус/плюс.
+               Это позволяет при смене ячейки/склада генерировать MOVE,
+               а остаток дельты (если есть) превращать в writeoff/stockin. */
+            for (const from of deficits) {
+                for (const to of surpluses) {
+                    if (from.meters < 0.001 || to.meters < 0.001) continue;
+                    const transferable = Math.min(from.meters, to.meters);
+                    if (transferable < 0.001) continue;
+                    moveItems.push({
+                        fromWarehouse: from.warehouse,
+                        fromCell: from.cell,
+                        toWarehouse: to.warehouse,
+                        toCell: to.cell,
+                        meters: +transferable.toFixed(3)
+                    });
+                    from.meters = +(from.meters - transferable).toFixed(3);
+                    to.meters = +(to.meters - transferable).toFixed(3);
+                }
+            }
+        }
+
+        const writeoffItems = deficits
+            .filter(x => x.meters >= 0.001)
+            .map(x => ({ warehouse: x.warehouse, cell: x.cell, meters: x.meters }));
+        const stockinItems = surpluses
+            .filter(x => x.meters >= 0.001)
+            .map(x => ({ warehouse: x.warehouse, cell: x.cell, meters: x.meters }));
+
+        return { writeoffItems, stockinItems, moveItems };
+    }
+
+    function logAutoStockAdjust(articul, autoDelta) {
+        const move = autoDelta?.moveItems?.length || 0;
+        const wr = autoDelta?.writeoffItems?.length || 0;
+        const st = autoDelta?.stockinItems?.length || 0;
+        if (!move && !wr && !st) return;
+        logError(`[AUTO-STOCK] ${articul || '-'} move=${move} writeoff=${wr} stockin=${st}`);
+        if (move) logError(`[AUTO-STOCK] MOVE ${move}: ` + autoDelta.moveItems.map(x => `${x.fromWarehouse}/${x.fromCell} -> ${x.toWarehouse}/${x.toCell} (${x.meters})`).join('; '));
+        if (wr) logError(`[AUTO-STOCK] WRITEOFF ${wr}: ` + autoDelta.writeoffItems.map(x => `${x.warehouse}/${x.cell} (${x.meters})`).join('; '));
+        if (st) logError(`[AUTO-STOCK] STOCKIN ${st}: ` + autoDelta.stockinItems.map(x => `${x.warehouse}/${x.cell} (${x.meters})`).join('; '));
+    }
+
+    function createAutoDoc(tab, articul, items, uid, charUid, charName) {
+        if (!Array.isArray(items) || !items.length) return null;
+        const now = new Date();
+        const itemRows = items.map((x, idx) => {
+            const base = {
+                id: `${now.getTime().toString(36)}-${idx}`,
+                art: articul,
+                ts: now.toISOString(),
+                ...(uid ? { uid } : {}),
+                ...(charUid ? { charUid } : {}),
+                ...(charName ? { charName } : {})
+            };
+            if (tab === 'move') {
+                return {
+                    ...base,
+                    m: String(toNumber(x.meters)),
+                    fromWh: x.fromWarehouse || '',
+                    fromCell: x.fromCell || '',
+                    toWh: x.toWarehouse || '',
+                    toCell: x.toCell || ''
+                };
+            }
+            return {
+                ...base,
+                m: String(toNumber(x.meters)),
+                wh: x.warehouse || '',
+                cell: x.cell || ''
+            };
+        });
+        const title =
+            tab === 'writeoff' ? 'Авто-списание' :
+            tab === 'stockin' ? 'Авто-оприходование' :
+            'Авто-перемещение';
+        return {
+            id: `${tab}-${now.getTime().toString(36)}`,
+            name: `${title} ${now.toLocaleDateString()}`,
+            status: 'closed',
+            createdAt: now.toISOString(),
+            docWarehouse: tab === 'move' ? (itemRows[0]?.fromWh || '') : (itemRows[0]?.wh || ''),
+            items: itemRows
+        };
     }
 
     /* Накапливаем ячейки из ответа 1С в sets.knownCells и обновляем datalist */
@@ -3606,6 +4193,41 @@ body {
         return hasCharacteristics(p) && p.characteristics.length === 1;
     }
 
+    function isKioskA4CollectContext() {
+        const kioskVisible = !document.getElementById('screen-kiosk')?.classList.contains('hidden');
+        const customerOpen = !document.getElementById('customer-view')?.classList.contains('hidden');
+        return kioskA4CollectMode && kioskVisible && !customerOpen && !isMgr;
+    }
+
+    function tryAddProductToA4Buffer(product, preferredCode = '') {
+        if (!isKioskA4CollectContext()) return false;
+        const art = String(
+            preferredCode ||
+            product?.charArticul ||
+            product?.articul ||
+            product?.article ||
+            ''
+        ).trim().toUpperCase();
+
+        if (!art) {
+            showToast('Не удалось определить артикул для A4', 'danger');
+            return true;
+        }
+        if (kioskA4Buffer.includes(art)) {
+            flashA4Duplicate(art);
+            showToast(`${art} уже в листе`, 'warning');
+            return true;
+        }
+        if (kioskA4Buffer.length >= 10) {
+            showToast('Лист заполнен (10/10)', 'warning');
+            return true;
+        }
+        kioskA4Buffer.push(art);
+        updateKioskA4Status();
+        showToast(`Добавлено в A4: ${art}`, 'success');
+        return true;
+    }
+
     /* Применяем характеристику к продукту — подменяем цену и остатки */
     function applyCharacteristic(baseProduct, char) {
         return {
@@ -3626,17 +4248,23 @@ body {
     function resolveAndShowProduct(p) {
         /* Вариант 3: в ответе уже charUid — штрихкод был уникальным */
         if (p.charUid && !hasCharacteristics(p)) {
+            if (tryAddProductToA4Buffer(p, p.articul || p.article || '')) return;
             showProduct(p);
             return;
         }
         /* Нет характеристик вообще — обычный товар */
         if (!hasCharacteristics(p)) {
+            if (tryAddProductToA4Buffer(p, p.articul || p.article || '')) return;
             showProduct(p);
             return;
         }
         /* Одна характеристика — выбор пропускаем, применяем сразу */
         if (hasSingleChar(p)) {
-            showProduct(applyCharacteristic(p, p.characteristics[0]));
+            const selected = p.characteristics[0] || {};
+            const withChar = applyCharacteristic(p, selected);
+            const selectedArt = selected.articul || selected.article || p.articul || p.article || '';
+            if (tryAddProductToA4Buffer(withChar, selectedArt)) return;
+            showProduct(withChar);
             return;
         }
         /* Несколько характеристик — показываем модалку выбора */
@@ -3699,6 +4327,8 @@ body {
 
             item.onclick = () => {
                 closeModal('modal-char-select');
+                const selectedArt = char.articul || char.article || p.articul || p.article || '';
+                if (tryAddProductToA4Buffer(applyCharacteristic(p, char), selectedArt)) return;
                 isProductDirty = false;
                 showProduct(applyCharacteristic(p, char));
             };
@@ -3742,6 +4372,11 @@ body {
         currentProduct = p;
         customerGalleryIndex = 0;
         const rows = buildStockRows(p);
+        const baseKey = `${p.uid || p.id || ''}|${p.charUid || ''}|${p.articul || ''}`;
+        if (!isProductDirty || baseKey !== productStockBaselineKey) {
+            productStockBaseline = normalizeStockRowsForDiff(rows);
+            productStockBaselineKey = baseKey;
+        }
         const allImages = p.images || p.photos || p.gallery || [];
         const images = Array.isArray(allImages) ? allImages : [];
         document.getElementById('c-name').textContent = p.name || 'Товар';
@@ -3789,6 +4424,11 @@ body {
         inlineEditField = el.dataset.editField;
         document.getElementById('ie-title').textContent = `Изменить: ${el.dataset.editLabel || 'Поле'}`;
         const input = document.getElementById('ie-input');
+        const compHint = document.getElementById('ie-comp-hint');
+        if (compHint) {
+            compHint.style.display = 'none';
+            compHint.textContent = '';
+        }
         const upperMode = inlineEditField === 'composition' || inlineEditField === 'articul' || inlineEditField === 'brand';
         input.setAttribute('autocapitalize', upperMode ? 'characters' : 'none');
         input.value = (inlineEditField === 'priceRub' ? toNumber(currentProduct.priceRub || currentProduct.price || 0).toFixed(2) : (currentProduct[inlineEditField] ?? '').toString());
@@ -3827,7 +4467,6 @@ body {
         activeStockRowIndex = index;
         const list = currentProduct.stockRows || [];
         const row = index >= 0 ? (list[index] || {}) : {};
-        const whSel = document.getElementById('sr-wh');
         fillWarehouseSelect('sr-wh', sets.warehouses, row.warehouse || row.wh || '');
         document.getElementById('sr-title').textContent = index >= 0 ? 'Редактирование склада' : 'Добавить склад';
         const delBtn = document.querySelector('#modal-stock-row-edit .btn-danger');
@@ -3870,13 +4509,11 @@ body {
         const cell = normalizeCellValue(document.getElementById('sr-cell').value);
         const warehouse = document.getElementById('sr-wh').value;
 
-        /* Проверка метража */
         if (!(metersValue >= 0)) {
             fieldError('sr-meters', 'Укажите количество метров');
             return;
         }
 
-        /* Проверка ячейки — только если указана */
         if (cell && !isKnownCell(cell)) {
             if (!sets.allowNewCells) {
                 const hint = document.getElementById('sr-cell-hint');
@@ -3889,7 +4526,6 @@ body {
                 document.getElementById('sr-cell')?.focus();
                 return;
             }
-            /* allowNewCells = true — добавляем ячейку в knownCells */
             if (!Array.isArray(sets.knownCells)) sets.knownCells = [];
             if (!sets.knownCells.includes(cell)) {
                 sets.knownCells.push(cell);
@@ -3929,8 +4565,6 @@ body {
         updateCompSumHint('pe-comp', 'pe-comp-hint');
         document.getElementById('pe-brand').value = currentProduct.brand || '';
         document.getElementById('pe-density').value = currentProduct.density || currentProduct.dens || '';
-        const row = Array.isArray(currentProduct.stockRows) && currentProduct.stockRows.length ? currentProduct.stockRows[0] : {};
-        document.getElementById('pe-qty').value = currentProduct.qty ?? row.qty ?? '';
         openModal('modal-product-edit');
     }
 
@@ -3958,41 +4592,70 @@ body {
         currentProduct.composition = composition;
         currentProduct.brand = brand;
         currentProduct.density = density;
-        currentProduct.qty = toNumber(document.getElementById('pe-qty')?.value || currentProduct.qty || 0);
         markProductDirty();
         showProduct(currentProduct);
         closeModal('modal-product-edit');
         showToast('Сохранено. Будет отправлено в 1С при синхронизации.');
     }
 
+    function buildProductUpdatePayload(product) {
+        return {
+            uid:     product.uid     || product.id   || '',
+            articul: product.articul || product.article || '',
+            priceRub: toNumber(product.priceRub || product.price || 0),
+            namePrint: product.namePrint || product.printName || product.name || '',
+            fullName: product.fullName || product.fullname || '',
+            newPhoto: product.newPhoto || null,
+            width: product.width || '',
+            composition: product.composition || '',
+            brand: product.brand || '',
+            density: product.density || product.dens || ''
+        };
+    }
+
+    function buildAutoDocsForProduct(product) {
+        const currentRowsForDiff = normalizeStockRowsForDiff(buildStockRows(product));
+        const autoDelta = buildAutoStockAdjustItems(productStockBaseline, currentRowsForDiff);
+        const uid = product.uid || product.id || '';
+        const charUid = product?.charUid || '';
+        const charName = product?.charName || '';
+        const autoDocs = [
+            ['move', createAutoDoc('move', product.articul || '', autoDelta.moveItems, uid, charUid, charName)],
+            ['writeoff', createAutoDoc('writeoff', product.articul || '', autoDelta.writeoffItems, uid, charUid, charName)],
+            ['stockin', createAutoDoc('stockin', product.articul || '', autoDelta.stockinItems, uid, charUid, charName)]
+        ].filter(([, d]) => !!d);
+        logAutoStockAdjust(product.articul || '', autoDelta);
+        return autoDocs;
+    }
+
+    async function applyAutoDocs(autoDocs, queueForSync) {
+        for (const [tab, doc] of autoDocs) {
+            db[tab].unshift(doc);
+            if (queueForSync) outboxAdd(doc.id, tab);
+            else setDocSyncStatus(doc.id, 'pending');
+        }
+        if (queueForSync && autoDocs.length) await flushOutbox();
+    }
+
+    function finalizeProductSyncState(product) {
+        isProductDirty = false;
+        productStockBaseline = normalizeStockRowsForDiff(buildStockRows(product));
+        updateProductSyncButton();
+    }
+
     async function pushProductChangesTo1C() {
         if (!currentProduct) return;
         if (!isProductDirty) { showToast('Нет несохранённых изменений'); return; }
+        const autoDocs = buildAutoDocsForProduct(currentProduct);
+
         if (isDemoMode) {
-            isProductDirty = false;
-            updateProductSyncButton();
-            showToast('DEV: изменения товара сохранены локально', 'success');
+            await applyAutoDocs(autoDocs, false);
+            finalizeProductSyncState(currentProduct);
+            if (autoDocs.length) showToast(`DEV: авто-документы созданы локально (${autoDocs.map(([,d]) => d.name).join(', ')})`, 'success');
+            else showToast('DEV: изменения товара сохранены локально', 'success');
             return;
         }
-        const payload = {
-            uid:     currentProduct.uid     || currentProduct.id   || '',
-            articul: currentProduct.articul || currentProduct.article || '',
-            priceRub: toNumber(currentProduct.priceRub || currentProduct.price || 0),
-            namePrint: currentProduct.namePrint || currentProduct.printName || currentProduct.name || '',
-            fullName: currentProduct.fullName || currentProduct.fullname || '',
-            newPhoto: currentProduct.newPhoto || null,
-            width: currentProduct.width || '',
-            composition: currentProduct.composition || '',
-            brand: currentProduct.brand || '',
-            density: currentProduct.density || currentProduct.dens || '',
-            qty: toNumber(currentProduct.qty || 0),
-            stockRows: (currentProduct.stockRows || []).map(r => ({
-                warehouse: r.warehouse || r.wh || '',
-                cell: r.cell || '',
-                meters: toNumber(r.meters ?? r.m),
-                qty: toNumber(r.meters ?? r.m ?? r.qty)
-            }))
-        };
+        const payload = buildProductUpdatePayload(currentProduct);
 
         if (!sets.url) { showToast('Демо режим: изменения оставлены локально'); return; }
         try {
@@ -4002,8 +4665,8 @@ body {
                 body: JSON.stringify(payload)
             });
             if (res.ok) {
-                isProductDirty = false;
-                updateProductSyncButton();
+                await applyAutoDocs(autoDocs, true);
+                finalizeProductSyncState(currentProduct);
                 showToast('Изменения отправлены в 1С', 'success');
             } else {
                 showApiError({ endpoint: '/update-product', status: res.status,
@@ -4616,6 +5279,36 @@ body {
         if (status) status.textContent = `A4 буфер: ${kioskA4Buffer.length}/10${kioskA4CollectMode ? ' (режим сбора включён)' : ''}`;
         if (btn) btn.textContent = kioskA4CollectMode ? '✅ Режим сбора включен' : '📋 Собрать лист этикеток';
         renderA4PreviewModal();
+        renderKioskA4List();
+    }
+
+    function renderKioskA4List() {
+        const list = document.getElementById('kiosk-a4-list');
+        if (!list) return;
+        if (!kioskA4Buffer.length) {
+            list.innerHTML = '<div class="kiosk-a4-list-empty">Список пуст. Добавляйте позиции сканером, Enter или кнопкой «+».</div>';
+            return;
+        }
+        list.innerHTML = '';
+        kioskA4Buffer.forEach((art, idx) => {
+            const row = document.createElement('div');
+            row.className = 'kiosk-a4-list-item';
+
+            const label = document.createElement('div');
+            label.className = 'kiosk-a4-list-art';
+            label.textContent = `${idx + 1}. ${art}`;
+
+            const del = document.createElement('button');
+            del.className = 'kiosk-a4-list-del';
+            del.type = 'button';
+            del.textContent = '✕';
+            del.title = `Удалить ${art}`;
+            del.setAttribute('aria-label', `Удалить ${art}`);
+            del.onclick = () => removeA4Item(idx);
+
+            row.append(label, del);
+            list.appendChild(row);
+        });
     }
 
     function renderA4PreviewModal() {
@@ -4732,6 +5425,7 @@ body {
 
     function toggleKioskA4CollectMode() {
         kioskA4CollectMode = !kioskA4CollectMode;
+        if (kioskA4CollectMode && isCompactKioskLayout()) setKioskPane('a4');
         updateKioskA4Status();
     }
 
@@ -5126,6 +5820,66 @@ body {
         });
     }
 
+    function setupReceiveEnterNavigation() {
+        if (curTab !== 'receive') return;
+        const ids = ['f-art', 'f-name-print', 'f-full-name', 'f-width', 'f-density', 'f-brand', 'f-comp']
+            .filter(id => !!document.getElementById(id));
+        ids.forEach((id, idx) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener('keydown', (event) => {
+                if (event.key !== 'Enter' || event.shiftKey) return;
+                event.preventDefault();
+                event.stopPropagation();
+                const nextId = ids[idx + 1];
+                if (nextId) {
+                    const next = document.getElementById(nextId);
+                    if (next && typeof next.focus === 'function') next.focus();
+                    return;
+                }
+                saveLine();
+            });
+        });
+    }
+
+    function getMoveFormHtml() {
+        return `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" placeholder="Артикул → Enter для поиска" onblur="resolveFormArtInput(this); loadMoveStockPreview();" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this); loadMoveStockPreview();}"></div><div id="move-stock-preview" class="writeoff-stock-preview">Введите артикул или отсканируйте штрихкод, чтобы увидеть остатки</div><div class="flex gap-2"><div style="flex:1"><label>ОТКУДА (СКЛАД)</label><select id="f-wh-from"></select></div><div style="flex:1"><label>ОТКУДА (ЯЧ)</label><input type="text" id="f-cell-from" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="flex gap-2"><div style="flex:1"><label>КУДА (СКЛАД)</label><select id="f-wh-to"></select></div><div style="flex:1"><label>КУДА (ЯЧ)</label><input type="text" id="f-cell-to" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div></div><div class="input-group"><label>МЕТРАЖ</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-primary w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+    }
+
+    function initMoveForm() {
+        fillWarehouseSelect('f-wh-from', sets.warehouses);
+        fillWarehouseSelect('f-wh-to', sets.warehouses);
+        loadMoveStockPreview();
+        if (movePrefillSource) {
+            const whFrom = document.getElementById('f-wh-from');
+            const cellFrom = document.getElementById('f-cell-from');
+            if (whFrom && [...whFrom.options].some(o => o.value === movePrefillSource.wh)) whFrom.value = movePrefillSource.wh;
+            if (cellFrom) cellFrom.value = movePrefillSource.cell || '';
+        }
+    }
+
+    function getWriteoffFormHtml() {
+        return `<div class="input-group"><label>СКЛАД ДОКУМЕНТА</label><select id="f-wh-doc" onchange="setDocWarehouse(this.value)"></select></div><div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" placeholder="Артикул → Enter для поиска" onblur="resolveFormArtInput(this); loadWriteoffStockPreview();" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this); loadWriteoffStockPreview();}"></div><div id="writeoff-stock-preview" class="writeoff-stock-preview">Введите артикул, чтобы увидеть остатки по складам</div><div class="input-group"><label>ЯЧЕЙКА</label><input type="text" id="f-cell" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div><div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-danger w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+    }
+
+    function initWriteoffForm(d) {
+        fillWarehouseSelect('f-wh-doc', sets.warehouses, d.docWarehouse || sets.warehouses[0] || '');
+        loadWriteoffStockPreview();
+        if (writeoffPrefillSource) {
+            const cell = document.getElementById('f-cell');
+            if (cell) cell.value = writeoffPrefillSource.cell || '';
+        }
+    }
+
+    function getStockinFormHtml() {
+        return `<div class="input-group"><label>СКЛАД ДОКУМЕНТА</label><select id="f-wh-doc" onchange="setDocWarehouse(this.value)"></select></div><div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" placeholder="Артикул → Enter для поиска" onblur="resolveFormArtInput(this); loadStockinStockPreview();" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this); loadStockinStockPreview();}"></div><div id="stockin-stock-preview" class="writeoff-stock-preview">Введите артикул, чтобы увидеть остатки по складам</div><div class="input-group"><label>ЯЧЕЙКА</label><input type="text" id="f-cell" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div><div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-success w-full" id="btn-save-line" onclick="saveLine()">ОПРИХОДОВАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
+    }
+
+    function initStockinForm(d) {
+        fillWarehouseSelect('f-wh-doc', sets.warehouses, d.docWarehouse || sets.warehouses[0] || '');
+        loadStockinStockPreview();
+    }
+
     function renderForm() {
         const cont = document.getElementById('form-container'); const d = db[curTab]?.find(x=>x.id===curDocId);
         if(!d || d.status !== 'active') return;
@@ -5138,30 +5892,14 @@ body {
             renderCuts();
             renderReceivePhotoPreview();
         } else if(curTab === 'move'){
-            cont.innerHTML = `<div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" placeholder="Артикул → Enter для поиска" onblur="resolveFormArtInput(this); loadMoveStockPreview();" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this); loadMoveStockPreview();}"></div><div id="move-stock-preview" class="writeoff-stock-preview">Введите артикул или отсканируйте штрихкод, чтобы увидеть остатки</div><div class="flex gap-2"><div style="flex:1"><label>ОТКУДА (СКЛАД)</label><select id="f-wh-from"></select></div><div style="flex:1"><label>ОТКУДА (ЯЧ)</label><input type="text" id="f-cell-from" list="list-cells" oninput="this.value = this.value.toUpperCase()"></div></div><div class="flex gap-2"><div style="flex:1"><label>КУДА (СКЛАД)</label><select id="f-wh-to"></select></div><div style="flex:1"><label>КУДА (ЯЧ)</label><input type="text" id="f-cell-to" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div></div><div class="input-group"><label>МЕТРАЖ</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-primary w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
-            fillWarehouseSelect('f-wh-from', sets.warehouses);
-            fillWarehouseSelect('f-wh-to',   sets.warehouses);
-            loadMoveStockPreview();
-            if (movePrefillSource) {
-                const whFrom = document.getElementById('f-wh-from');
-                const cellFrom = document.getElementById('f-cell-from');
-                if (whFrom && [...whFrom.options].some(o => o.value === movePrefillSource.wh)) whFrom.value = movePrefillSource.wh;
-                if (cellFrom) cellFrom.value = movePrefillSource.cell || '';
-            }
+            cont.innerHTML = getMoveFormHtml();
+            initMoveForm();
         } else if(curTab === 'writeoff'){
-            const docWh = d.docWarehouse || sets.warehouses[0] || '';
-            cont.innerHTML = `<div class="input-group"><label>СКЛАД ДОКУМЕНТА</label><select id="f-wh-doc" onchange="setDocWarehouse(this.value)"></select></div><div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" placeholder="Артикул → Enter для поиска" onblur="resolveFormArtInput(this); loadWriteoffStockPreview();" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this); loadWriteoffStockPreview();}"></div><div id="writeoff-stock-preview" class="writeoff-stock-preview">Введите артикул, чтобы увидеть остатки по складам</div><div class="input-group"><label>ЯЧЕЙКА</label><input type="text" id="f-cell" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div><div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-danger w-full" id="btn-save-line" onclick="saveLine()">ЗАПИСАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
-            fillWarehouseSelect('f-wh-doc', sets.warehouses, d.docWarehouse || sets.warehouses[0] || '');
-            loadWriteoffStockPreview();
-            if (writeoffPrefillSource) {
-                const cell = document.getElementById('f-cell');
-                if (cell) cell.value = writeoffPrefillSource.cell || '';
-            }
+            cont.innerHTML = getWriteoffFormHtml();
+            initWriteoffForm(d);
         } else if(curTab === 'stockin'){
-            const docWh = d.docWarehouse || sets.warehouses[0] || '';
-            cont.innerHTML = `<div class="input-group"><label>СКЛАД ДОКУМЕНТА</label><select id="f-wh-doc" onchange="setDocWarehouse(this.value)"></select></div><div class="input-group"><label>Артикул</label><input type="text" id="f-art" data-art-field list="list-arts" placeholder="Артикул → Enter для поиска" onblur="resolveFormArtInput(this); loadStockinStockPreview();" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this); loadStockinStockPreview();}"></div><div id="stockin-stock-preview" class="writeoff-stock-preview">Введите артикул, чтобы увидеть остатки по складам</div><div class="input-group"><label>ЯЧЕЙКА</label><input type="text" id="f-cell" list="list-cells" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') saveLine()"></div><div class="input-group"><label>КОЛИЧЕСТВО</label><input type="text" id="f-m" oninput="this.value=this.value.replace(',','.')" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"></div><button class="btn-success w-full" id="btn-save-line" onclick="saveLine()">ОПРИХОДОВАТЬ</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
-            fillWarehouseSelect('f-wh-doc', sets.warehouses, d.docWarehouse || sets.warehouses[0] || '');
-            loadStockinStockPreview();
+            cont.innerHTML = getStockinFormHtml();
+            initStockinForm(d);
         } else if(curTab === 'price'){
             cont.innerHTML = `<label>Артикул</label><div class="flex gap-2"><input type="text" id="f-art" data-art-field list="list-arts" oninput="clearPriceLookupState()" onblur="resolveFormArtInput(this); loadPriceItemPreview();" onkeydown="if(event.key==='Enter'){event.preventDefault(); resolveFormArtInput(this); loadPriceItemPreview();}"><button class="btn-outline" type="button" onclick="loadPriceItemPreview()">🔎 Найти</button></div><div id="price-item-preview" class="text-sm text-sec" style="margin:6px 0 6px;">Нажмите «Найти товар», чтобы подтянуть данные из 1С</div><label>Текущая цена (из 1С)</label><input type="text" id="f-p-current" readonly><label>Новая цена (у.е.)</label><input type="text" id="f-p" inputmode="decimal" onkeydown="if(event.key==='Enter') saveLine()"><button class="btn-primary w-full" style="background:var(--price-color)" id="btn-save-line" onclick="saveLine()">Провести изменение цены</button>${editingItemId ? '<button class="btn-outline w-full mt-2" onclick="cancelEdit()">ОТМЕНА</button>' : ''}`;
             if (!editingItemId) clearPriceLookupState();
@@ -5169,6 +5907,7 @@ body {
         clearAllFieldErrors();
         _selectedStockRowIdx = { writeoff: -1, move: -1, stockin: -1 };
         setupInputAssistancePolicy();
+        setupReceiveEnterNavigation();
     }
 
     function renderCuts() {
@@ -5279,7 +6018,27 @@ body {
         if (_charName) item.charName = _charName;
 
         if (curTab === 'receive') {
-            const v = activeCuts.filter(c => !isNaN(parseFloat(c.m)) && parseFloat(c.m) > 0);
+            if (!Array.isArray(sets.warehouses) || !sets.warehouses.length) {
+                showToast('Добавьте хотя бы один склад в настройках', 'danger');
+                return;
+            }
+            const v = [];
+            for (let i = 0; i < activeCuts.length; i++) {
+                const cut = activeCuts[i];
+                const meters = parseFloat(cut.m);
+                if (!(meters > 0)) continue;
+                const wh = normalizeWhValue(cut.wh || cut.warehouse || '');
+                if (!wh || wh === '-') {
+                    showToast('Укажите склад для каждого отреза', 'danger');
+                    const whSelect = document.querySelectorAll('#receive-cuts .cut-row select')[i];
+                    if (whSelect) {
+                        whSelect.classList.add('input-error');
+                        whSelect.focus();
+                    }
+                    return;
+                }
+                v.push({ ...cut, wh });
+            }
             if (!v.length) {
                 showToast('Добавьте хотя бы один отрез с метражом > 0', 'danger');
                 /* Подсвечиваем первый пустой m-инпут в нарезках */
@@ -5399,7 +6158,10 @@ body {
         save(); renderForm(); renderRows();
         showToast('Записано', 'success');
         const artField = document.getElementById('f-art');
-        if (artField) { artField.value = ''; setTimeout(() => artField.focus(), 30); }
+        if (artField) {
+            if (curTab !== 'receive') artField.value = '';
+            setTimeout(() => artField.focus(), 30);
+        }
     }
 
     function editItem(id) {
@@ -5624,9 +6386,12 @@ body {
             const focusable = nextModal?.querySelector(FOCUSABLE);
             if (focusable) setTimeout(() => focusable.focus(), 0);
         }
+        /* Если все модалки закрыты — возвращаем фокус в канал сканера */
+        if (!activeModalId) setTimeout(ensureScannerFocus, 100);
     }
     function showToast(m, t, durationMs = 2500) {
         const c = document.getElementById('toast-container');
+        applyToastContainerPosition(c);
         if (c.children.length > 3) c.removeChild(c.firstChild);
         const d = document.createElement('div');
         d.className = 'toast';
@@ -5640,6 +6405,19 @@ body {
         setTimeout(() => d.remove(), durationMs);
     }
 
+    function applyToastContainerPosition(containerEl) {
+        const c = containerEl || document.getElementById('toast-container');
+        if (!c) return;
+        const customerOpen = !document.getElementById('customer-view')?.classList.contains('hidden');
+        if (customerOpen) {
+            c.style.top = 'auto';
+            c.style.bottom = '16px';
+        } else {
+            c.style.bottom = 'auto';
+            c.style.top = '84px';
+        }
+    }
+
     /* ─── showApiError ───────────────────────────────────────────────────
        Показывает детальную ошибку сетевого/API вызова с кнопкой «Повторить».
 
@@ -5651,6 +6429,7 @@ body {
     ────────────────────────────────────────────────────────────────── */
     function showApiError({ endpoint = '', status = '', retryFn = null, msg = '' } = {}) {
         const c = document.getElementById('toast-container');
+        applyToastContainerPosition(c);
         if (c.children.length > 3) c.removeChild(c.firstChild);
 
         const statusStr = status === 'net'     ? 'Нет связи'
@@ -5708,7 +6487,35 @@ body {
         /* Сбрасываем на первую вкладку при каждом открытии */
         switchSettingsTab('tab-1c', document.querySelector('.settings-tab-btn'));
         updateConnStatus('unknown', 'Статус подключения к 1С не проверен');
-        document.getElementById('set-show-width').checked = sets.showWidth !== false; document.getElementById('set-show-density').checked = sets.showDensity !== false; document.getElementById('set-show-brand').checked = sets.showBrand !== false; document.getElementById('set-show-comp').checked = sets.showComp !== false; document.getElementById('set-show-fullname').checked = sets.showFullName === true; document.getElementById('set-print-name-default').value = sets.printNameDefault || ''; document.getElementById('set-prefix').value = sets.prefix; document.getElementById('set-next-num').value = sets.nextNum; document.getElementById('set-url').value = sets.url; document.getElementById('set-user').value = sets.user; document.getElementById('set-pass').value = sets.pass || ""; document.getElementById('set-api-key').value = sets.apiKey || ""; document.getElementById('set-pn-key').value = sets.pnKey || ""; document.getElementById('set-pn-printer').value = sets.pnPrinter || ""; document.getElementById('set-print-method').value = sets.printMethod || "server"; document.getElementById('set-kiosk-demo').checked = sets.kioskDemoMode !== false; document.getElementById('set-dev-offline').checked = isDemoMode; document.getElementById('set-allow-new-cells').checked = sets.allowNewCells === true; togglePrintSettingsUI(); renderSettingsWh(); renderSettingsInfoPanel(); validateUrlField(); await loadServerPrinters();
+
+        const setChecked = (id, value) => { const el = document.getElementById(id); if (el) el.checked = !!value; };
+        const setValue = (id, value) => { const el = document.getElementById(id); if (el) el.value = value ?? ''; };
+
+        setChecked('set-show-width', sets.showWidth !== false);
+        setChecked('set-show-density', sets.showDensity !== false);
+        setChecked('set-show-brand', sets.showBrand !== false);
+        setChecked('set-show-comp', sets.showComp !== false);
+        setChecked('set-show-fullname', sets.showFullName === true);
+        setValue('set-print-name-default', sets.printNameDefault || '');
+        setValue('set-prefix', sets.prefix);
+        setValue('set-next-num', sets.nextNum);
+        setValue('set-url', sets.url);
+        setValue('set-user', sets.user);
+        setValue('set-pass', sets.pass || "");
+        setValue('set-api-key', sets.apiKey || "");
+        setValue('set-pn-key', sets.pnKey || "");
+        setValue('set-pn-printer', sets.pnPrinter || "");
+        setValue('set-print-method', sets.printMethod || "server");
+        setChecked('set-kiosk-demo', sets.kioskDemoMode !== false);
+        setChecked('set-dev-offline', isDemoMode);
+        setChecked('set-allow-new-cells', sets.allowNewCells === true);
+        setValue('set-auto-stock-mode', sets.autoStockMode || 'move_first');
+
+        togglePrintSettingsUI();
+        renderSettingsWh();
+        renderSettingsInfoPanel();
+        validateUrlField();
+        await loadServerPrinters();
         const shEl = document.getElementById('set-session-hours');
         if (shEl) shEl.value = sets.sessionHours ?? MGR_SESSION_DEFAULT_HOURS;
         renderKnownCellsSettings();
@@ -5720,11 +6527,108 @@ body {
                 ? new Date(exp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
                 : '—';
         }
-        openModal('modal-settings'); }
-    function togglePrintSettingsUI() { const method = document.getElementById('set-print-method').value; const block = document.getElementById('printnode-block'); const serverBlock = document.getElementById('server-printers-block'); if (block) block.style.display = (method === 'printnode') ? 'block' : 'none'; if (serverBlock) serverBlock.style.display = (method === 'server') ? 'block' : 'none'; }
-    function saveSets() { sets.showWidth = document.getElementById('set-show-width').checked; sets.showDensity = document.getElementById('set-show-density').checked; sets.showBrand = document.getElementById('set-show-brand').checked; sets.showComp = document.getElementById('set-show-comp').checked; sets.showFullName = document.getElementById('set-show-fullname').checked; sets.printNameDefault = document.getElementById('set-print-name-default').value; sets.prefix = document.getElementById('set-prefix').value; sets.nextNum = parseInt(document.getElementById('set-next-num').value) || 1; sets.url = document.getElementById('set-url').value; sets.user = document.getElementById('set-user').value; sets.pass = document.getElementById('set-pass').value; sets.apiKey = document.getElementById('set-api-key').value; sets.pnKey = document.getElementById('set-pn-key').value; sets.pnPrinter = document.getElementById('set-pn-printer').value; sets.printMethod = document.getElementById('set-print-method').value; sets.kioskDemoMode = document.getElementById('set-kiosk-demo').checked; sets.allowNewCells = document.getElementById('set-allow-new-cells').checked; isDemoMode = document.getElementById('set-dev-offline').checked; sets.devOfflineMode = isDemoMode; const _sh = parseFloat(document.getElementById('set-session-hours')?.value); sets.sessionHours = isFinite(_sh) && _sh > 0 ? _sh : MGR_SESSION_DEFAULT_HOURS; sets.printerClient = document.getElementById('set-printer-client')?.value || ''; sets.printerWarehouse = document.getElementById('set-printer-warehouse')?.value || ''; sets.printerHanger = document.getElementById('set-printer-hanger')?.value || ''; sets.printerA4 = document.getElementById('set-printer-a4')?.value || ''; validateUrlField(); save(); saveAppState(); renderSettingsInfoPanel(); }
-    function renderSettingsWh() { const root = document.getElementById('settings-warehouses'); if (!root) return; root.innerHTML = ''; (sets.warehouses || []).forEach((w, idx) => { const row = document.createElement('div'); row.className = 'wh-item'; const label = document.createElement('span'); label.textContent = w; const actions = document.createElement('div'); actions.className = 'wh-actions'; const up = document.createElement('button'); up.className = 'btn-outline wh-move-btn'; up.textContent = '↑'; up.disabled = idx === 0; up.addEventListener('click', () => moveWh(idx, -1)); const down = document.createElement('button'); down.className = 'btn-outline wh-move-btn'; down.textContent = '↓'; down.disabled = idx === (sets.warehouses.length - 1); down.addEventListener('click', () => moveWh(idx, 1)); const btn = document.createElement('button'); btn.className = 'btn-icon text-danger'; btn.textContent = '🗑️'; btn.addEventListener('click', () => delWh(w)); actions.append(up, down, btn); row.append(label, actions); root.appendChild(row); }); }
-    function moveWh(idx, dir) { const arr = sets.warehouses || []; const to = idx + dir; if (to < 0 || to >= arr.length) return; [arr[idx], arr[to]] = [arr[to], arr[idx]]; renderSettingsWh(); saveSets(); }
+        openModal('modal-settings');
+    }
+    function togglePrintSettingsUI() {
+        const method = document.getElementById('set-print-method').value;
+        const block = document.getElementById('printnode-block');
+        const serverBlock = document.getElementById('server-printers-block');
+        if (block) block.style.display = (method === 'printnode') ? 'block' : 'none';
+        if (serverBlock) serverBlock.style.display = (method === 'server') ? 'block' : 'none';
+    }
+    function saveSets() {
+        const getChecked = (id) => !!document.getElementById(id)?.checked;
+        const getValue = (id) => document.getElementById(id)?.value ?? '';
+
+        sets.showWidth = getChecked('set-show-width');
+        sets.showDensity = getChecked('set-show-density');
+        sets.showBrand = getChecked('set-show-brand');
+        sets.showComp = getChecked('set-show-comp');
+        sets.showFullName = getChecked('set-show-fullname');
+
+        sets.printNameDefault = getValue('set-print-name-default');
+        sets.prefix = getValue('set-prefix');
+        sets.nextNum = parseInt(getValue('set-next-num')) || 1;
+
+        sets.url = getValue('set-url');
+        sets.user = getValue('set-user');
+        sets.pass = getValue('set-pass');
+        sets.apiKey = getValue('set-api-key');
+
+        sets.pnKey = getValue('set-pn-key');
+        sets.pnPrinter = getValue('set-pn-printer');
+        sets.printMethod = getValue('set-print-method');
+
+        sets.kioskDemoMode = getChecked('set-kiosk-demo');
+        sets.allowNewCells = getChecked('set-allow-new-cells');
+        sets.autoStockMode = getValue('set-auto-stock-mode') || 'move_first';
+
+        isDemoMode = getChecked('set-dev-offline');
+        sets.devOfflineMode = isDemoMode;
+
+        const _sh = parseFloat(getValue('set-session-hours'));
+        sets.sessionHours = isFinite(_sh) && _sh > 0 ? _sh : MGR_SESSION_DEFAULT_HOURS;
+
+        sets.printerClient = getValue('set-printer-client');
+        sets.printerWarehouse = getValue('set-printer-warehouse');
+        sets.printerHanger = getValue('set-printer-hanger');
+        sets.printerA4 = getValue('set-printer-a4');
+
+        validateUrlField();
+        save();
+        saveAppState();
+        renderSettingsInfoPanel();
+    }
+    function createWarehouseSettingsRow(warehouseName, idx, total) {
+        const row = document.createElement('div');
+        row.className = 'wh-item';
+
+        const label = document.createElement('span');
+        label.textContent = warehouseName;
+
+        const actions = document.createElement('div');
+        actions.className = 'wh-actions';
+
+        const up = document.createElement('button');
+        up.className = 'btn-outline wh-move-btn';
+        up.textContent = '↑';
+        up.disabled = idx === 0;
+        up.addEventListener('click', () => moveWh(idx, -1));
+
+        const down = document.createElement('button');
+        down.className = 'btn-outline wh-move-btn';
+        down.textContent = '↓';
+        down.disabled = idx === (total - 1);
+        down.addEventListener('click', () => moveWh(idx, 1));
+
+        const del = document.createElement('button');
+        del.className = 'btn-icon text-danger';
+        del.textContent = '🗑️';
+        del.addEventListener('click', () => delWh(warehouseName));
+
+        actions.append(up, down, del);
+        row.append(label, actions);
+        return row;
+    }
+
+    function renderSettingsWh() {
+        const root = document.getElementById('settings-warehouses');
+        if (!root) return;
+        root.innerHTML = '';
+        const warehouses = sets.warehouses || [];
+        warehouses.forEach((w, idx) => {
+            root.appendChild(createWarehouseSettingsRow(w, idx, warehouses.length));
+        });
+    }
+
+    function moveWh(idx, dir) {
+        const arr = sets.warehouses || [];
+        const to = idx + dir;
+        if (to < 0 || to >= arr.length) return;
+        [arr[idx], arr[to]] = [arr[to], arr[idx]];
+        renderSettingsWh();
+        saveSets();
+    }
     /* Синхронизация складов из 1С
        Эндпоинт GET /warehouses должен вернуть:
          [ "Магазин", "Склад", "Розница" ]
@@ -6214,7 +7118,8 @@ body {
     async function syncWith1C() { return queueAndSync(); }
 
     async function test1CConnection() {
-        const url    = document.getElementById('set-url').value;
+        const rawUrl = document.getElementById('set-url').value;
+        const url    = String(rawUrl || '').trim().replace(/\/+$/, '');
         const user   = document.getElementById('set-user').value;
         const pass   = document.getElementById('set-pass').value;
         const apiKey = document.getElementById('set-api-key').value;
@@ -6223,6 +7128,24 @@ body {
             showToast('DEV-режим: связь с 1С не требуется', 'success'); return;
         }
         if (!url) { showToast("Сначала введите URL", "danger"); return; }
+        let parsed;
+        try {
+            parsed = new URL(url);
+        } catch (_) {
+            updateConnStatus('error', 'Некорректный URL сервера');
+            showToast('URL должен быть в формате http(s)://host:port', 'danger');
+            return;
+        }
+        const isMixedHttp = location.protocol === 'https:' && parsed.protocol === 'http:' && parsed.hostname !== 'localhost' && parsed.hostname !== '127.0.0.1';
+        if (isMixedHttp) {
+            updateConnStatus('error', 'Блокировка mixed content: HTTPS → HTTP');
+            showApiError({
+                endpoint: '/health',
+                status: 'net',
+                msg: 'Страница открыта по HTTPS, а 1С указан как HTTP. Используйте HTTPS URL для 1С или откройте приложение по HTTP в локальной сети.'
+            });
+            return;
+        }
         updateConnStatus('unknown', 'Проверяем связь...');
         showToast("Проверка связи...");
         try {
@@ -6240,8 +7163,12 @@ body {
                 showApiError({ endpoint: '/health', status: res.status, msg: 'Проверьте URL и учётные данные' });
             }
         } catch (e) {
-            updateConnStatus('error', 'Сервер недоступен · проверьте сеть и URL');
-            showApiError({ endpoint: '/health', status: 'net', msg: 'Нет ответа от сервера' });
+            const errMsg = String(e && e.message || '');
+            const netHint = errMsg.includes('Failed to fetch')
+                ? 'Нет ответа от сервера (возможны: CORS, mixed content, VPN/сеть, блокировка порта)'
+                : 'Нет ответа от сервера';
+            updateConnStatus('error', 'Сервер недоступен · проверьте сеть, URL и протокол');
+            showApiError({ endpoint: '/health', status: 'net', msg: netHint });
             logError(`Тест связи: ${e.message}`);
         }
     }
