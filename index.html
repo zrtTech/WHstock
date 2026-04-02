@@ -330,6 +330,29 @@
         }
         .kiosk-a4-head { margin-bottom: 8px; }
         .kiosk-a4-body { min-height: 0; display: flex; flex-direction: column; }
+        .kiosk-a4-add-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .kiosk-a4-add-input {
+            min-height: 42px;
+            border-radius: 10px;
+            border: 1px solid rgba(170, 215, 255, 0.4);
+            background: rgba(255, 255, 255, 0.08);
+            color: #e8f3ff;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .kiosk-a4-add-btn {
+            min-height: 42px;
+            min-width: 122px;
+            border-radius: 10px;
+            background: linear-gradient(180deg, #3d79ff, #2c61dd);
+            color: #fff;
+            font-weight: 800;
+        }
         .kiosk-a4-list {
             flex: 1;
             min-height: 0;
@@ -1643,6 +1666,10 @@ body {
                     <div class="text-sm kiosk-a4-subtext">Товары для печати листа можно удалять прямо здесь.</div>
                 </div>
                 <div class="kiosk-a4-body">
+                    <div class="kiosk-a4-add-row">
+                        <input id="kiosk-a4-add-input" class="kiosk-a4-add-input" type="text" placeholder="Сканируйте или введите артикул..." autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters" onkeydown="if(event.key==='Enter'){event.preventDefault();addA4ItemFromPane();}">
+                        <button class="kiosk-a4-add-btn" type="button" onclick="addA4ItemFromPane()">+ Добавить</button>
+                    </div>
                     <div id="kiosk-a4-list" class="kiosk-a4-list"></div>
                 </div>
                 <div class="kiosk-a4-actions kiosk-a4-foot">
@@ -5400,6 +5427,12 @@ body {
                 name.className = 'kiosk-a4-item-name';
                 name.textContent = meta.name;
                 main.appendChild(name);
+            } else {
+                const name = document.createElement('div');
+                name.className = 'kiosk-a4-item-name';
+                name.style.opacity = '0.75';
+                name.textContent = 'Данные товара будут показаны после сканирования из карточки.';
+                main.appendChild(name);
             }
 
             const tags = [];
@@ -5518,6 +5551,28 @@ body {
         }, 80);
     }
 
+    async function addA4ItemFromPane() {
+        const inp = document.getElementById('kiosk-a4-add-input');
+        const raw = (inp?.value || '').trim().toUpperCase();
+        if (!raw) return;
+        const art = await resolveCodeToArt(raw) || raw;
+        if (kioskA4Buffer.includes(art)) {
+            flashA4Duplicate(art);
+            showToast(`${art} уже в листе`, 'warning');
+            if (inp) { inp.value = ''; inp.focus(); }
+            return;
+        }
+        if (kioskA4Buffer.length >= 10) {
+            showToast('Лист заполнен (10/10)', 'warning');
+            return;
+        }
+        if (currentProduct && (currentProduct.articul || '').toUpperCase() === art) rememberA4Meta(art, currentProduct);
+        kioskA4Buffer.push(art);
+        updateKioskA4Status();
+        if (inp) { inp.value = ''; inp.focus(); }
+        showToast(`Добавлено: ${art}`, 'success');
+    }
+
     async function addA4ItemManual() {
         const inp = document.getElementById('a4-manual-art');
         const raw = (inp?.value || '').trim().toUpperCase();
@@ -5546,6 +5601,7 @@ body {
             return;
         }
 
+        if (currentProduct && (currentProduct.articul || '').toUpperCase() === art) rememberA4Meta(art, currentProduct);
         kioskA4Buffer.push(art);
         updateKioskA4Status();
         if (inp) { inp.value = ''; inp.focus(); }
@@ -5569,6 +5625,7 @@ body {
             showToast('Лист заполнен (10/10)', 'warning');
             return;
         }
+        if (currentProduct && (currentProduct.articul || '').toUpperCase() === art) rememberA4Meta(art, currentProduct);
         kioskA4Buffer.push(art);
         updateKioskA4Status();
         showToast(`Добавлено: ${art}`, 'success');
