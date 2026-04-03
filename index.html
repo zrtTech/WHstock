@@ -303,7 +303,12 @@
         #screen-kiosk.pane-a4 .kiosk-inner { display: none; }
         #screen-kiosk.pane-main .kiosk-main-layout,
         #screen-kiosk.pane-a4 .kiosk-main-layout { grid-template-columns: minmax(0, 1fr); }
-        #screen-kiosk.pane-a4 .kiosk-a4-panel { width: 100%; max-height: none; }
+        #screen-kiosk.pane-a4 .kiosk-a4-panel {
+            width: 100%;
+            max-height: none;
+            height: calc(var(--app-height, 100vh) - 120px);
+            min-height: 0;
+        }
         .kiosk-inner {
             width: min(900px, 100%);
             margin: 0 auto;
@@ -369,12 +374,15 @@
         .kiosk-a4-list {
             flex: 1;
             min-height: 0;
-            overflow: auto;
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 6px;
             margin-bottom: 0;
             padding-right: 2px;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            touch-action: pan-y;
         }
         .kiosk-a4-list-item {
             display: grid;
@@ -572,6 +580,7 @@
             .kiosk-a4-panel { min-width: 260px; width: 100%; padding: 10px; }
             .kiosk-a4-list { max-height: none; }
         }
+        #screen-kiosk.pane-a4 { touch-action: pan-y; }
 
         /* КНОПКИ */
         button {
