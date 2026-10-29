@@ -163,6 +163,22 @@ test("Direct move: scan unique ID, target rack, one explicit action", () => {
   t.set("target-rack", "D-03-01"); a.act("move-review");
   assert.equal(a.db.samples.find(x => x.id === "S-000001").loc, "D-03-01");
 });
+test("Explicit direct move closes the matching open wrong-rack discrepancy", () => {
+  const t = boot(), a = t.api;
+  a.act("rack-B-01-02"); a.act("move");
+  t.press("move-scan", "S-000001");
+  t.set("target-rack", "D-03-01"); a.act("move-review");
+  assert.equal(a.allIssues("wrong").length, 49);
+  assert.equal(a.issues(a.db.inspections[0], "wrong", false).length, 50);
+});
+test("Found after inspection creates a separate observation, not a historical rewrite", () => {
+  const { api } = boot();
+  api.act("rack-B-01-02"); api.act("issues-missing");
+  api.act("single-found-S-000051"); api.commit(false);
+  assert.equal(api.db.manualObservations.length, 1);
+  assert.equal(api.db.manualObservations[0].sampleId, "S-000051");
+  assert.equal(api.db.inspections[0].observations.length, 62);
+});
 test("Network uncertainty retains requestId; retry does not create new request", () => {
   const { api } = boot();
   api.act("rack-B-01-02"); api.act("remove");
