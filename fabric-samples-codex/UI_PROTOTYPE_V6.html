@@ -169,7 +169,7 @@ frame(head("Убрать из активного учёта","Это отдел�
 '<h3>Быстрый выбор из списка (первые 80)</h3><div class="tablebox"><table class="tbl"><thead><tr><th>Выбрать</th><th>Образец</th><th>Товар</th><th>Полка</th><th>Остаток*</th></tr></thead><tbody>'+
 list.map(function(x){return'<tr><td><input type="checkbox" data-select="'+x.id+'" '+(S.selected.includes(x.id)?"checked":"")+'></td><td>'+x.id+'</td><td>'+E(product(x.productId)?.name||"")+'</td><td>'+x.loc+'</td><td>'+product(x.productId)?.stock+'</td></tr>'}).join("")+'</tbody></table></div>'+
 '<div class="bar"><b>К исключению: '+S.selected.length+'</b><span class="grow"></span>'+B("Отменить","cancel-operation","")+B("Продолжить к подтверждению","remove-review","red big",!S.selected.length)+'</div></section>')}
-function find(){var q=S.search.toLowerCase().trim(),matching=(q?db.samples:active()).filter(function(x){var p=product(x.productId);return!q||[x.id,x.epc,p?.name,p?.article,p?.barcode,x.loc].concat((x.epcHistory||[]).map(function(h){return h.epc})).some(function(v){return String(v||"").toLowerCase().includes(q)})});var focus=sample(S.focusId),p=product(focus?.productId);
+function find(){var q=S.search.toLowerCase().trim(),matching=(q?db.samples:active()).filter(function(x){var p=product(x.productId);return!q||[x.id,x.epc,p?.name,p?.article,p?.barcode,x.loc].concat((x.epcHistory||[]).map(function(h){return h.epc})).some(function(v){return String(v||"").toLowerCase().includes(q)})});var focus=sample(S.focusId),p=product(focus?.productId),focusIssue=allIssues("missing").concat(allIssues("wrong")).find(function(i){return i.sampleId===focus?.id});
 frame(head("Найти образец","Поиск по уникальному коду, EPC, товарному ШК, артикулу, ткани или полке. Товарный ШК может соответствовать нескольким экземплярам.")+
 '<section class="panel stack">'+field("global-search","Поиск по всему складу","Код, EPC, артикул, название, полка","scan",S.search)+
 '<div class="row between"><h3>Найдено: '+matching.length+'</h3><span class="tiny">Показаны первые 40 результатов</span></div>'+
@@ -177,7 +177,7 @@ frame(head("Найти образец","Поиск по уникальному �
 matching.slice(0,40).map(function(x){return'<tr><td><b>'+x.id+'</b><br><small>'+E(x.epc||"Без EPC")+'</small></td><td>'+E(product(x.productId)?.name||"")+'</td><td>'+x.loc+'</td><td>'+tag(!x.active?"Исключён":x.labeled?"Маркирован":"Нужна этикетка",!x.active?"red":x.labeled?"green":"amber")+'</td><td>'+B("Открыть","detail-"+x.id,"small primary")+'</td></tr>'}).join("")+'</tbody></table></div>'+
 (focus?'<hr class="divider"><h2>Карточка '+E(focus.id)+'</h2><div class="grid3"><div class="stat"><b>'+E(focus.loc)+'</b><small>Учётная полка</small></div><div class="stat"><b>'+focus.version+'</b><small>Версия записи</small></div><div class="stat"><b>'+E(focus.active?"Активен":"Исключён")+'</b><small>Состояние</small></div></div>'+
 '<div class="notice">'+E(p?.name||"")+' · '+E(p?.article||"")+' · товарный ШК '+E(p?.barcode||"")+'<br>Уникальный код: <b>'+focus.id+'</b> · EPC: <b>'+E(focus.epc||"Не привязан")+'</b></div>'+
-'<div class="row">'+B("Переместить","detail-move","primary",!focus.active)+B("Убрать из учёта","detail-remove","red",!focus.active)+B("Журнал этого образца","detail-history")+'</div>'+
+'+(focusIssue?'<div class="notice warn">Есть открытое расхождение: '+(focusIssue.type==="missing"?"не найден":"чужой")+' на '+E(focusIssue.rack)+'. '+B("Разобрать это расхождение","focus-issue","primary")+'</div>':"")+'<div class="row">'+B("Переместить","detail-move","primary",!focus.active)+B("Убрать из учёта","detail-remove","red",!focus.active)+B("Журнал этого образца","detail-history")+'</div>'+
 '<div class="field"><label for="epc-input">Привязать / заменить EPC (демо, только уникальное значение)</label><input id="epc-input" class="input" placeholder="E200..." value="'+E(focus.epc||"")+'"></div>'+
 B("Сохранить EPC","bind-epc","",!focus.active)+
 '<p class="tiny">При замене старый интервал EPC закрывается, новый открывается. В реальной системе требуется подтверждение чтением RFID-метки.</p>':
@@ -352,6 +352,7 @@ if(a==="cancel-operation"){S.selected=[];S.page="work";toast("Операция �
 if(a.startsWith("qinc-")||a.startsWith("qdec-")||a.startsWith("qdel-")){var op=a.slice(0,4),i=Number(a.slice(5));if(!db.queue[i])return;if(op==="qinc")db.queue[i].qty++;else if(op==="qdec"){db.queue[i].qty--;if(db.queue[i].qty<=0)db.queue.splice(i,1)}else db.queue.splice(i,1);save();render();return}
 if(a==="print-labels"){window.print();return}
 if(a.startsWith("detail-")&&a!=="detail-move"&&a!=="detail-remove"&&a!=="detail-history"){S.focusId=a.slice(7);S.search=S.focusId;go("find");return}
+if(a==="focus-issue"){var i=allIssues("missing").concat(allIssues("wrong")).find(function(x){return x.sampleId===S.focusId});if(i){S.rack=i.rack;S.issueType=i.type;S.selected=[i.sampleId];go("issues")}return}
 if(a==="detail-move"){S.selected=[S.focusId];S.target="";go("move");return}
 if(a==="detail-remove"){S.selected=[S.focusId];go("remove");return}
 if(a==="detail-history"){go("history");return}
