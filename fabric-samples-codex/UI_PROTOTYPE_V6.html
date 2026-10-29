@@ -116,7 +116,7 @@ frame(head("Добавить образцы","Каждый завершённы�
 '<section class="panel stack"><div class="row between"><div><h2>Сканирование товаров</h2><p class="sub">Никаких кнопок после каждого скана.</p></div><div class="stat"><b>'+count+'</b><small>Экземпляров в партии</small></div></div>'+
 field("create-scan","Товарный штрихкод или артикул + Enter","4600000000001","scan")+
 '<div class="notice">Повтор одного товара увеличивает количество, независимо от того, сканировали ШК или вводили артикул. После создания каждому экземпляру выдаётся собственный код.</div>'+
-'<div class="row">'+B("Загрузить демо: 100 товаров","demo-create","ghost")+B("Очистить очередь","clear-queue","",!count)+'</div>'+
+'<div class="row">'+B("Загрузить демо: 100 товаров","demo-create","ghost")+B("Очистить очередь","clear-queue","",!count)+B("Отменить создание","cancel-create","")+'</div>'+
 '<div class="tablebox"><table class="tbl"><thead><tr><th>Товар</th><th>Артикул</th><th>Количество</th><th>Статус</th><th>Убрать</th></tr></thead><tbody>'+
 (db.queue.length?db.queue.map(function(q,i){var p=product(q.productId);return'<tr><td><b>'+E(p?.name||"Неизвестный код")+'</b></td><td>'+E(p?.article||q.code)+'</td><td>'+B("−","qdec-"+i,"small")+' <b>'+q.qty+'</b> '+B("+","qinc-"+i,"small")+'</td><td>'+tag(p?(q.qty>1?"Повтор ×"+q.qty:"Распознан"):"Найти или убрать",p?"green":"red")+'</td><td>'+B("×","qdel-"+i,"small")+'</td></tr>'}).join(""):'<tr><td colspan="5">Очередь пуста. Отсканируйте первый товар.</td></tr>')+'</tbody></table></div>'+
 '<div class="bar"><b>Всего '+count+' образцов на '+S.rack+'</b><span class="grow"></span>'+B("Создать "+count+" образцов","create-review","primary big",!count||!!bad)+'</div></section>')}
@@ -157,7 +157,7 @@ function move(){frame(head("Переместить образцы","Сканир
 '<div class="row"><div class="field grow"><label for="target-rack">Полка назначения</label><select class="input" id="target-rack">'+options(S.target||S.rack,true)+'</select></div></div>'+
 '<div class="notice">Выбранная рабочая полка не обязательно является полкой назначения. Проверьте адрес перед изменением.</div>'+
 selectedTable(S.selected)+
-'<div class="bar"><b>Выбрано: '+S.selected.length+'</b><span class="grow"></span>'+B("Очистить","select-none","",!S.selected.length)+B("Переместить "+S.selected.length,"move-review","primary big",!S.selected.length)+'</div></section>')}
+'<div class="bar"><b>Выбрано: '+S.selected.length+'</b><span class="grow"></span>'+B("Очистить","select-none","",!S.selected.length)+B("Отменить","cancel-operation","")+B("Переместить "+S.selected.length,"move-review","primary big",!S.selected.length)+'</div></section>')}
 function selectedTable(ids){return'<div class="tablebox"><table class="tbl"><thead><tr><th>Образец</th><th>Товар</th><th>Сейчас числится</th><th>Убрать из выбора</th></tr></thead><tbody>'+
 (ids.length?ids.map(function(id){var x=sample(id),p=product(x?.productId);return'<tr><td><b>'+E(id)+'</b></td><td>'+E(p?.name||"")+'</td><td>'+E(x?.loc||"")+'</td><td>'+B("×","unselect-"+id,"small")+'</td></tr>'}).join(""):'<tr><td colspan="4">Отсканируйте образцы для выбора.</td></tr>')+'</tbody></table></div>'}
 function remove(){var list=active().filter(function(x){return S.removeFilter==="rack"?x.loc===S.rack:S.removeFilter==="zero"?product(x.productId)?.stock===0:true}).slice(0,80);
@@ -168,7 +168,7 @@ frame(head("Убрать из активного учёта","Это отдел�
 '<div class="row"><b>Выбрано: '+S.selected.length+'</b>'+B("Очистить выбор","select-none","",!S.selected.length)+'</div>'+selectedTable(S.selected)+
 '<h3>Быстрый выбор из списка (первые 80)</h3><div class="tablebox"><table class="tbl"><thead><tr><th>Выбрать</th><th>Образец</th><th>Товар</th><th>Полка</th><th>Остаток*</th></tr></thead><tbody>'+
 list.map(function(x){return'<tr><td><input type="checkbox" data-select="'+x.id+'" '+(S.selected.includes(x.id)?"checked":"")+'></td><td>'+x.id+'</td><td>'+E(product(x.productId)?.name||"")+'</td><td>'+x.loc+'</td><td>'+product(x.productId)?.stock+'</td></tr>'}).join("")+'</tbody></table></div>'+
-'<div class="bar"><b>К исключению: '+S.selected.length+'</b><span class="grow"></span>'+B("Продолжить к подтверждению","remove-review","red big",!S.selected.length)+'</div></section>')}
+'<div class="bar"><b>К исключению: '+S.selected.length+'</b><span class="grow"></span>'+B("Отменить","cancel-operation","")+B("Продолжить к подтверждению","remove-review","red big",!S.selected.length)+'</div></section>')}
 function find(){var q=S.search.toLowerCase().trim(),matching=(q?db.samples:active()).filter(function(x){var p=product(x.productId);return!q||[x.id,x.epc,p?.name,p?.article,p?.barcode,x.loc].some(function(v){return String(v||"").toLowerCase().includes(q)})});var focus=sample(S.focusId),p=product(focus?.productId);
 frame(head("Найти образец","Поиск по уникальному коду, EPC, товарному ШК, артикулу, ткани или полке. Товарный ШК может соответствовать нескольким экземплярам.")+
 '<section class="panel stack">'+field("global-search","Поиск по всему складу","Код, EPC, артикул, название, полка","scan",S.search)+
@@ -347,6 +347,8 @@ if(a==="simulate-conflict"){S.simulateConflict=true;S.simulateNetwork=false;toas
 if(a==="simulate-network"){S.simulateNetwork=true;S.simulateConflict=false;toast("Следующее подтверждение покажет неопределённый результат; requestId сохранится.","warn");render();return}
 if(a==="demo-create"){db.queue=db.products.slice(0,100).map(function(p){return{code:p.barcode,productId:p.id,qty:1}});save();toast("В очереди 100 товаров. Создание не выполнялось.");render();return}
 if(a==="clear-queue"){if(window.confirm("Очистить всю очередь создания?")){db.queue=[];save();render()}return}
+if(a==="cancel-create"){if(queueCount()&&!window.confirm("Отменить создание и очистить очередь из "+queueCount()+" образцов?"))return;db.queue=[];save();S.page="work";S.selected=[];toast("Создание отменено. Ничего не создано.");render();return}
+if(a==="cancel-operation"){S.selected=[];S.page="work";toast("Операция отменена. Данные не изменялись.");render();return}
 if(a.startsWith("qinc-")||a.startsWith("qdec-")||a.startsWith("qdel-")){var op=a.slice(0,4),i=Number(a.slice(5));if(!db.queue[i])return;if(op==="qinc")db.queue[i].qty++;else if(op==="qdec"){db.queue[i].qty--;if(db.queue[i].qty<=0)db.queue.splice(i,1)}else db.queue.splice(i,1);save();render();return}
 if(a==="print-labels"){window.print();return}
 if(a.startsWith("detail-")&&a!=="detail-move"&&a!=="detail-remove"&&a!=="detail-history"){S.focusId=a.slice(7);S.search=S.focusId;go("find");return}
