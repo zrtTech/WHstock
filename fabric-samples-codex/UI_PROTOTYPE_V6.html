@@ -208,7 +208,7 @@ field("c5-code","Демо: скан с C5 (в активную проверку)
 '<div class="row">'+B("Сканировать с C5","c5-scan","primary")+B("Открыть проверку","nav-inspection")+'</div>'+
 '<div class="notice warn">Реальные SDK Chainway, RFID-считывание, TLS, API, авторизация и фоновая служба здесь отсутствуют. Очередь только моделирует повторы и офлайн-доставку.</div>'+
 '<hr class="divider"><h2>Данные макета</h2><p class="tiny">localStorage зависит от политики браузера. Для надёжного переноса используйте экспорт JSON.</p>'+
-'<div class="row">'+B("Экспортировать JSON","export-demo","")+B("Импортировать JSON","import-demo","")+B("Сбросить демоданные","reset-demo","red")+'</div>'+
+'<div class="row">'+B("Экспортировать JSON","export-demo","")+B("Импортировать JSON","import-demo","")+B("Каталог 10 000 (тест)","stress-10k","")+B("Сбросить демоданные","reset-demo","red")+'</div>'+
 '<input type="file" id="backup-file" accept="application/json,.json" style="display:none">'+
 '<p class="tiny">Последний экспорт: '+stamp(db.lastBackup)+' · каталог (демо): '+stamp(db.catalogUpdatedAt)+'</p></section>')}
 function labelIds(){return Array.from(new Set(db.lastCreatedIds.concat(active().filter(function(x){return!x.labeled}).map(function(x){return x.id}))))}
@@ -228,7 +228,7 @@ frame(head("Подтверждение операции",title)+
 '<div class="notice '+(m.action==="remove"?"error":"warn")+'">'+(m.action==="remove"?"Образцы будут навсегда исключены из активного учёта. История и tombstone сохранятся.":"Проверьте выбранные экземпляры и адрес назначения. Сканирование само ничего не изменяло.")+'</div>'+
 '<div class="tablebox"><table class="tbl"><thead><tr><th>Образец / товар</th><th>Сейчас</th><th>После действия</th></tr></thead><tbody>'+
 (m.action==="create"?db.queue.map(function(q){return'<tr><td>'+E(product(q.productId)?.name||q.code)+'</td><td>Новый экземпляр × '+q.qty+'</td><td>'+E(m.target)+'</td></tr>'}):rows.map(function(id){var x=sample(id);return'<tr><td><b>'+E(id)+'</b></td><td>'+E(x?.loc||"")+'</td><td>'+E(m.action==="remove"?"Исключён":m.action==="found"?"Найден, место без изменений":m.target||"")+'</td></tr>'})).join("")+'</tbody></table></div>'+
-(m.action==="remove"||m.action==="found"||m.action==="foundOther"?'<label class="check"><input type="checkbox" id="ack"> '+(m.action==="remove"?"Подтверждаю исключение именно этих физических экземпляров":"Подтверждаю, что физически обнаружил(а) все выбранные экземпляры")+'</label>':"")+
+(m.action==="remove"||m.action==="found"||m.action==="foundOther"||(m.action==="move"&&m.insId)?'<label class="check"><input type="checkbox" id="ack"> '+(m.action==="remove"?"Подтверждаю исключение именно этих физических экземпляров":m.action==="move"?"Подтверждаю физическое перемещение выбранных экземпляров":"Подтверждаю, что физически обнаружил(а) все выбранные экземпляры")+'</label>':"")+
 '<div class="row">'+B("Назад без изменений","back","")+B(m.action==="remove"?"Убрать "+rows.length:m.action==="create"?"Создать "+queueCount():"Подтвердить "+rows.length,"commit",m.action==="remove"?"red big":"primary big")+'</div>'+
 '<hr class="divider"><p class="tiny">Демонстрация обработки ошибок:</p><div class="row">'+B("Имитировать конфликт версии","simulate-conflict","small")+B("Имитировать обрыв сети","simulate-network","small")+'</div>'+
 '<p class="tiny">requestId: '+E(m.requestId)+' · при неопределённом результате повторяется тот же requestId.</p></section>')}
@@ -295,7 +295,7 @@ if(m.action==="create")db.audit.push({id:uid(),kind:"Создание",at:t,deta
 var response={ok:true,message:m.action==="create"?"Создано "+newIds.length+" образцов. Теперь маркировка.":"Выполнено: "+m.ids.length+" образцов.",newIds:newIds};
 db.requests[m.requestId]={payload:payload,response:response,at:t};save();return response}
 function commit(silent){var m=S.confirm;if(!m)return;
-if(["remove","found","foundOther"].includes(m.action)&&!silent&&!document.getElementById("ack")?.checked){toast("Подтвердите физическое действие.","warn");render();return}
+if((["remove","found","foundOther"].includes(m.action)||(m.action==="move"&&m.insId))&&!silent&&!document.getElementById("ack")?.checked){toast("Подтвердите физическое действие.","warn");render();return}
 var result=apply(m);if(!result.ok){toast(result.message,result.unknown?"warn":"error");render();return}
 S.confirm=null;S.selected=[];S.noticeDetails="";S.focusId=null;
 if(m.action==="create"){S.newIds=result.newIds;S.stack=[];S.page="labels"}
@@ -332,8 +332,8 @@ if(a.startsWith("unselect-")){selectId(a.slice(9),false);render();return}
 if(a.startsWith("single-here-")){var id=a.slice(12);prepare("here",[id],S.rack,latest(S.rack)?.id);return}
 if(a.startsWith("single-found-")&&!a.startsWith("single-found-other-")){prepare("found",[a.slice(13)],S.rack,latest(S.rack)?.id);return}
 if(a.startsWith("single-found-other-")){var id=a.slice(19);S.selected=[id];S.issueType="missing";S.issueAction="foundOther";S.noticeDetails="Выберите целевую полку для найденного образца в поле ниже.";go("issues-target");return}
-if(a.startsWith("where-")){var x=sample(a.slice(6));S.noticeDetails=x?.id+" числился на полке "+x?.loc+". Это памятка, учёт не изменён.";render();return}
-if(a==="bulk-where"){S.noticeDetails=S.selected.map(function(id){var x=sample(id);return id+" → "+x?.loc}).join("; ")+". Это памятка, учёт не изменён.";render();return}
+if(a.startsWith("where-")){var x=sample(a.slice(6)),i=issues(latest(S.rack),"wrong",true).find(function(z){return z.sampleId===x?.id});S.noticeDetails=x?.id+" при проверке числился на полке "+(i?.from||x?.loc)+". Это памятка, учёт не изменён.";render();return}
+if(a==="bulk-where"){S.noticeDetails=S.selected.map(function(id){var x=sample(id),i=issues(latest(S.rack),"wrong",true).find(function(z){return z.sampleId===id});return id+" → "+(i?.from||x?.loc)}).join("; ")+". Это памятка, учёт не изменён.";render();return}
 if(a==="bulk-here"){prepare("here",S.selected,S.rack,latest(S.rack)?.id);return}
 if(a==="bulk-found"){prepare("found",S.selected,S.rack,latest(S.rack)?.id);return}
 if(a==="bulk-remove"){prepare("remove",S.selected,null,latest(S.rack)?.id);return}
@@ -363,6 +363,7 @@ if(a==="sync-c5"){syncC5();return}
 if(a==="c5-scan"){var v=document.getElementById("c5-code")?.value.trim();if(v)c5Scan(v);return}
 if(a==="export-demo"){db.lastBackup=now();save();var data=JSON.stringify(db,null,2),blob=new Blob([data],{type:"application/json"}),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download="fabric-samples-demo-v6-backup.json";link.click();setTimeout(function(){URL.revokeObjectURL(url)},1000);toast("Демо-данные экспортированы в JSON.");render();return}
 if(a==="import-demo"){document.getElementById("backup-file")?.click();return}
+if(a==="stress-10k"){if(db.products.length>=10000){toast("В каталоге уже "+db.products.length+" товаров.","warn");render();return}for(var n=db.products.length+1;n<=10000;n++){db.products.push({id:n,name:names[(n-1)%names.length]+" / "+String(n).padStart(5,"0"),article:"ART-"+String(n).padStart(5,"0"),barcode:"460000"+String(n).padStart(7,"0"),stock:n%4===0?0:(n*7)%38+1})}save();toast("Демо-каталог расширен до 10 000 товаров. Отчёты показывают 30 строк на страницу.");render();return}
 if(a==="reset-demo"){if(window.confirm("Сбросить ВСЕ изменения макета и вернуть исходные вымышленные данные?")){db=seed();S.selected=[];S.stack=[];S.page="warehouse";save();toast("Демоданные сброшены.");render()}return}
 }
 function renderIssueTarget(){frame(head("Куда переместить найденные образцы?","Выберите фактическую полку. Само обнаружение не меняло учёт.")+
