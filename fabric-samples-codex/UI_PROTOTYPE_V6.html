@@ -48,11 +48,11 @@ var samples=Array.from({length:80},function(_,i){var n=i+1;return{id:"S-"+String
 var expected=samples.filter(function(s){return s.loc==="B-01-02"}).map(function(s){return{id:s.id,loc:s.loc,version:s.version}});
 var observations=samples.filter(function(s){var n=Number(s.id.slice(2));return n<=50||(n>=59&&n<=70)}).map(function(s){return{sampleId:s.id,code:s.id,at:"2026-10-29T10:20:00Z",source:"Демо C5",registeredLocAtScan:s.loc}});
 var inspection={id:"demo-b",rack:"B-01-02",startedAt:"2026-10-29T10:00:00Z",finishedAt:"2026-10-29T10:21:00Z",status:"finished",expected:expected,observations:observations,unresolved:[],scanLog:[]};
-return{schema:6,products:products,samples:samples,inspections:[inspection],resolutions:[],audit:[{id:uid(),kind:"Проверка",at:inspection.finishedAt,detail:"B-01-02: 50 чужих, 8 не найдены, 12 на месте",sampleIds:[],requestId:null}],requests:{},queue:[],nextSample:300,c5Online:true,c5Queue:[],deliveredEvents:{},catalogUpdatedAt:"2026-10-29T09:00:00Z",lastBackup:null};
+return{schema:6,products:products,samples:samples,inspections:[inspection],resolutions:[],audit:[{id:uid(),kind:"Проверка",at:inspection.finishedAt,detail:"B-01-02: 50 чужих, 8 не найдены, 12 на месте",sampleIds:[],requestId:null}],requests:{},queue:[],nextSample:300,c5Online:true,c5Queue:[],deliveredEvents:{},catalogUpdatedAt:"2026-10-29T09:00:00Z",lastBackup:null,lastCreatedIds:[]};
 }
 function load(){try{var x=JSON.parse(localStorage.getItem(STORAGE)||"null");if(x&&x.schema===6&&Array.isArray(x.samples)&&Array.isArray(x.inspections)&&Array.isArray(x.products))return x}catch(e){}return seed()}
-var db=load();
-var S={page:"warehouse",stack:[],rack:"B-01-02",toast:"",toastType:"good",search:"",findCode:"",focusId:null,reportTab:"no",reportPage:0,reportSearch:"",reportSelected:[],issueType:"wrong",selected:[],target:"",removeFilter:"rack",createCode:"",inspectCode:"",moveCode:"",removeCode:"",labelCode:"",c5Code:"",confirm:null,simulateConflict:false,simulateNetwork:false,noticeDetails:"",newIds:[],showAll:false};
+var db=load();if(!Array.isArray(db.lastCreatedIds))db.lastCreatedIds=[];
+var S={page:"warehouse",stack:[],rack:"B-01-02",toast:"",toastType:"good",search:"",findCode:"",focusId:null,reportTab:"no",reportPage:0,reportSearch:"",reportSelected:[],issueType:"wrong",selected:[],target:"",removeFilter:"rack",createCode:"",inspectCode:"",moveCode:"",removeCode:"",labelCode:"",c5Code:"",confirm:null,simulateConflict:false,simulateNetwork:false,noticeDetails:"",newIds:db.lastCreatedIds.slice(),showAll:false};
 var root=document.getElementById("app");
 function E(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function save(){try{localStorage.setItem(STORAGE,JSON.stringify(db));return true}catch(e){S.toast="Браузер не смог сохранить демонстрационные данные. Экспортируйте резервную копию.";S.toastType="error";return false}}
@@ -96,14 +96,14 @@ kpi(unchecked,"Полки без проверки","Нет завершённо�
 '<section class="panel stack"><h2>Дополнительная аналитика</h2><div class="grid3">'+kpi(noSample().length,"Товаров без образца","Не обязательно создавать","report-no")+
 kpi(zeroSamples().length,"Образцов с остатком 0","Кандидаты для ручного пересмотра","report-zero")+
 kpi(db.products.length,"Товаров в каталоге","Последнее демо-обновление: "+stamp(db.catalogUpdatedAt),"report-catalog")+'</div></section>')}
-function work(){var ins=latest(S.rack),runningHere=running()&&running().rack===S.rack;
+function work(){var ins=latest(S.rack),runningHere=running()&&running().rack===S.rack,unlabeled=active().filter(function(x){return!x.labeled}).length;
 frame(head("Работа на полке "+S.rack,"Выберите действие. Сканирование само не изменяет учётное место.")+
 '<div class="grid">'+
 '<button class="task" data-act="create"><span class="sym">＋</span><span><strong>Добавить образцы</strong><small>Сканируйте товары подряд, затем создайте партию и промаркируйте экземпляры.</small></span></button>'+
 '<button class="task" data-act="move"><span class="sym">↔</span><span><strong>Переместить</strong><small>Сканируйте уникальные коды образцов и укажите полку назначения.</small></span></button>'+
 '<button class="task" data-act="inspection"><span class="sym">▣</span><span><strong>'+(runningHere?"Продолжить проверку":"Проверить полку")+'</strong><small>Автоматически принимать сканы; завершение — только вручную.</small></span></button>'+
 '<button class="task" data-act="remove"><span class="sym">−</span><span><strong>Убрать образцы</strong><small>Исключить из активного учёта с отдельным подтверждением.</small></span></button></div>'+
-'<section class="panel stack"><div class="row between"><div><h2>Расхождения последней проверки</h2><p class="tiny">'+(ins?"Завершена "+stamp(ins.finishedAt):"Завершённой проверки нет")+'</p></div>'+B("Журнал проверок","nav-history","ghost")+'</div>'+
+(unlabeled?'<div class="notice warn"><b>Ожидают маркировки: '+unlabeled+'</b>. '+B('Продолжить маркировку','labels','primary')+'</div>':'')+'<section class="panel stack"><div class="row between"><div><h2>Расхождения последней проверки</h2><p class="tiny">'+(ins?"Завершена "+stamp(ins.finishedAt):"Завершённой проверки нет")+'</p></div>'+B("Журнал проверок","nav-history","ghost")+'</div>'+
 '<div class="grid3"><div class="stat red"><b>'+(ins?rackIssues(S.rack,"wrong").length:"—")+'</b><small>Чужие, требуют решения</small></div><div class="stat amber"><b>'+(ins?rackIssues(S.rack,"missing").length:"—")+'</b><small>Не найдены, требуют решения</small></div><div class="stat green"><b>'+(ins?ins.observations.filter(function(o){return o.registeredLocAtScan===ins.rack}).length:"—")+'</b><small>На месте при проверке</small></div></div>'+
 (ins?'<div class="row">'+B("Разобрать чужие","issues-wrong","primary",!rackIssues(S.rack,"wrong").length)+B("Разобрать не найденные","issues-missing","",!rackIssues(S.rack,"missing").length)+'</div>':'<div class="notice">Сначала выполните проверку, чтобы получить расхождения.</div>')+'</section>')}
 function shelfPage(){frame(head("Выбрать рабочую полку","Сканируйте код RACK:B-01-02 — полка выберется сразу. При выборе из списка также не нужен отдельный экран подтверждения.")+
@@ -211,7 +211,7 @@ field("c5-code","Демо: скан с C5 (в активную проверку)
 '<div class="row">'+B("Экспортировать JSON","export-demo","")+B("Импортировать JSON","import-demo","")+B("Сбросить демоданные","reset-demo","red")+'</div>'+
 '<input type="file" id="backup-file" accept="application/json,.json" style="display:none">'+
 '<p class="tiny">Последний экспорт: '+stamp(db.lastBackup)+' · каталог (демо): '+stamp(db.catalogUpdatedAt)+'</p></section>')}
-function labels(){var list=S.newIds.map(sample).filter(Boolean),pending=list.filter(function(x){return!x.labeled}).length;
+function labels(){var ids=S.newIds.length?S.newIds:db.lastCreatedIds;var list=ids.map(sample).filter(Boolean),pending=list.filter(function(x){return!x.labeled}).length;
 frame(head("Маркировка созданных образцов","У каждого экземпляра свой код. Напечатайте/наклейте этикетки и подтвердите маркировку сканированием каждого уникального кода.")+
 '<section class="panel stack"><div class="grid3"><div class="stat"><b>'+list.length+'</b><small>Создано</small></div><div class="stat amber"><b>'+pending+'</b><small>Ожидают маркировки</small></div><div class="stat green"><b>'+(list.length-pending)+'</b><small>Маркировка подтверждена</small></div></div>'+
 '<div class="row">'+B("Печать этикеток (браузер)","print-labels","primary")+B("Вернуться к созданию","create")+'</div>'+
@@ -236,7 +236,7 @@ function selectId(id,yes){if(yes){if(!S.selected.includes(id))S.selected.push(id
 function setShelf(id){id=String(id||"").replace(/^RACK:/i,"").toUpperCase().trim();if(!R.some(function(r){return r.id===id})){toast("Неизвестная полка: "+id,"error");render();return}
 if(running()){toast("Сначала завершите или отмените проверку "+running().rack,"warn");render();return}
 if(id!==S.rack&&queueCount()&&!window.confirm("В очереди "+queueCount()+" образцов. Переназначить всю ещё не созданную партию на "+id+"?"))return;
-S.rack=id;S.selected=[];S.target="";toast("Рабочая полка выбрана: "+id);S.page="work";render()}
+S.rack=id;S.selected=[];S.target="";toast("Рабочая полка выбрана: "+id);S.page=S.afterShelf||"work";S.afterShelf=null;render()}
 function createScan(code){code=String(code||"").trim();if(!code)return;if(/^RACK:/i.test(code)){toast("Это код полки. Смените её отдельно.","error");render();return}
 var p=db.products.find(function(x){return x.barcode===code||x.article.toUpperCase()===code.toUpperCase()});
 var q=db.queue.find(function(x){return p?x.productId===p.id:!x.productId&&x.code===code});if(q)q.qty++;else db.queue.push({code:code,productId:p?.id||null,qty:1});
@@ -266,28 +266,28 @@ if(["move","here","foundOther"].includes(action)&&!R.some(function(r){return r.i
 if(action==="move"&&ids.every(function(id){return sample(id).loc===target})){toast("Все выбранные образцы уже числятся на этой полке.","warn");render();return}
 if(action==="here"&&target!==S.rack){toast("Ошибка контекста полки.","error");render();return}
 if(action==="foundOther"&&target===S.rack){toast("Для этой полки выберите «Нашёл здесь».","warn");render();return}
-var m={action:action,ids:ids,target:target||null,insId:insId||null,versions:Object.fromEntries(ids.map(function(id){return[id,sample(id).version]})),requestId:uid(),origin:S.page};
+var m={action:action,ids:ids,target:target||null,insId:insId||null,issueType:insId?S.issueType:null,versions:Object.fromEntries(ids.map(function(id){return[id,sample(id).version]})),requestId:uid(),origin:S.page==="issues-target"?"issues":S.page};
 S.confirm=m;S.simulateConflict=false;S.simulateNetwork=false;
-if(ids.length===1&&["move","here"].includes(action)){commit(true);return}
+if(ids.length===1&&(action==="here"||(action==="move"&&!insId))){commit(true);return}
 go("confirm")}
 function prepareCreate(){if(!queueCount()||db.queue.some(function(x){return!x.productId})){toast("Уберите неизвестные коды из партии.","error");render();return}
 S.confirm={action:"create",ids:[],target:S.rack,requestId:uid(),origin:S.page,queueSnapshot:JSON.stringify(db.queue)};go("confirm")}
-function apply(m){var payload=JSON.stringify({action:m.action,ids:m.ids,target:m.target,insId:m.insId,versions:m.versions,queueSnapshot:m.queueSnapshot});
+function apply(m){var payload=JSON.stringify({action:m.action,ids:m.ids,target:m.target,insId:m.insId,versions:m.versions,issueType:m.issueType,queueSnapshot:m.queueSnapshot});
 var prev=db.requests[m.requestId];if(prev){if(prev.payload!==payload)return{ok:false,message:"REQUEST_ID_CONFLICT"};return prev.response}
 if(S.simulateConflict){S.simulateConflict=false;return{ok:false,message:"VERSION_CONFLICT: пакет не применён"}}
 if(S.simulateNetwork){S.simulateNetwork=false;return{ok:false,unknown:true,message:"Связь прервалась. Результат неизвестен; повторите тот же requestId."}}
 if(m.action==="create"&&JSON.stringify(db.queue)!==m.queueSnapshot)return{ok:false,message:"Очередь создания изменилась. Вернитесь и проверьте партию."};
 if(m.action!=="create"){
 for(var id of m.ids){var x=sample(id);if(!x?.active||x.version!==m.versions[id])return{ok:false,message:"VERSION_CONFLICT: "+id+" изменился после выбора"}}
-if(m.insId){var ins=db.inspections.find(function(x){return x.id===m.insId}),type=m.action==="here"?"wrong":"missing";
+if(m.insId){var ins=db.inspections.find(function(x){return x.id===m.insId}),type=m.issueType||(m.action==="here"?"wrong":"missing");
 if(!ins||m.ids.some(function(id){return!issues(ins,type,true).some(function(i){return i.sampleId===id})}))return{ok:false,message:"Расхождение уже разобрано или проверка недоступна"}}
 }
 var newIds=[],t=now();
-if(m.action==="create"){db.queue.forEach(function(q){for(var j=0;j<q.qty;j++){var id="S-"+String(db.nextSample++).padStart(6,"0");db.samples.push({id:id,productId:q.productId,loc:m.target,active:true,version:1,labeled:false,epc:null,epcHistory:[],createdAt:t});newIds.push(id)}});db.queue=[]}
+if(m.action==="create"){db.queue.forEach(function(q){for(var j=0;j<q.qty;j++){var id="S-"+String(db.nextSample++).padStart(6,"0");db.samples.push({id:id,productId:q.productId,loc:m.target,active:true,version:1,labeled:false,epc:null,epcHistory:[],createdAt:t});newIds.push(id)}});db.queue=[];db.lastCreatedIds=newIds.slice()}
 else m.ids.forEach(function(id){var x=sample(id),old=x.loc;
 if(m.action==="remove"){x.active=false;x.removedAt=t;x.version++;if(x.epcHistory?.length&&x.epcHistory[x.epcHistory.length-1].to===null)x.epcHistory[x.epcHistory.length-1].to=t;x.epc=null}
 else if(["move","here","foundOther"].includes(m.action)&&x.loc!==m.target){x.loc=m.target;x.version++}
-if(["here","found","foundOther"].includes(m.action)){var ins=db.inspections.find(function(y){return y.id===m.insId});db.resolutions.push({key:key(ins,m.action==="here"?"wrong":"missing",id),at:t,action:m.action,target:m.target||ins.rack,requestId:m.requestId})}
+if(m.insId&&["here","found","foundOther","move"].includes(m.action)){var ins=db.inspections.find(function(y){return y.id===m.insId});db.resolutions.push({key:key(ins,m.issueType||(m.action==="here"?"wrong":"missing"),id),at:t,action:m.action,target:m.target||ins.rack,requestId:m.requestId})}
 db.audit.push({id:uid(),kind:({remove:"Исключение",move:"Перемещение",here:"Исправление места",found:"Подтверждение обнаружения",foundOther:"Обнаружение и перемещение"})[m.action],at:t,detail:id+": "+old+" → "+(m.action==="remove"?"исключён":m.action==="found"?"найден на "+m.target:m.target),sampleIds:[id],requestId:m.requestId})});
 if(m.action==="create")db.audit.push({id:uid(),kind:"Создание",at:t,detail:"Создано "+newIds.length+" образцов на "+m.target+"; ожидают маркировки",sampleIds:newIds,requestId:m.requestId});
 var response={ok:true,message:m.action==="create"?"Создано "+newIds.length+" образцов. Теперь маркировка.":"Выполнено: "+m.ids.length+" образцов.",newIds:newIds};
@@ -297,7 +297,7 @@ if(["remove","found","foundOther"].includes(m.action)&&!silent&&!document.getEle
 var result=apply(m);if(!result.ok){toast(result.message,result.unknown?"warn":"error");render();return}
 S.confirm=null;S.selected=[];S.noticeDetails="";S.focusId=null;
 if(m.action==="create"){S.newIds=result.newIds;S.stack=[];S.page="labels"}
-else{S.page=m.origin;S.stack=S.stack.filter(function(p){return p!=="confirm"})}
+else{S.page=m.origin;if(S.stack[S.stack.length-1]===m.origin)S.stack.pop();S.stack=S.stack.filter(function(p){return p!=="confirm"&&p!=="issues-target"})}
 toast(result.message);render()}
 function c5Scan(code){var ins=running();if(!ins){toast("Сначала начните проверку полки.","warn");render();return}
 var ev={id:uid(),insId:ins.id,code:code,at:now()};if(!db.c5Online){db.c5Queue.push(ev);save();toast("C5 офлайн: скан сохранён в очереди. Не отправлено: "+db.c5Queue.length,"warn");render();return}
@@ -314,7 +314,8 @@ x.epc=v;x.epcHistory.push({epc:v,from:t,to:null});x.version++;db.audit.push({id:
 function act(a){if(a==="back"){back();return}if(a==="noop"){toast("Для этой полки пока нет завершённой проверки.","warn");render();return}
 if(a.startsWith("nav-")){var page=a.slice(4);if(page==="inspection")page="inspection";S.selected=[];S.focusId=page==="find"?S.focusId:null;go(page);return}
 if(a.startsWith("rack-")||a.startsWith("check-")){var check=a.startsWith("check-"),id=a.slice(check?6:5);if(running()&&running().rack!==id){toast("Сначала завершите активную проверку "+running().rack,"warn");render();return}S.rack=id;S.selected=[];go(check?"inspection":"work");return}
-if(a==="shelf"){go("shelf");return}
+if(a==="shelf"){S.afterShelf=null;go("shelf");return}
+if(a==="labels"){S.newIds=db.lastCreatedIds.slice();go("labels");return}
 if(a==="create"||a==="inspection"||a==="move"||a==="remove"){S.selected=[];S.target="";go(a);return}
 if(a==="start-inspection"){startInspection();return}
 if(a==="finish-inspection"){finishInspection();return}
@@ -328,7 +329,7 @@ if(a==="select-none"){S.selected=[];render();return}
 if(a.startsWith("unselect-")){selectId(a.slice(9),false);render();return}
 if(a.startsWith("single-here-")){var id=a.slice(12);prepare("here",[id],S.rack,latest(S.rack)?.id);return}
 if(a.startsWith("single-found-")&&!a.startsWith("single-found-other-")){prepare("found",[a.slice(13)],S.rack,latest(S.rack)?.id);return}
-if(a.startsWith("single-found-other-")){var id=a.slice(19);S.selected=[id];S.issueType="missing";S.noticeDetails="Выберите целевую полку для найденного образца в поле ниже.";go("issues-target");return}
+if(a.startsWith("single-found-other-")){var id=a.slice(19);S.selected=[id];S.issueType="missing";S.issueAction="foundOther";S.noticeDetails="Выберите целевую полку для найденного образца в поле ниже.";go("issues-target");return}
 if(a.startsWith("where-")){var x=sample(a.slice(6));S.noticeDetails=x?.id+" числился на полке "+x?.loc+". Это памятка, учёт не изменён.";render();return}
 if(a==="bulk-where"){S.noticeDetails=S.selected.map(function(id){var x=sample(id);return id+" → "+x?.loc}).join("; ")+". Это памятка, учёт не изменён.";render();return}
 if(a==="bulk-here"){prepare("here",S.selected,S.rack,latest(S.rack)?.id);return}
@@ -354,7 +355,7 @@ if(a==="clear-history-filter"){S.focusId=null;render();return}
 if(a==="bind-epc"){bindEpc();return}
 if(a.startsWith("report-")){var id=a.slice(7);if(id==="prev"||id==="next"){S.reportPage=Math.max(0,S.reportPage+(id==="next"?1:-1))}else{S.reportTab=id;S.reportPage=0;S.reportSearch=""}render();return}
 if(a.startsWith("report-issue-")){var m=a.match(/^report-issue-(wrong|missing)-(.+)$/);if(m){S.rack=m[2];S.issueType=m[1];S.selected=[];go("issues")}return}
-if(a.startsWith("report-add-")){var p=product(Number(a.slice(11)));if(p){var q=db.queue.find(function(x){return x.productId===p.id});if(q)q.qty++;else db.queue.push({code:p.barcode,productId:p.id,qty:1});save();toast("Добавлен "+p.article+" в очередь. Выберите полку перед созданием.");go("shelf")}return}
+if(a.startsWith("report-add-")){var p=product(Number(a.slice(11)));if(p){var q=db.queue.find(function(x){return x.productId===p.id});if(q)q.qty++;else db.queue.push({code:p.barcode,productId:p.id,qty:1});save();S.afterShelf="create";go("shelf");toast("Добавлен "+p.article+" в очередь. Выберите полку перед созданием.");render()}return}
 if(a==="toggle-c5"){db.c5Online=!db.c5Online;save();toast("C5 (демо): "+(db.c5Online?"в сети":"офлайн"));render();return}
 if(a==="sync-c5"){syncC5();return}
 if(a==="c5-scan"){var v=document.getElementById("c5-code")?.value.trim();if(v)c5Scan(v);return}
@@ -372,7 +373,7 @@ function scanInput(id,fn){var el=document.getElementById(id);if(el)el.onkeydown=
 scanInput("create-scan",createScan);scanInput("inspection-scan",function(v){inspectScan(v,"USB HID / клавиатура")});
 scanInput("move-scan",function(v){var x=active().find(function(s){return s.id.toLowerCase()===v.toLowerCase()||s.epc?.toLowerCase()===v.toLowerCase()});if(!x){toast("Нужен уникальный код образца или EPC.","error")}else{selectId(x.id,true);toast("Выбран "+x.id)}render()});
 scanInput("remove-scan",function(v){var x=active().find(function(s){return s.id.toLowerCase()===v.toLowerCase()||s.epc?.toLowerCase()===v.toLowerCase()});if(!x){toast("Нужен уникальный код образца или EPC.","error")}else{selectId(x.id,true);toast("Выбран "+x.id)}render()});
-scanInput("label-scan",function(v){var x=S.newIds.map(sample).find(function(s){return s?.id.toLowerCase()===v.toLowerCase()});if(!x){toast("Код не относится к только что созданной партии.","error")}else if(x.labeled){toast("Маркировка уже подтверждена.","warn")}else{x.labeled=true;x.version++;db.audit.push({id:uid(),kind:"Маркировка",at:now(),detail:"Подтверждена этикетка "+x.id,sampleIds:[x.id],requestId:uid()});save();toast("Маркировка подтверждена: "+x.id)}render()});
+scanInput("label-scan",function(v){var x=(S.newIds.length?S.newIds:db.lastCreatedIds).map(sample).find(function(s){return s?.id.toLowerCase()===v.toLowerCase()});if(!x){toast("Код не относится к только что созданной партии.","error")}else if(x.labeled){toast("Маркировка уже подтверждена.","warn")}else{x.labeled=true;x.version++;db.audit.push({id:uid(),kind:"Маркировка",at:now(),detail:"Подтверждена этикетка "+x.id,sampleIds:[x.id],requestId:uid()});save();toast("Маркировка подтверждена: "+x.id)}render()});
 scanInput("shelf-scan",setShelf);var ss=document.getElementById("shelf-select");if(ss)ss.onchange=function(){setShelf(ss.value)};
 var sr=document.getElementById("global-search");if(sr)sr.oninput=function(){var pos=sr.selectionStart;S.search=sr.value;render();var e=document.getElementById("global-search");if(e){e.focus();e.setSelectionRange(pos,pos)}};
 var rr=document.getElementById("report-search");if(rr)rr.oninput=function(){var pos=rr.selectionStart;S.reportSearch=rr.value;S.reportPage=0;render();var e=document.getElementById("report-search");if(e){e.focus();e.setSelectionRange(pos,pos)}};
