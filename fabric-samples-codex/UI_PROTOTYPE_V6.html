@@ -268,13 +268,13 @@ if(action==="move"&&ids.some(function(id){return sample(id).loc===target})){toas
 if(action==="move"&&insId&&S.issueType==="wrong"&&target===S.rack){toast("Для этой полки используйте «Закрепить здесь».","warn");render();return}
 if(action==="here"&&target!==S.rack){toast("Ошибка контекста полки.","error");render();return}
 if(action==="foundOther"&&target===S.rack){toast("Для этой полки выберите «Нашёл здесь».","warn");render();return}
-var m={action:action,ids:ids,target:target||null,insId:insId||null,issueType:insId?S.issueType:null,versions:Object.fromEntries(ids.map(function(id){return[id,sample(id).version]})),requestId:uid(),origin:S.page==="issues-target"?"issues":S.page};
+var m={action:action,ids:ids,target:target||null,insId:insId||null,issueType:insId?S.issueType:null,sourceRack:S.rack,versions:Object.fromEntries(ids.map(function(id){return[id,sample(id).version]})),requestId:uid(),origin:S.page==="issues-target"?"issues":S.page};
 S.confirm=m;S.simulateConflict=false;S.simulateNetwork=false;
 if(ids.length===1&&(action==="here"||(action==="move"&&!insId))){commit(true);return}
 go("confirm")}
 function prepareCreate(){if(!queueCount()||db.queue.some(function(x){return!x.productId})){toast("Уберите неизвестные коды из партии.","error");render();return}
 S.confirm={action:"create",ids:[],target:S.rack,requestId:uid(),origin:S.page,queueSnapshot:JSON.stringify(db.queue)};go("confirm")}
-function apply(m){var payload=JSON.stringify({action:m.action,ids:m.ids,target:m.target,insId:m.insId,versions:m.versions,issueType:m.issueType,queueSnapshot:m.queueSnapshot});
+function apply(m){var payload=JSON.stringify({action:m.action,ids:m.ids,target:m.target,insId:m.insId,sourceRack:m.sourceRack,versions:m.versions,issueType:m.issueType,queueSnapshot:m.queueSnapshot});
 var prev=db.requests[m.requestId];if(prev){if(prev.payload!==payload)return{ok:false,message:"REQUEST_ID_CONFLICT"};return prev.response}
 if(S.simulateConflict){S.simulateConflict=false;return{ok:false,message:"VERSION_CONFLICT: пакет не применён"}}
 if(S.simulateNetwork){S.simulateNetwork=false;return{ok:false,unknown:true,message:"Связь прервалась. Результат неизвестен; повторите тот же requestId."}}
@@ -290,6 +290,7 @@ else m.ids.forEach(function(id){var x=sample(id),old=x.loc,oldVersion=x.version;
 if(m.action==="remove"){x.active=false;x.removedAt=t;x.version++;if(x.epcHistory?.length&&x.epcHistory[x.epcHistory.length-1].to===null)x.epcHistory[x.epcHistory.length-1].to=t;x.epc=null}
 else if(["move","here","foundOther"].includes(m.action)&&x.loc!==m.target){x.loc=m.target;x.version++}
 if(m.insId&&["here","found","foundOther","move"].includes(m.action)){var ins=db.inspections.find(function(y){return y.id===m.insId});db.resolutions.push({key:key(ins,m.issueType||(m.action==="here"?"wrong":"missing"),id),at:t,action:m.action,target:m.target||ins.rack,requestId:m.requestId});if(["found","foundOther"].includes(m.action))db.manualObservations.push({id:uid(),sampleId:id,rack:m.target||ins.rack,insId:ins.id,at:t,source:"Оператор · демо",kind:"Найден после проверки"})}
+if(m.action==="move"&&!m.insId){var last=latest(m.sourceRack);if(last&&issues(last,"wrong",true).some(function(i){return i.sampleId===id}))db.resolutions.push({key:key(last,"wrong",id),at:t,action:"move",target:m.target,requestId:m.requestId})}
 db.audit.push({id:uid(),kind:({remove:"Исключение",move:"Перемещение",here:"Исправление места",found:"Подтверждение обнаружения",foundOther:"Обнаружение и перемещение"})[m.action],at:t,detail:id+": "+old+" → "+(m.action==="remove"?"исключён":m.action==="found"?"найден на "+m.target:m.target),sampleIds:[id],requestId:m.requestId,actor:"Демо-оператор",source:"Windows · макет",before:{loc:old,version:oldVersion,active:true},after:{loc:x.loc,version:x.version,active:x.active}})});
 if(m.action==="create")db.audit.push({id:uid(),kind:"Создание",at:t,detail:"Создано "+newIds.length+" образцов на "+m.target+"; ожидают маркировки",sampleIds:newIds,requestId:m.requestId});
 var response={ok:true,message:m.action==="create"?"Создано "+newIds.length+" образцов. Теперь маркировка.":"Выполнено: "+m.ids.length+" образцов.",newIds:newIds};
