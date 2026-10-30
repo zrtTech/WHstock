@@ -259,6 +259,15 @@ test("Permanent context bar shows current shelf and resume action across section
   assert.equal(a.S.page, "inspection");
   assert.equal(a.S.rack, "A-02-03");
 });
+test("Resume inspection does not create a Back navigation loop", () => {
+  const { api } = boot();
+  api.act("check-A-02-03"); api.startInspection();
+  api.act("nav-work");
+  api.act("resume-inspection");
+  assert.equal(api.S.page, "inspection");
+  api.act("back"); assert.equal(api.S.page, "work");
+  api.act("back"); assert.equal(api.S.page, "warehouse");
+});
 test("Finish opens a clear summary, then issues, with reliable return", () => {
   const t = boot(), a = t.api;
   a.act("check-A-02-03"); a.startInspection(); a.finishInspection();
