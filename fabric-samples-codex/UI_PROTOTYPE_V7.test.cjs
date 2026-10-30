@@ -22,6 +22,7 @@ function boot(storage = {}) {
   const document = {
     getElementById(id) {
       if (id === "app") return root;
+      if (!htmlOutput.includes('id="'+id+'"')) return null;
       return elements[id] ||= {
         value: "", checked: true, selectionStart: 0,
         focus() {}, setSelectionRange() {}
@@ -146,7 +147,7 @@ test("Create 100 unique instances, retry requestId does not duplicate", () => {
 test("Offline C5: queue persists, finish blocked, sync exactly once", () => {
   const t = boot(), a = t.api;
   a.act("rack-B-01-02"); a.act("inspection"); a.startInspection();
-  a.act("nav-service"); a.act("toggle-c5");
+  a.act("nav-service"); a.act("toggle-tech-panel"); a.act("toggle-c5");
   t.set("c5-code", "S-000001"); a.act("c5-scan");
   assert.equal(a.db.c5Queue.length, 1);
   a.finishInspection(); assert.ok(a.db.inspections.some(x => x.status === "active"));
@@ -272,6 +273,18 @@ test("Finish opens a clear summary, then issues, with reliable return", () => {
   a.act("nav-work");
   a.act("open-result");
   assert.equal(a.S.page, "result");
+});
+test("Settings hides technical C5 tests until explicitly expanded", () => {
+  const t = boot(), a = t.api;
+  a.act("nav-service");
+  assert.ok(t.html().includes("Технические тесты C5"));
+  assert.ok(!t.html().includes('id="c5-code"'));
+  a.act("toggle-tech-panel");
+  assert.ok(t.html().includes('id="c5-code"'));
+  a.act("toggle-c5");
+  assert.ok(t.html().includes('id="c5-code"'));
+  a.act("toggle-tech-panel");
+  assert.ok(!t.html().includes('id="c5-code"'));
 });
 test("Settings opened from inspection can be closed using Back", () => {
   const { api } = boot();
