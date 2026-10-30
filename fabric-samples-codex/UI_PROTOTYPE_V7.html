@@ -61,7 +61,7 @@ return{schema:6,products:products,samples:samples,inspections:[inspection],resol
 }
 function load(){try{var x=JSON.parse(localStorage.getItem(STORAGE)||"null");if(x&&x.schema===6&&Array.isArray(x.samples)&&Array.isArray(x.inspections)&&Array.isArray(x.products))return x}catch(e){}return seed()}
 var db=load();if(!Array.isArray(db.lastCreatedIds))db.lastCreatedIds=[];if(!Array.isArray(db.manualObservations))db.manualObservations=[];
-var S={page:"warehouse",stack:[],rack:"B-01-02",toast:"",toastType:"good",search:"",findCode:"",focusId:null,reportTab:"no",reportPage:0,reportSearch:"",reportSelected:[],issueType:"wrong",selected:[],target:"",removeFilter:"rack",createCode:"",inspectCode:"",moveCode:"",removeCode:"",labelCode:"",c5Code:"",confirm:null,simulateConflict:false,simulateNetwork:false,noticeDetails:"",newIds:db.lastCreatedIds.slice(),showAll:false,onlyUnchecked:false,afterShelf:null,issueAction:null,c5Panel:false,inspectionResultId:null};
+var S={page:"warehouse",stack:[],rack:"B-01-02",toast:"",toastType:"good",search:"",findCode:"",focusId:null,reportTab:"no",reportPage:0,reportSearch:"",reportSelected:[],issueType:"wrong",selected:[],target:"",removeFilter:"rack",createCode:"",inspectCode:"",moveCode:"",removeCode:"",labelCode:"",c5Code:"",confirm:null,simulateConflict:false,simulateNetwork:false,noticeDetails:"",newIds:db.lastCreatedIds.slice(),showAll:false,onlyUnchecked:false,afterShelf:null,issueAction:null,c5Panel:false,inspectionResultId:null,techPanel:false};
 var root=document.getElementById("app");
 function E(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function save(){try{localStorage.setItem(STORAGE,JSON.stringify(db));return true}catch(e){S.toast="Браузер не смог сохранить демонстрационные данные. Экспортируйте резервную копию.";S.toastType="error";return false}}
@@ -230,17 +230,20 @@ frame(head("Журнал действий","События хранятся от
 '<section class="panel stack">'+(S.focusId?'<div class="row">'+B("Показать весь журнал","clear-history-filter","ghost")+'<b>Фильтр: '+E(S.focusId)+'</b></div>':"")+
 '<div class="list">'+(list.filter(function(a){return!S.focusId||a.sampleIds.includes(S.focusId)}).map(function(a){return'<div class="item"><div class="row between"><b>'+E(a.kind)+'</b><small>'+stamp(a.at)+'</small></div><div>'+E(a.detail)+'</div><small>Образцы: '+E(a.sampleIds.slice(0,12).join(", ")||"—")+(a.sampleIds.length>12?" …":"")+' · requestId: '+E(a.requestId||"—")+' · '+E(a.actor||"Демо")+'</small>'+(a.before?'<div class="tiny">До: '+E(a.before.loc)+' · v'+a.before.version+' → После: '+E(a.after.loc)+' · v'+a.after.version+' · '+(a.after.active?"активен":"исключён")+'</div>':"")+'</div>'}).join("")||'<p class="muted">Записей нет.</p>')+'</div></section>')}
 function service(){var pending=db.c5Queue.length;
-frame(head("Настройки демомакета","Это технические инструменты, а не шаг проверки полки. Во время проверки C5 доступен прямо на её экране.")+
-'<div class="notice warn"><b>Вы не должны заходить сюда для проверки полки.</b> Состояние C5 доступно внутри проверки. Чтобы вернуться, используйте кнопку «К проверке» над рабочей областью или '+B("К работе на полке","nav-work","")+'</div>'+
-'<section class="panel stack"><div class="grid3"><div class="stat"><b>Демо</b><small>1С: чтение каталога не подключено</small></div><div class="stat"><b>'+tag(db.c5Online?"В сети":"Офлайн",db.c5Online?"green":"amber")+'</b><small>Имитатор C5</small></div><div class="stat '+(pending?"amber":"green")+'"><b>'+pending+'</b><small>Неотправленных событий C5</small></div></div>'+
-'<div class="row">'+B(db.c5Online?"Перевести C5 в офлайн":"Вернуть C5 в сеть","toggle-c5","primary")+B("Отправить очередь C5","sync-c5","",!pending||!db.c5Online)+'</div>'+
-field("c5-code","Демо: скан с C5 (в активную проверку)","S-000001","scan")+
-'<div class="row">'+B("Сканировать с C5","c5-scan","primary")+B("Открыть проверку","nav-inspection")+'</div>'+
-'<div class="notice warn">Реальные SDK Chainway, RFID-считывание, TLS, API, авторизация и фоновая служба здесь отсутствуют. Очередь только моделирует повторы и офлайн-доставку.</div>'+
-'<hr class="divider"><h2>Данные макета</h2><p class="tiny">localStorage зависит от политики браузера. Для надёжного переноса используйте экспорт JSON.</p>'+
+frame(head("Настройки демомакета","Этот раздел не нужен для обычной проверки. Здесь находятся экспорт данных и дополнительные технические тесты.")+
+'<div class="notice"><b>Проверка полки — отдельный процесс.</b> Состояние C5 открывается прямо внутри экрана проверки. Если вы попали сюда случайно, '+B("Вернуться к проверке","resume-inspection","primary",!running())+' '+B("К работе на полке","nav-work","")+'</div>'+
+'<section class="panel stack"><h2>Данные макета</h2><p>Данные хранятся только в браузере. Экспортируйте JSON, если хотите сохранить демонстрационный сценарий.</p>'+
 '<div class="row">'+B("Экспортировать JSON","export-demo","")+B("Импортировать JSON","import-demo","")+B("Каталог 10 000 (тест)","stress-10k","")+B("Сбросить демоданные","reset-demo","red")+'</div>'+
 '<input type="file" id="backup-file" accept="application/json,.json" style="display:none">'+
-'<p class="tiny">Последний экспорт: '+stamp(db.lastBackup)+' · каталог (демо): '+stamp(db.catalogUpdatedAt)+'</p></section>')}
+'<p class="tiny">Последний экспорт: '+stamp(db.lastBackup)+' · каталог (демо): '+stamp(db.catalogUpdatedAt)+'</p></section>'+
+'<section class="panel stack"><div class="row between"><div><h2>Технические тесты C5</h2><p class="tiny">Не относятся к ежедневной работе оператора.</p></div>'+B(S.techPanel?"Скрыть тесты":"Показать тесты","toggle-tech-panel","")+'</div>'+
+(S.techPanel?'<div class="notice warn">Это только имитатор. Реальные SDK Chainway, RFID-считывание, TLS, API, авторизация и фоновая служба здесь отсутствуют.</div>'+
+'<div class="grid3"><div class="stat"><b>Демо</b><small>1С: чтение каталога не подключено</small></div><div class="stat"><b>'+tag(db.c5Online?"В сети":"Офлайн",db.c5Online?"green":"amber")+'</b><small>Имитатор C5</small></div><div class="stat '+(pending?"amber":"green")+'"><b>'+pending+'</b><small>Неотправленных событий C5</small></div></div>'+
+'<div class="row">'+B(db.c5Online?"Перевести C5 в офлайн":"Вернуть C5 в сеть","toggle-c5","")+B("Отправить очередь C5","sync-c5","",!pending||!db.c5Online)+'</div>'+
+field("c5-code","Демо-скан C5 в активную проверку","S-000001","scan")+
+'<div class="row">'+B("Добавить тестовый скан","c5-scan","")+B("Открыть проверку","resume-inspection","primary",!running())+'</div>':
+'<p class="tiny">Эти настройки скрыты, чтобы не отвлекать от проверки образцов.</p>')+'</section>')}
+
 function labelIds(){return Array.from(new Set(db.lastCreatedIds.concat(active().filter(function(x){return!x.labeled}).map(function(x){return x.id}))))}
 function labels(){var ids=labelIds();var list=ids.map(sample).filter(Boolean),pending=list.filter(function(x){return!x.labeled}).length;
 frame(head("Маркировка созданных образцов","У каждого экземпляра свой код. Напечатайте/наклейте этикетки и подтвердите маркировку сканированием каждого уникального кода.")+
@@ -344,7 +347,7 @@ if(x.epc===v){toast("EPC не изменился.","warn");render();return}
 if(!window.confirm("Подтверждаете физическую привязку EPC "+v+" к "+x.id+"?"))return;
 var t=now();if(x.epcHistory.length&&x.epcHistory[x.epcHistory.length-1].to===null)x.epcHistory[x.epcHistory.length-1].to=t;
 x.epc=v;x.epcHistory.push({epc:v,from:t,to:null});x.version++;db.audit.push({id:uid(),kind:"Привязка EPC",at:t,detail:x.id+" → "+v,sampleIds:[x.id],requestId:uid()});save();toast("EPC привязан. История интервалов сохранена.");render()}
-function act(a){if(a==="back"){back();return}if(a==="toggle-c5-panel"){S.c5Panel=!S.c5Panel;render();return}if(a==="resume-inspection"){var ins=running();if(ins){S.rack=ins.rack;go("inspection")}else{toast("Нет активной проверки.","warn");render()}return}if(a==="open-result"){S.inspectionResultId=latest(S.rack)?.id||null;go("result");return}if(a==="unchecked"){S.onlyUnchecked=true;S.page="warehouse";render();return}if(a==="show-all-racks"){S.onlyUnchecked=false;render();return}
+function act(a){if(a==="back"){back();return}if(a==="toggle-c5-panel"){S.c5Panel=!S.c5Panel;render();return}if(a==="toggle-tech-panel"){S.techPanel=!S.techPanel;render();return}if(a==="resume-inspection"){var ins=running();if(ins){S.rack=ins.rack;go("inspection")}else{toast("Нет активной проверки.","warn");render()}return}if(a==="open-result"){S.inspectionResultId=latest(S.rack)?.id||null;go("result");return}if(a==="unchecked"){S.onlyUnchecked=true;S.page="warehouse";render();return}if(a==="show-all-racks"){S.onlyUnchecked=false;render();return}
 if(a.startsWith("nav-")){var page=a.slice(4);if(page==="warehouse")S.onlyUnchecked=false;if(page==="inspection")page="inspection";S.selected=[];S.focusId=page==="find"?S.focusId:null;go(page);return}
 if(a.startsWith("rack-")||a.startsWith("check-")){var check=a.startsWith("check-"),id=a.slice(check?6:5);if(running()&&running().rack!==id){toast("Сначала завершите активную проверку "+running().rack,"warn");render();return}S.rack=id;S.selected=[];go(check?"inspection":"work");return}
 if(a==="shelf"){S.afterShelf=null;go("shelf");return}
