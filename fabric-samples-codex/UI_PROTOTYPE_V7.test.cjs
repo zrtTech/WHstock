@@ -254,7 +254,7 @@ test("Permanent context bar shows current shelf and resume action across section
   assert.ok(t.html().includes('data-act="shelf"'));
   assert.ok(t.html().includes('data-act="back"'));
   a.act("nav-service");
-  assert.ok(t.html().includes("Это технические инструменты"));
+  assert.ok(t.html().includes("Этот раздел не нужен для обычной проверки"));
   a.act("resume-inspection");
   assert.equal(a.S.page, "inspection");
   assert.equal(a.S.rack, "A-02-03");
