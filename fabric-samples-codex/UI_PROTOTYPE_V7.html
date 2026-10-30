@@ -131,23 +131,41 @@ field("create-scan","Товарный штрихкод или артикул + E
 '<div class="tablebox"><table class="tbl"><thead><tr><th>Товар</th><th>Артикул</th><th>Количество</th><th>Статус</th><th>Убрать</th></tr></thead><tbody>'+
 (db.queue.length?db.queue.map(function(q,i){var p=product(q.productId);return'<tr><td><b>'+E(p?.name||"Неизвестный код")+'</b></td><td>'+E(p?.article||q.code)+'</td><td>'+B("−","qdec-"+i,"small")+' <b>'+q.qty+'</b> '+B("+","qinc-"+i,"small")+'</td><td>'+tag(p?(q.qty>1?"Повтор ×"+q.qty:"Распознан"):"Найти или убрать",p?"green":"red")+'</td><td>'+B("×","qdel-"+i,"small")+'</td></tr>'}).join(""):'<tr><td colspan="5">Очередь пуста. Отсканируйте первый товар.</td></tr>')+'</tbody></table></div>'+
 '<div class="bar"><b>Всего '+count+' образцов на '+S.rack+'</b><span class="grow"></span>'+B("Создать "+count+" образцов","create-review","primary big",!count||!!bad)+'</div></section>')}
-function inspection(){var a=running(),mine=a&&a.rack===S.rack;var ins=mine?a:null;var seen=ins?ins.observations.length:0,own=ins?ins.observations.filter(function(o){return o.registeredLocAtScan===ins.rack}).length:0;
-var other=seen-own;var pending=ins?db.c5Queue.filter(function(x){return x.insId===ins.id}).length:0;
-frame(head("Проверить полку","Сканирование — наблюдение. Учётные места не меняются. Завершение — только по вашей команде.")+
+function inspection(){var a=running(),mine=a&&a.rack===S.rack,ins=mine?a:null;
+var seen=ins?ins.observations.length:0,own=ins?ins.observations.filter(function(o){return o.registeredLocAtScan===ins.rack}).length:0;
+var other=seen-own,pending=ins?db.c5Queue.filter(function(x){return x.insId===ins.id}).length:0;
+frame(workflowSteps(ins?2:1)+head(ins?"Проверка полки "+ins.rack:"Начать проверку полки "+S.rack,ins?"Вы на этапе сканирования. Можно выйти и вернуться: принятые сканы сохранятся.":"Сначала фиксируем ожидаемые образцы, затем начинаем обход полки.")+
 '<section class="panel stack">'+(!ins?
-'<h2>'+(a?"Есть незавершённая проверка "+a.rack:"Новая проверка "+S.rack)+'</h2><p class="sub">В момент начала программа замораживает ожидаемые образцы. Старые проверки останутся неизменными.</p>'+
-'<div class="notice warn">Не найденные определяются только после завершения обхода. Отсутствие не означает удаление.</div>'+
-B(a?"Перейти к активной проверке":"Начать проверку","start-inspection","primary big"):
-'<div class="row between"><div><h2>Идёт проверка '+ins.rack+'</h2><p class="tiny">Ожидалось на старте: '+ins.expected.length+' · начало '+stamp(ins.startedAt)+'</p></div>'+tag("● Готов к сканированию","green")+'</div>'+
-field("inspection-scan","Уникальный код образца / EPC / однозначный товарный ШК + Enter","S-000001","scan")+
-'<div class="grid4"><div class="stat green"><b>'+own+'</b><small>Свои</small></div><div class="stat red"><b>'+other+'</b><small>Чужие</small></div><div class="stat amber"><b>'+ins.unresolved.length+'</b><small>Уточнить</small></div><div class="stat"><b>'+pending+'</b><small>C5 не отправлено</small></div></div>'+
-'<div class="row">'+B("C5: демо-скан S-000001","c5-example","ghost")+B("Состояние C5 / офлайн","nav-service","ghost")+'</div>'+
-(ins.unresolved.length?'<div class="notice warn">Есть '+ins.unresolved.length+' неразобранных сканов. Сканирование можно продолжать, но завершение пока недоступно.</div><div class="list">'+ins.unresolved.map(function(u,i){return'<div class="item"><b>'+E(u.code)+'</b> — '+E(u.reason)+
-(u.candidates.length?'<div class="row"><select class="input" id="resolve-'+i+'" style="max-width:300px"><option value="">Уточнить экземпляр</option>'+u.candidates.map(function(id){return'<option value="'+id+'">'+id+'</option>'}).join("")+'</select>'+B("Подтвердить после проверки бирки","resolve-"+i,"small primary")+'</div>':"")+
-'<div>'+B("Убрать ошибочный скан","discard-"+i,"small")+'</div></div>'}).join("")+'</div>':'<div class="notice good">Неразобранных сканов нет. Можно продолжать.</div>')+
-'<div><h3>Последние сканы</h3><div class="list">'+(ins.scanLog.slice(-6).reverse().map(function(l){return'<div class="item">'+E(l.code)+' — '+tag(l.result,l.result==="Чужой"?"red":l.result==="Повтор"?"amber":"green")+' <small>'+stamp(l.at)+'</small></div>'}).join("")||'<span class="muted">Пока пусто</span>')+'</div></div>'+
-'<div class="row">'+B("Завершить проверку","finish-inspection","green big",ins.unresolved.length>0||pending>0)+B("Отменить проверку","cancel-inspection","",false)+'</div>'+
-'<p class="tiny">«Назад» сохраняет незавершённую проверку. «Отменить» удаляет только этот незавершённый сеанс после подтверждения.</p>')+'</section>')}
+'<div class="guide"><h2>Шаг 1. Подготовка</h2><p>Вы выбрали полку <b>'+E(S.rack)+'</b>. После нажатия «Начать проверку» система запомнит, какие образцы должны находиться здесь. Затем сканируйте каждый физически обнаруженный экземпляр.</p></div>'+
+'<div class="notice warn">Сканирование не перемещает и не удаляет образцы. Не найденные определятся только после завершения проверки.</div>'+
+(a?'<div class="notice warn">Уже идёт проверка другой полки: '+E(a.rack)+'. Вернитесь к ней.</div>'+B("Продолжить начатую проверку","resume-inspection","primary big"):
+'<div class="row">'+B("Начать проверку и перейти к сканированию","start-inspection","primary big")+B("Вернуться к работе на полке","nav-work","")+'</div>'):
+'<div class="guide"><h2>Шаг 2. Сканируйте образцы на этой полке</h2><p>Поднесите USB-сканер к этикетке и считайте код. После Enter скан появится в списке. Для Chainway C5 откройте «Состояние C5» ниже — это панель на этом же экране, не переход в другой раздел.</p></div>'+
+'<div class="row between"><div><h3>Идёт проверка '+E(ins.rack)+'</h3><p class="tiny">На старте ожидалось '+ins.expected.length+' · начата '+stamp(ins.startedAt)+'</p></div>'+tag("Проверка активна","green")+'</div>'+
+field("inspection-scan","Сканируйте код образца / EPC / однозначный товарный ШК + Enter","S-000001","scan")+
+'<div class="grid4"><div class="stat green"><b>'+own+'</b><small>Свои обнаружены</small></div><div class="stat red"><b>'+other+'</b><small>Чужие обнаружены</small></div><div class="stat amber"><b>'+ins.unresolved.length+'</b><small>Нужно уточнить</small></div><div class="stat"><b>'+pending+'</b><small>В очереди C5</small></div></div>'+
+'<div class="row">'+B((S.c5Panel?"Скрыть":"Показать")+" состояние C5 · "+(db.c5Online?"в сети":"офлайн"),"toggle-c5-panel","ghost")+'<span class="tiny">Не обязательно: если используете USB-сканер, этот пункт можно пропустить.</span></div>'+
+(S.c5Panel?'<div class="c5box"><div><h3>Состояние C5 — внутри текущей проверки</h3><p>Это имитатор Chainway. Все сканы относятся к проверке <b>'+E(ins.rack)+'</b>. Вы не покидали проверку. Здесь можно проверить офлайн-очередь и сразу продолжить сканирование.</p></div>'+
+'<div class="row">'+tag(db.c5Online?"C5 в сети":"C5 офлайн",db.c5Online?"green":"amber")+tag("Не отправлено: "+pending,pending?"amber":"green")+'</div>'+
+'<div class="row">'+B(db.c5Online?"Имитировать отключение C5":"Имитировать подключение C5","toggle-c5","")+B("Отправить очередь ("+pending+")","sync-c5","primary",!pending||!db.c5Online)+'</div>'+
+field("c5-code","Тестовый скан с C5 (в текущую проверку)","S-000001","scan")+
+'<div class="row">'+B("Добавить тестовый скан C5","c5-scan","")+B("Закрыть панель и продолжить","toggle-c5-panel","primary")+'</div>'+
+'<p class="tiny">В реальной программе C5 передаёт сканы автоматически. В макете подключений к оборудованию нет.</p></div>':"")+
+(ins.unresolved.length?'<div class="notice warn">Есть '+ins.unresolved.length+' неразобранных сканов. Их нужно уточнить до завершения.</div><div class="list">'+ins.unresolved.map(function(u,i){return'<div class="item"><b>'+E(u.code)+'</b> — '+E(u.reason)+
+(u.candidates.length?'<div class="row"><select class="input" id="resolve-'+i+'" style="max-width:300px"><option value="">Уточнить экземпляр</option>'+u.candidates.map(function(id){return'<option value="'+id+'">'+id+'</option>'}).join("")+'</select>'+B("Подтвердить по этикетке","resolve-"+i,"small primary")+'</div>':"")+
+'<div>'+B("Убрать ошибочный скан","discard-"+i,"small")+'</div></div>'}).join("")+'</div>':'<div class="notice good">Неразобранных сканов нет. Продолжайте обход или завершите проверку.</div>')+
+'<div><h3>Последние сканы</h3><div class="list">'+(ins.scanLog.slice(-6).reverse().map(function(l){return'<div class="item">'+E(l.code)+' — '+tag(l.result,l.result==="Чужой"?"red":l.result==="Повтор"?"amber":"green")+' <small>'+stamp(l.at)+'</small></div>'}).join("")||'<span class="muted">Сканов ещё нет</span>')+'</div></div>'+
+'<div class="guide"><h2>Шаг 3. Завершите обход, когда всё проверено</h2><p>После завершения появится итог: сколько образцов обнаружено, какие чужие и какие не найдены. Никаких автоматических перемещений или удалений не будет.</p></div>'+
+'<div class="row">'+B("Завершить обход и показать итоги","finish-inspection","green big",ins.unresolved.length>0||pending>0)+B("Выйти, сохранив сканы","nav-work","")+B("Отменить эту проверку","cancel-inspection","")+'</div>'+
+'<p class="tiny">«Выйти, сохранив сканы» не завершает проверку. Вернуться можно через постоянную кнопку «К проверке» над рабочей областью.</p>')+'</section>')}
+function inspectionResult(){var ins=db.inspections.find(function(x){return x.id===S.inspectionResultId&&x.status==="finished"})||latest(S.rack);if(!ins){frame(head("Итоги проверки","Для этой полки пока нет завершённой проверки.")+B("К работе на полке","nav-work","primary"));return}
+var own=ins.observations.filter(function(o){return o.registeredLocAtScan===ins.rack}).length,wrong=issues(ins,"wrong",true).length,missing=issues(ins,"missing",true).length;
+frame(workflowSteps(3)+head("Проверка завершена — "+ins.rack,"Сканы сохранены "+stamp(ins.finishedAt)+". Учётные места не изменились.")+
+'<section class="panel stack"><div class="guide"><h2>Шаг 3. Итог проверки</h2><p>Теперь решите, что делать с расхождениями. Чужие — обнаруженные здесь образцы, которые числятся в другом месте. Не найденные остаются в учёте и не удаляются автоматически.</p></div>'+
+'<div class="grid3"><div class="stat green"><b>'+own+'</b><small>На своём месте при сканировании</small></div><div class="stat red"><b>'+wrong+'</b><small>Чужие, открытые</small></div><div class="stat amber"><b>'+missing+'</b><small>Не найдены, открытые</small></div></div>'+
+'<h3>Что делать дальше?</h3><div class="row">'+B("Разобрать чужие ("+wrong+")","issues-wrong","primary",!wrong)+B("Разобрать не найденные ("+missing+")","issues-missing","",!missing)+B("Вернуться к работе на полке","nav-work","")+'</div>'+
+'<div class="notice good">Проверка уже завершена и сохранена. Расхождения можно разобрать позже; они не исчезнут из истории.</div></section>')}
+
 function issueTable(rows){return'<div class="tablebox"><table class="tbl"><thead><tr><th>✓</th><th>Образец</th><th>Товар</th><th>Учётная полка при проверке</th><th>Обнаружен</th><th>Быстрое действие</th></tr></thead><tbody>'+
 (rows.length?rows.map(function(i){var x=sample(i.sampleId),p=product(x?.productId);return'<tr><td><input type="checkbox" data-select="'+i.sampleId+'" '+(S.selected.includes(i.sampleId)?"checked":"")+' aria-label="Выбрать '+i.sampleId+'"></td><td><b>'+i.sampleId+'</b></td><td>'+E(p?.name||"")+'<br><small>'+E(p?.article||"")+'</small></td><td>'+E(i.from)+'</td><td>'+E(i.observed||"Не найден")+'</td><td>'+
 (i.type==="wrong"?B("Закрепить здесь","single-here-"+i.sampleId,"small primary")+' '+B("Куда вернуть","where-"+i.sampleId,"small"):
