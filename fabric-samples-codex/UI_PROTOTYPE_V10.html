@@ -183,7 +183,7 @@ function seed(){
 ui.threshold=1;ui.stockSelection=[];ui.rfidFeedback="";ui.stockFilter="all";
 db.resolutions=db.resolutions||[];db.afterObservations=db.afterObservations||[];db.epcWrites=db.epcWrites||[];db.nextEpc=db.nextEpc||900000;
 function nav(){
- var pages=[["warehouse","Склад"],["work","Операции"],["find","Артикулы"],["stock","Отбор по остаткам"],["reports","Отчёты"],["history","Журнал"]];
+ var pages=[["warehouse","Склад"],["work","Операции"],["find","Артикулы"],["stock","Отбор по остаткам"],["reports","Отчёты"],["history","Журнал"],["system","Система"]];
  return '<header class="top"><div class="brand"><div><strong>▤ Образцы тканей</strong><div class="small">Работа по артикулам · уникальность по RFID</div></div><span class="small">МАКЕТ v10 · автономно</span></div><nav class="nav">'+pages.map(function(p){return b(p[1],"nav:"+p[0],ui.page===p[0]?"on":"")}).join("")+'</nav></header>';
 }
 function frame(body){
@@ -236,7 +236,7 @@ function productPage(){
  '<div class="row" style="margin-top:14px">'+b("Записать RFID для артикула","writeproduct:"+p.id,"primary")+b("Создать ещё образец","queueproduct:"+p.id)+b("К поиску","nav:find")+'</div></section>');
 }
 function rfid(){
- var p=product(ui.epcPid),untagged=p?byProduct(p.id).filter(function(s){return !s.epc}):[],chosen=untagged[0]||null;
+ var p=product(ui.epcPid),untagged=p?byProduct(p.id).filter(function(s){return !s.epc}):[],chosen=untagged.find(function(s){return s.loc===db.rack})||null;
  ui.epcSample=chosen?chosen.id:null;
  frame(head("Запись RFID на образцы","Режим: сканировать товарный ШК → поднести ОДНУ метку → записать уникальный EPC → считать для проверки.")+
  '<section class="panel"><div class="steps"><span class="current">1. ШК / артикул</span><span>2. Запись EPC</span><span>3. Проверка записи</span><span>4. Следующий образец</span></div>'+
@@ -244,7 +244,7 @@ function rfid(){
  (p?'<div class="notice"><b>'+esc(p.article)+' · '+esc(p.name)+'</b><div class="statline"><span>Всего: '+byProduct(p.id).length+'</span><span>Без RFID: '+untagged.length+'</span><span>Уже с RFID: '+(byProduct(p.id).length-untagged.length)+'</span></div></div>':'<div class="notice">Сканируйте товар. Система автоматически подберёт свободный, ещё не маркированный экземпляр этого артикула.</div>')+
  (p&&chosen?'<div class="actioncard"><h3>Готово к записи метки</h3><p>Артикул '+esc(p.article)+' · учётная полка '+esc(chosen.loc)+'. На C5 должна быть выделена только одна физическая метка.</p>'+
  b("ДЕМО: записать EPC и проверить","demowrite","primary")+
- '<div class="footnote">В настоящем приложении эту команду выполняет Chainway C5: генерация EPC сервером, запись на метку, чтение обратно, проверка и фиксация привязки. Здесь вместо оборудования — имитация.</div></div>':p?'<div class="notice warn">Нет свободных экземпляров без RFID. Нельзя перезаписывать уже привязанные метки автоматически. При необходимости сначала создайте новый образец.</div>':"")+
+ '<div class="footnote">В настоящем приложении эту команду выполняет Chainway C5: генерация EPC сервером, запись на метку, чтение обратно, проверка и фиксация привязки. Здесь вместо оборудования — имитация.</div></div>':p?'<div class="notice warn">Нет свободных экземпляров без RFID на рабочей полке. Проверьте полку или создайте образец. Экземпляры на других полках автоматически не выбираются.</div>':"")+
  (ui.rfidFeedback?'<div class="notice good">'+esc(ui.rfidFeedback)+'</div>':"")+
  '<div class="row" style="margin-top:12px">'+b("Следующий артикул","rfidclear")+b("К операциям","nav:work")+'</div></section>');
 }
@@ -296,7 +296,7 @@ function stockCandidates(){
  '<div class="actioncard"><b>Правило: остаток строго меньше '+esc(ui.threshold)+' м</b><p>Источник в макете — вымышленные значения. В реальной системе остатки читаются из 1С без записи обратно.</p></div></div>'+
  '<div class="statline"><span>Артикулов-кандидатов: <b>'+products.length+'</b></span><span>Физических образцов: <b>'+rows.length+'</b></span><span>Выбрано вручную: <b>'+selected.length+'</b></span></div>'+
  '<div class="notice warn">Отбор — это рекомендация к физической проверке и уборке. Выберите только реально изъятые образцы. Если одного артикула несколько, различайте физические экземпляры по RFID.</div>'+
- '<div class="toolbar">'+b("Выбрать всех кандидатов","stockall","",!rows.length)+b("Снять выбор","stocknone","",!selected.length)+b("Обновить список","stockrefresh")+'</div>'+
+ '<div class="toolbar">'+b(rows.length>300?"Выбрать показанные 300":"Выбрать всех кандидатов","stockall","",!rows.length)+b("Снять выбор","stocknone","",!selected.length)+b("Обновить список","stockrefresh")+'</div>'+
  table(["Выбор","Артикул / товар","Остаток, м","Учётная полка","RFID / экземпляр"],rows.slice(0,300).map(function(x){return tr(['<input type="checkbox" class="check" data-check="'+esc(x.s.id)+'" '+(selected.includes(x.s.id)?"checked":"")+'>','<b>'+esc(x.p.article)+'</b><br><small>'+esc(x.p.name)+'</small>',String(x.p.stock),esc(x.s.loc),x.s.epc?'<small>'+esc(x.s.epc)+'</small>':pill("Нет EPC","yellow")+' <small>'+esc(x.s.id)+'</small>'])}))+
  (rows.length>300?'<div class="notice warn">Показаны первые 300 экземпляров. Уточните порог или используйте поиск по артикулу, чтобы обработать остальные.</div>':"")+
  '<div class="footerbar"><b>К исключению: '+selected.length+'</b><span class="spacer"></span>'+b("Подтвердить исключение выбранных","stockremove","danger",!selected.length)+'</div></section>');
@@ -321,18 +321,18 @@ function commitMove(ids,target,reason){
 function removeSelected(){
  var ids=ui.selected.filter(function(sid){var x=sample(sid);return x&&x.active});if(!ids.length)return;
  if(!confirm("Вы ФИЗИЧЕСКИ убрали "+ids.length+" выбранных образцов?\nПодтвердить окончательное исключение из активного учёта?\nОперация необратима. EPC и история сохраняются."))return;
- var old=ids.map(function(sid){var x=sample(sid);return{sid:sid,article:product(x.pid).article,loc:x.loc,epc:x.epc}});
+ var returnPage=ui.page==="stock"?"stock":"work";var old=ids.map(function(sid){var x=sample(sid);return{sid:sid,article:product(x.pid).article,loc:x.loc,epc:x.epc}});
  ids.forEach(function(sid){var x=sample(sid);x.active=false;x.version++;x.removedAt=now();(x.epcHistory||[]).forEach(function(z){if(!z.to)z.to=x.removedAt});R.forEach(function(r){var s=latest(r.id);if(s){if(issues(r.id,"wrong").includes(sid))resolveOne(s,sid,"wrong","Исключён");if(issues(r.id,"missing").includes(sid))resolveOne(s,sid,"missing","Исключён")}})});
- log("Исключение",ids,JSON.stringify(old));ui.selected=[];go("work");notify("Исключено "+ids.length+" образцов. EPC и история сохранены.");
+ log("Исключение",ids,JSON.stringify(old));ui.selected=[];go(returnPage);notify("Исключено "+ids.length+" образцов. EPC и история сохранены.");
 }
 function demoWrite(){
- var p=product(ui.epcPid),x=sample(ui.epcSample);if(!p||!x||!x.active||x.pid!==p.id||x.epc)return notify("Нет свободного экземпляра для записи.");
- var code;do{code="E200V10"+String(db.nextEpc++).padStart(12,"0")}while(db.samples.some(function(z){return z.epc===code||(z.epcHistory||[]).some(function(y){return y.epc===code})}));
+ var p=product(ui.epcPid),x=sample(ui.epcSample);if(!p||!x||!x.active||x.pid!==p.id||x.epc||x.loc!==db.rack)return notify("Нет свободного экземпляра на текущей полке для записи.");
+ var code;do{code="E200000000000000"+(db.nextEpc++).toString(16).toUpperCase().padStart(8,"0")}while(db.samples.some(function(z){return z.epc===code||(z.epcHistory||[]).some(function(y){return y.epc===code})}));
  x.epc=code;x.epcHistory=x.epcHistory||[];x.epcHistory.push({epc:code,from:now(),to:null});x.version++;
  db.epcWrites.push({id:id(),sample:x.id,epc:code,status:"SIMULATED_WRITE_AND_READBACK",at:now()});
  log("RFID: демо запись + проверка",[x.id],p.article+" · "+code+" · без реального C5");
  ui.rfidFeedback="ИМИТАЦИЯ: EPC "+code+" записан и проверен для "+p.article+". Реальная метка не менялась.";
- var next=byProduct(p.id).find(function(s){return !s.epc});ui.epcSample=next?next.id:null;save();render();
+ var next=byProduct(p.id).find(function(s){return !s.epc&&s.loc===db.rack});ui.epcSample=next?next.id:null;save();render();
 }
 function wire(){
  legacyWire();
@@ -350,7 +350,7 @@ function action(a){
  if(a==="rfid"){ui.epcPid=null;ui.epcSample=null;ui.rfidFeedback="";return go("rfid")}
  if(a==="startinspection"){if(running())return notify("Сначала завершите текущую проверку.");var exp=active().filter(function(x){return x.loc===db.rack});db.sessions.push({id:id(),rack:db.rack,status:"active",expected:exp.map(function(x){return x.id}),expectedLocations:Object.fromEntries(exp.map(function(x){return[x.id,x.loc]})),seen:[],seenLocations:{},unclear:[],startedAt:now(),finishedAt:null});save();return render()}
  if(a==="demoinspect"){var s=running();if(!s)return;active().filter(function(x){return x.epc}).slice(0,12).forEach(function(x){if(!s.seen.includes(x.id)){s.seen.push(x.id);s.seenLocations[x.id]=x.loc}});save();return notify("Демо: добавлено до 12 уникальных EPC.")}
- if(a==="finishinspection"){var s=running();if(!s)return;if(!confirm("Завершить проверку "+s.rack+"? Снимок останется неизменным; места не изменятся."))return;s.status="done";s.finishedAt=now();log("Проверка",s.seen,"Снимок "+s.rack+"; чужих "+snapshotWrong(s).length+"; не найдено "+snapshotMissing(s).length);return go("result")}
+ if(a==="finishinspection"){var s=running();if(!s)return;if(!confirm("Завершить проверку "+s.rack+"? Снимок останется неизменным; места не изменятся."))return;db.rack=s.rack;s.status="done";s.finishedAt=now();log("Проверка",s.seen,"Снимок "+s.rack+"; чужих "+snapshotWrong(s).length+"; не найдено "+snapshotMissing(s).length);return go("result")}
  if(a==="returnhome"){var s=latest(db.rack),ids=ui.selected.filter(function(sid){return issues(db.rack,"wrong").includes(sid)});if(!ids.length)return;if(!confirm("Вы физически ВЕРНУЛИ "+ids.length+" образцов на их учётные полки?\nУчётные места не изменятся."))return;ids.forEach(function(sid){resolveOne(s,sid,"wrong","Физически возвращён на учётную полку")});log("Возврат на место",ids,"Физическое исправление без изменения учётных мест");ui.selected=[];return notify("Подтверждён физический возврат: "+ids.length+".")}
  if(a==="markfound"){var s=latest(db.rack),ids=ui.selected.filter(function(sid){return issues(db.rack,"missing").includes(sid)});if(!ids.length)return;if(!confirm("Физически нашли "+ids.length+" образцов на "+db.rack+"?"))return;ids.forEach(function(sid){db.afterObservations.push({id:id(),session:s.id,sid:sid,loc:db.rack,at:now()});resolveOne(s,sid,"missing","Найден после проверки")});log("Найдено после проверки",ids,"Наблюдение после закрытия снимка "+s.id);ui.selected=[];return notify("Образцы найдены; снимок проверки не изменён.")}
  if(a==="fixhere")return commitMove(ui.selected,db.rack,"Исправить учёт");
@@ -360,7 +360,7 @@ function action(a){
  if(a.startsWith("movedetail:")){ui.moveSample=a.slice(11);return go("directmove")}
  if(a==="confirmdirect"){var el=document.getElementById("movetarget");return commitMove([ui.moveSample],el?el.value:"","Прямое перемещение")}
  if(a==="stockrefresh")return render();
- if(a==="stockall"){var t=Number(ui.threshold);ui.selected=active().filter(function(s){return product(s.pid).stock<t}).slice(0,300).map(function(s){return s.id});return render()}
+ if(a==="stockall"){var t=Number(ui.threshold),ids=[];db.products.filter(function(p){return p.stock<t}).forEach(function(p){byProduct(p.id).forEach(function(s){ids.push(s.id)})});ui.selected=ids.slice(0,300);return render()}
  if(a==="stocknone"){ui.selected=[];return render()}
  if(a==="stockremove"){var t=Number(ui.threshold),valid=ui.selected.filter(function(sid){var x=sample(sid);return x&&x.active&&product(x.pid).stock<t});ui.selected=valid;return removeSelected()}
  if(a==="nav:stock"){ui.selected=[];return go("stock")}
@@ -372,6 +372,7 @@ function action(a){
  return legacyAction(a);
 }
 
+function render(){var pages={warehouse:warehouse,work:work,shelf:shelf,create:create,created:created,find:find,product:productPage,rfid:rfid,inspection:inspection,result:result,issues:issuePage,choosemove:chooseMove,remove:removePage,reports:reports,history:history,system:system,stock:stockCandidates,directmove:moveDirect};(pages[ui.page]||warehouse)()}
 save();render();
 })();
 </script></body></html>
