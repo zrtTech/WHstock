@@ -64,7 +64,7 @@ function create(){var qty=db.queue.reduce(function(n,q){return n+q.qty},0),bad=d
 '<div class="steps"><span class="current">1. Сканировать товары</span><span>2. Проверить количество</span><span>3. Создать на полке</span></div>'+
 '<section class="panel"><div class="row between"><h2>Товары в партии</h2><div class="count">'+qty+' шт.</div></div>'+
 field("createscan","Товарный ШК / артикул + Enter","4600000000001 или ART-0001","",true)+
-'<div class="notice">Один товарный ШК может встречаться несколько раз: это будут разные физические образцы одного артикула. Новые этикетки печатать не нужно.</div>'+
+'<div class="notice">Один товарный ШК может встречаться несколько раз: это будут разные физические образцы одного артикула. Маркировка RFID выполняется отдельно.</div>'+
 '<div class="row">'+b("Демо: добавить 100 товаров","demo100")+b("Очистить список","clearqueue","",!qty)+b("Отменить","cancelcreate")+'</div>'+
 table(["Артикул","Товар","Количество","Действие"],db.queue.map(function(q,i){var p=product(q.pid);return tr(['<b>'+esc(p?p.article:q.code)+'</b>',esc(p?p.name:"Код не найден"),b("−","dec:"+i)+" <b>"+q.qty+"</b> "+b("+","inc:"+i),b("Убрать","del:"+i)])}))+
 '<div class="footerbar"><b>На полку '+esc(db.rack)+' · '+qty+' образцов</b><span class="spacer"></span>'+b("Создать "+qty+" образцов","commitcreate","primary",!qty||bad)+'</div></section>')}
@@ -140,7 +140,7 @@ function doScanInspect(code){var s=running();if(!s)return;var x=active().find(fu
 if(s.seen.includes(x.id)){notify("Повтор EPC: "+product(x.pid).article+". Уже учтён.");return}
 s.seen.push(x.id);save();notify("Добавлен: "+product(x.pid).article+(x.loc===s.rack?" · на месте":" · чужой образец")+". Сканируйте следующий.")}
 function doBindEpc(code){var x=sample(ui.epcSample),p=product(ui.epcPid);if(!x||!x.active||!p||x.pid!==p.id)return notify("Сначала выберите экземпляр нужного артикула.");code=code.trim().toUpperCase();if(!/^[A-Z0-9]{8,64}$/.test(code))return notify("EPC должен содержать 8–64 символа A–Z, 0–9 (демопроверка).");if(active().some(function(s){return s.id!==x.id&&s.epc===code}))return notify("Этот EPC уже привязан к другому активному экземпляру.");if(!confirm("Привязать EPC "+code+" к артикулу "+p.article+"?\nЭкземпляр: "+x.id+"\nУбедитесь, что это метка именно этого физического образца."))return;x.epc=code;x.version++;log("Привязка EPC",[x.id],p.article+" · EPC "+code);notify("EPC привязан к экземпляру артикула "+p.article+".")}
-function legacyAction(a){var v;if(a==="back")return back();if(a.startsWith("nav:")){ui.selected=[];return go(a.slice(4))}if(a.startsWith("rack:")||a.startsWith("check:")){var check=a.startsWith("check:");db.rack=a.slice(check?6:5);save();return go(check?"inspection":"work")}if(a==="shelf")return go("shelf");if(a.startsWith("setrack:")){if(running())return notify("Сначала завершите начатую проверку.");db.rack=a.slice(8);save();return go("work")}
+function legacyAction(a){var v;if(a==="back")return back();if(a.startsWith("nav:")){ui.selected=[];if(a==="nav:reports")ui.reportPage=0;return go(a.slice(4))}if(a.startsWith("rack:")||a.startsWith("check:")){var check=a.startsWith("check:");db.rack=a.slice(check?6:5);save();return go(check?"inspection":"work")}if(a==="shelf")return go("shelf");if(a.startsWith("setrack:")){if(running())return notify("Сначала завершите начатую проверку.");db.rack=a.slice(8);save();return go("work")}
 if(["create","inspection","rfid","issues","remove"].includes(a)){ui.selected=[];if(a==="rfid"){ui.epcPid=null;ui.epcSample=null}return go(a)}
 if(a==="demo100"){db.queue=db.products.slice(0,100).map(function(p){return{code:p.barcode,pid:p.id,qty:1}});save();return notify("В списке 100 разных артикулов. Ничего ещё не создано.")}
 if(a==="clearqueue"){if(confirm("Очистить очередь создания?")){db.queue=[];save();render()}return}
@@ -166,7 +166,7 @@ if(a==="markfound"){if(!ui.selected.length)return;if(!confirm("Подтверж�
 if(a==="choosemove")return go("choosemove");
 if(a==="confirmmove"){var t=document.getElementById("movetarget").value;return commitMove(ui.selected,t,"Перемещение")}
 if(a==="removechosen")return removeSelected();
-if(a.startsWith("report:")){ui.report=a.slice(7);return go("reports")}
+if(a.startsWith("report:")){ui.report=a.slice(7);ui.reportPage=0;return go("reports")}
 if(a==="export"){var blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),aEl=document.createElement("a");aEl.href=url;aEl.download="fabric-samples-demo-v9.json";aEl.click();setTimeout(function(){URL.revokeObjectURL(url)},1000);return}
 if(a==="reset"){if(confirm("Сбросить ВСЕ данные демомакета?")){db=seed();ui.page="warehouse";ui.stack=[];ui.selected=[];save();render()}return}
 }
@@ -180,7 +180,7 @@ function seed(){
  d.sessions.forEach(function(s){s.seenLocations={};s.seen.forEach(function(sid){var x=d.samples.find(function(z){return z.id===sid});if(x)s.seenLocations[sid]=x.loc});s.unclear=s.unclear||[]});
  return d;
 }
-ui.threshold=1;ui.stockSelection=[];ui.rfidFeedback="";ui.stockFilter="all";
+ui.threshold=1;ui.stockSelection=[];ui.rfidFeedback="";ui.stockFilter="all";ui.stockPage=0;ui.findPage=0;ui.reportPage=0;
 db.resolutions=db.resolutions||[];db.afterObservations=db.afterObservations||[];db.epcWrites=db.epcWrites||[];db.nextEpc=db.nextEpc||900000;
 function nav(){
  var pages=[["warehouse","Склад"],["work","Операции"],["find","Артикулы"],["stock","Отбор по остаткам"],["reports","Отчёты"],["history","Журнал"],["system","Система"]];
@@ -290,15 +290,17 @@ function issuePage(){
 function stockCandidates(){
  var t=Number(ui.threshold),valid=Number.isFinite(t)&&t>=0,products=db.products.filter(function(p){return valid&&p.stock<t&&byProduct(p.id).length}),rows=[];
  products.forEach(function(p){byProduct(p.id).forEach(function(s){rows.push({p:p,s:s})})});
- var selected=ui.selected.filter(function(sid){return rows.some(function(x){return x.s.id===sid})});
+ var selected=ui.selected.filter(function(sid){return rows.some(function(x){return x.s.id===sid})});var pages=Math.max(1,Math.ceil(rows.length/40));ui.stockPage=Math.min(ui.stockPage,pages-1);
  frame(head("Отбор образцов по остатку 1С","Вы задаёте порог в метрах. Система показывает кандидатов, но ничего не исключает автоматически.")+
  '<section class="panel"><div class="row"><div class="field" style="margin:0;max-width:250px"><label for="stockthreshold">Показать остаток меньше, м</label><input id="stockthreshold" class="input" type="number" min="0" step="0.1" value="'+esc(ui.threshold)+'"></div>'+
  '<div class="actioncard"><b>Правило: остаток строго меньше '+esc(ui.threshold)+' м</b><p>Источник в макете — вымышленные значения. В реальной системе остатки читаются из 1С без записи обратно.</p></div></div>'+
  '<div class="statline"><span>Артикулов-кандидатов: <b>'+products.length+'</b></span><span>Физических образцов: <b>'+rows.length+'</b></span><span>Выбрано вручную: <b>'+selected.length+'</b></span></div>'+
  '<div class="notice warn">Отбор — это рекомендация к физической проверке и уборке. Выберите только реально изъятые образцы. Если одного артикула несколько, различайте физические экземпляры по RFID.</div>'+
- '<div class="toolbar">'+b(rows.length>300?"Выбрать показанные 300":"Выбрать всех кандидатов","stockall","",!rows.length)+b("Снять выбор","stocknone","",!selected.length)+b("Обновить список","stockrefresh")+'</div>'+
- table(["Выбор","Артикул / товар","Остаток, м","Учётная полка","RFID / экземпляр"],rows.slice(0,300).map(function(x){return tr(['<input type="checkbox" class="check" data-check="'+esc(x.s.id)+'" '+(selected.includes(x.s.id)?"checked":"")+'>','<b>'+esc(x.p.article)+'</b><br><small>'+esc(x.p.name)+'</small>',String(x.p.stock),esc(x.s.loc),x.s.epc?'<small>'+esc(x.s.epc)+'</small>':pill("Нет EPC","yellow")+' <small>'+esc(x.s.id)+'</small>'])}))+
- (rows.length>300?'<div class="notice warn">Показаны первые 300 экземпляров. Уточните порог или используйте поиск по артикулу, чтобы обработать остальные.</div>':"")+
+ '<div class="toolbar">'+b("Выбрать на странице","stockpageall","",!rows.length)+b(rows.length>300?"Выбрать первые 300":"Выбрать всех кандидатов","stockall","",!rows.length)+b("Снять выбор","stocknone","",!selected.length)+b("Обновить список","stockrefresh")+'</div>'+
+ table(["Выбор","Артикул / товар","Остаток, м","Учётная полка","RFID / экземпляр"],rows.slice(ui.stockPage*40,(ui.stockPage+1)*40).map(function(x){return tr(['<input type="checkbox" class="check" data-check="'+esc(x.s.id)+'" '+(selected.includes(x.s.id)?"checked":"")+'>','<b>'+esc(x.p.article)+'</b><br><small>'+esc(x.p.name)+'</small>',String(x.p.stock),esc(x.s.loc),x.s.epc?'<small>'+esc(x.s.epc)+'</small>':pill("Нет EPC","yellow")+' <small>'+esc(x.s.id)+'</small>'])}))+
+ (rows.length>300?'<div class="notice warn">Для безопасности массовый выбор ограничен 300 экземплярами за раз. Все кандидаты доступны постранично.</div>':"")+
+ (!rows.length?'<div class="notice good">Кандидатов при этом пороге нет. Измените лимит.</div>':"")+
+ '<div class="toolbar"><span>Страница '+(ui.stockPage+1)+' из '+pages+' · по 40 образцов</span>'+b("← Назад","stockprev","",ui.stockPage===0)+b("Вперёд →","stocknext","",ui.stockPage>=pages-1)+'</div>'+
  '<div class="footerbar"><b>К исключению: '+selected.length+'</b><span class="spacer"></span>'+b("Подтвердить исключение выбранных","stockremove","danger",!selected.length)+'</div></section>');
 }
 function moveDirect(){
@@ -337,11 +339,18 @@ function demoWrite(){
 function wire(){
  legacyWire();
  var el=document.getElementById("rfidarticle");if(el)el.onkeydown=function(e){if(e.key!=="Enter")return;e.preventDefault();var p=lookup(el.value);if(!p)return notify("Артикул или ШК не найден в демокаталоге.");ui.epcPid=p.id;ui.rfidFeedback="";render()};
- var th=document.getElementById("stockthreshold");if(th)th.onchange=function(){var v=Number(th.value);if(!Number.isFinite(v)||v<0)return notify("Введите порог не меньше 0 метров.");ui.threshold=v;ui.selected=[];render()};
+ var th=document.getElementById("stockthreshold");if(th)th.onchange=function(){var v=Number(th.value);if(!Number.isFinite(v)||v<0)return notify("Введите порог не меньше 0 метров.");ui.threshold=v;ui.selected=[];ui.stockPage=0;render()};
  var m=document.getElementById("movescan");if(m)m.onkeydown=function(e){if(e.key!=="Enter")return;e.preventDefault();var x=active().find(function(z){return z.epc&&z.epc.toUpperCase()===m.value.trim().toUpperCase()});if(!x)return notify("EPC не найден. Товарный ШК не определяет физический экземпляр.");ui.moveSample=x.id;render()};
  if(ui.page==="directmove"&&m)m.focus();
+ if(ui.page==="rfid"&&el){el.focus();if(el.select)el.select()}
+ var ff=document.getElementById("findinput");if(ff)ff.oninput=function(){ui.search=ff.value;ui.findPage=0;render();var fresh=document.getElementById("findinput");if(fresh){fresh.focus();if(fresh.setSelectionRange)fresh.setSelectionRange(fresh.value.length,fresh.value.length)}};
+ document.querySelectorAll("[data-check]").forEach(function(c){c.onchange=function(){var sid=c.dataset.check;if(c.checked&&!ui.selected.includes(sid))ui.selected.push(sid);if(!c.checked)ui.selected=ui.selected.filter(function(x){return x!==sid});var y=window.scrollY||0;render();if(window.scrollTo)window.scrollTo(0,y)}});
 }
 function action(a){
+ if(a==="stocknext"){ui.stockPage++;return render()}if(a==="stockprev"){ui.stockPage=Math.max(0,ui.stockPage-1);return render()}
+ if(a==="findnext"){ui.findPage++;return render()}if(a==="findprev"){ui.findPage=Math.max(0,ui.findPage-1);return render()}
+ if(a==="reportnext"){ui.reportPage++;return render()}if(a==="reportprev"){ui.reportPage=Math.max(0,ui.reportPage-1);return render()}
+ if(a==="stockpageall"){var t=Number(ui.threshold),ids=[];db.products.filter(function(p){return p.stock<t}).forEach(function(p){byProduct(p.id).forEach(function(s){ids.push(s.id)})});ids.slice(ui.stockPage*40,(ui.stockPage+1)*40).forEach(function(sid){if(!ui.selected.includes(sid))ui.selected.push(sid)});return render()}
  if(a==="resumeinspection"){var s=running();if(!s)return notify("Активной проверки нет.");db.rack=s.rack;save();return go("inspection")}
  if(a==="demowrite")return demoWrite();
  if(a==="rfidclear"){ui.epcPid=null;ui.epcSample=null;ui.rfidFeedback="";return render()}
@@ -359,14 +368,14 @@ function action(a){
  if(a==="directmove"){ui.moveSample=null;return go("directmove")}
  if(a.startsWith("movedetail:")){ui.moveSample=a.slice(11);return go("directmove")}
  if(a==="confirmdirect"){var el=document.getElementById("movetarget");return commitMove([ui.moveSample],el?el.value:"","Прямое перемещение")}
- if(a==="stockrefresh")return render();
+ if(a==="stockrefresh"){ui.stockPage=0;return render()}
  if(a==="stockall"){var t=Number(ui.threshold),ids=[];db.products.filter(function(p){return p.stock<t}).forEach(function(p){byProduct(p.id).forEach(function(s){ids.push(s.id)})});ui.selected=ids.slice(0,300);return render()}
  if(a==="stocknone"){ui.selected=[];return render()}
  if(a==="stockremove"){var t=Number(ui.threshold),valid=ui.selected.filter(function(sid){var x=sample(sid);return x&&x.active&&product(x.pid).stock<t});ui.selected=valid;return removeSelected()}
- if(a==="nav:stock"){ui.selected=[];return go("stock")}
+ if(a==="nav:stock"){ui.selected=[];ui.stockPage=0;return go("stock")}
  if(a==="nav:system")return go("system");
  if(a.startsWith("nav:")){ui.selected=[];return go(a.slice(4))}
- if(a==="remove"){ui.selected=[];return go("remove")}
+ if(a==="remove"){ui.selected=[];ui.detail=null;return go("remove")}
  if(a==="issues"){ui.selected=[];ui.filter="wrong";return go("issues")}
  if(a==="rfidproduct:")return;
  return legacyAction(a);
