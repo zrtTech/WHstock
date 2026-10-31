@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Образцы тканей — макет v10</title>
+<style>
+:root{font:15px/1.5 system-ui,"Segoe UI",Arial,sans-serif;color:#152a48;background:#f3f6fb}*{box-sizing:border-box}body{margin:0}button,input,select{font:inherit}button{cursor:pointer;min-height:44px;border:1px solid #b9cce5;background:white;color:#123359;border-radius:10px;padding:9px 15px;font-weight:650}button:hover{background:#eaf1ff}button:disabled{opacity:.45;cursor:not-allowed}.primary{background:#245fe8;color:white;border-color:#245fe8}.primary:hover{background:#164ac1}.danger{color:#b62239;border-color:#e4b0ba}.danger:hover{background:#fff0f2}.ghost{background:transparent}.top{background:white;border-bottom:1px solid #dbe5f2;padding:12px max(18px,calc((100vw - 1250px)/2));position:sticky;top:0;z-index:3}.brand{display:flex;align-items:center;justify-content:space-between;gap:10px}.brand strong{font-size:19px}.small{font-size:12px;color:#5d7190}.nav{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.nav button{min-height:40px}.nav .on{background:#e4edff;color:#174bd1;border-color:#9cbaff}.wrap{max-width:1250px;margin:0 auto;padding:20px 18px 70px}.banner{background:#edf3ff;border:1px solid #c9dbff;color:#244f94;padding:11px 14px;border-radius:10px;font-size:13px;margin-bottom:15px}.sub{color:#5b7090;margin:4px 0 22px}h1{font-size:29px;line-height:1.25;margin:5px 0}h2{font-size:19px;margin:0 0 12px}h3{margin:0 0 9px}.panel{background:white;border:1px solid #d7e3f2;border-radius:15px;padding:22px;margin-bottom:15px;box-shadow:0 8px 28px #142b4709}.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.between{justify-content:space-between}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.metric{padding:17px;border:1px solid #d7e3f2;border-radius:12px;background:#f7f9fd}.metric b{display:block;font-size:28px;line-height:1.15}.metric small{color:#5e7190}.task{display:flex;gap:12px;text-align:left;align-items:center;min-height:95px;padding:17px}.task strong{display:block;font-size:17px}.task small{display:block;color:#587092;font-weight:400}.task .symbol{background:#e9f0ff;border-radius:9px;color:#2058d9;padding:8px;font-size:22px;min-width:42px;text-align:center}.rack{background:#102947;color:white;border-radius:15px;padding:20px 25px;margin-bottom:15px}.rack b{font-size:34px}.rack button{float:right}.input{border:1px solid #b8cce8;border-radius:10px;min-height:48px;padding:10px 13px;width:100%;background:white;color:#142a48}.scan{font-size:21px;min-height:58px;border:2px solid #7ea5ff}.input:focus{outline:3px solid #c5d7ff}.field{margin:12px 0}.field label{display:block;font-weight:650;margin-bottom:6px}.notice{border:1px solid #c7d8f6;border-radius:10px;padding:13px 15px;background:#eef4ff;margin:12px 0}.good{background:#e8f8f0;border-color:#b7e8ce;color:#126748}.warn{background:#fff5e2;border-color:#f1d49a;color:#8a5400}.bad{background:#fff0f1;border-color:#eebec7;color:#a81e36}.tablewrap{overflow:auto;max-height:460px;border:1px solid #dce6f3;border-radius:11px;margin-top:12px}table{border-collapse:collapse;width:100%;font-size:14px}th{position:sticky;top:0;background:#edf3fb;text-align:left;color:#35567e;font-size:12px;z-index:1}th,td{padding:10px 12px;border-bottom:1px solid #e2eaf5}tr:hover td{background:#f8fbff}td button{min-height:36px;padding:5px 10px}.pill{display:inline-block;border-radius:6px;padding:3px 7px;font-size:12px;background:#eef2f8}.pill.red{background:#ffe8eb;color:#b11d36}.pill.green{background:#e0f6e8;color:#117447}.pill.yellow{background:#fff0d3;color:#905b00}.footerbar{position:sticky;bottom:0;background:#fff;border:1px solid #c9dbf2;box-shadow:0 -8px 25px #142b4710;padding:12px;border-radius:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}.spacer{flex:1}.muted{color:#5f7494}.steps{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 15px}.steps span{background:#e9eef6;border-radius:7px;padding:6px 11px;font-size:13px}.steps .current{background:#dce8ff;color:#1752ce;font-weight:700}.tabs{display:flex;flex-wrap:wrap;gap:7px}.tabs .on{background:#245fe8;color:white}.back{margin-bottom:10px}.count{font-size:28px;font-weight:750}.highlight{color:#1a58da}.check{width:19px;height:19px;accent-color:#245fe8}.tag{font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:750;color:#607897}.split{display:grid;grid-template-columns:2fr 1fr;gap:15px}@media(max-width:850px){.grid4{grid-template-columns:repeat(2,1fr)}.grid,.split{grid-template-columns:1fr}.top{position:static}}@media(max-width:530px){.grid4{grid-template-columns:1fr 1fr}.wrap{padding:12px}.panel{padding:14px}h1{font-size:24px}.rack b{font-size:26px}.nav button{padding:7px 9px;font-size:13px}}
+.compact{font-size:13px;color:#5b7090}.statline{display:flex;gap:9px;flex-wrap:wrap;margin:10px 0}.statline span{padding:6px 10px;border-radius:8px;background:#eef4ff;color:#244f94}.attention{border-left:4px solid #df9b35}.actioncard{background:#f7faff;border:1px solid #d4e1f5;border-radius:12px;padding:15px}.actioncard h3{margin:0 0 6px}.actioncard p{margin:0 0 12px;color:#516989}.fixed-context{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#102947;color:white;padding:10px 16px;border-radius:10px;margin-bottom:14px}.fixed-context strong{font-size:17px}.fixed-context button{min-height:35px}.tablewrap{max-height:580px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0}.toolbar input{max-width:160px}.footnote{font-size:12px;color:#657b9a;margin-top:8px}@media(max-width:680px){.fixed-context{align-items:stretch}.fixed-context button{flex:1}.actioncard{padding:12px}}</style></head><body><div id="app"></div>
+<script>
+(function(){
+"use strict";
+var KEY="fabric-prototype-v10";
+var R=[{id:"A-02-03",name:"Стеллаж A · секция 02 · полка 03"},{id:"B-01-02",name:"Стеллаж B · секция 01 · полка 02"},{id:"C-01-04",name:"Стеллаж C · секция 01 · полка 04"},{id:"D-03-01",name:"Стеллаж D · секция 03 · полка 01"}];
+var names=["Лён натуральный","Блэкаут графит","Велюр песочный","Сатин белый","Рогожка серая","Шенилл оливковый","Хлопок экрю","Жаккард синий","Тюль молочный","Габардин бежевый"];
+function esc(x){return String(x==null?"":x).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function id(){return "e"+Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+function now(){return new Date().toISOString()}
+function seedV9(){
+var products=Array.from({length:140},function(_,i){return{id:i+1,article:"ART-"+String(i+1).padStart(4,"0"),barcode:"460000"+String(i+1).padStart(7,"0"),name:names[i%names.length]+" / "+String(i+1).padStart(3,"0"),stock:i%7===0?0:i%29+1}});
+var samples=Array.from({length:80},function(_,i){var n=i+1,pid=i<55?i+1:i-54,loc=R[i%4].id;return{id:"S-"+String(n).padStart(6,"0"),pid:pid,loc:loc,epc:i<65?"E200DEMO"+String(n).padStart(8,"0"):null,active:true,version:1,createdAt:now()}});
+var expected=samples.filter(function(x){return x.loc==="B-01-02"}).map(function(x){return x.id});
+var seen=samples.filter(function(x){return x.loc==="B-01-02"}).slice(0,12).map(function(x){return x.id});
+seen.push(samples[0].id,samples[4].id);
+return{schema:9,products:products,samples:samples,next:81,queue:[],rack:"B-01-02",sessions:[{id:"initial",rack:"B-01-02",status:"done",expected:expected,seen:seen,startedAt:now(),finishedAt:now()}],events:[],lastCreated:[]};
+}
+var db;try{db=JSON.parse(localStorage.getItem(KEY)||"null");if(!db||db.schema!==10)db=seed()}catch(e){db=seed()}
+var ui={page:"warehouse",stack:[],notice:"",search:"",selected:[],filter:"wrong",report:"no",target:"",epcPid:null,epcSample:null,session:null,detail:null,after:"work"};
+function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){ui.notice="Не удалось сохранить данные браузера. Экспортируйте их вручную."}}
+function product(pid){return db.products.find(function(x){return x.id===pid})}
+function sample(sid){return db.samples.find(function(x){return x.id===sid})}
+function active(){return db.samples.filter(function(x){return x.active})}
+function byProduct(pid){return active().filter(function(x){return x.pid===pid})}
+function lookup(v){v=String(v||"").trim().toLowerCase();return db.products.find(function(p){return p.article.toLowerCase()===v||p.barcode===v})}
+function latest(r){return db.sessions.filter(function(s){return s.rack===r&&s.status==="done"}).slice(-1)[0]}
+function running(){return db.sessions.find(function(s){return s.status==="active"})}
+function issues(r,type){var s=latest(r);if(!s)return[];if(type==="wrong")return s.seen.filter(function(x){var z=sample(x);return z&&z.active&&z.loc!==r});return s.expected.filter(function(x){var z=sample(x);return z&&z.active&&z.loc===r&&!s.seen.includes(x)})}
+function totalIssues(type){return R.reduce(function(n,r){return n+issues(r.id,type).length},0)}
+function log(action,ids,detail){db.events.push({id:id(),at:now(),action:action,ids:ids,detail:detail});save()}
+function b(label,act,cls,disabled){return'<button type="button" data-a="'+esc(act)+'" class="'+(cls||"")+'" '+(disabled?"disabled":"")+'>'+esc(label)+'</button>'}
+function pill(text,color){return'<span class="pill '+(color||"")+'">'+esc(text)+'</span>'}
+function table(headers,rows){return'<div class="tablewrap"><table><thead><tr>'+headers.map(function(x){return'<th>'+esc(x)+'</th>'}).join("")+'</tr></thead><tbody>'+rows.join("")+'</tbody></table></div>'}
+function tr(cells){return'<tr>'+cells.map(function(x){return'<td>'+x+'</td>'}).join("")+'</tr>'}
+function field(id,label,placeholder,value,scan){return'<div class="field"><label for="'+id+'">'+esc(label)+'</label><input id="'+id+'" class="input '+(scan?"scan":"")+'" autocomplete="off" spellcheck="false" placeholder="'+esc(placeholder)+'" value="'+esc(value||"")+'"></div>'}
+function head(t,sub){return'<div class="tag">УЧЁТ ФИЗИЧЕСКИХ ОБРАЗЦОВ</div><h1>'+esc(t)+'</h1><p class="sub">'+esc(sub)+'</p>'}
+function rackBanner(){return'<div class="rack">'+b("Сменить полку","shelf","")+'<div class="tag" style="color:#a9c5e8">РАБОЧАЯ ПОЛКА</div><b>'+esc(db.rack)+'</b><div>'+esc(R.find(function(x){return x.id===db.rack}).name)+'</div></div>'}
+function nav(){var pages=[["warehouse","Склад"],["work","Работа на полке"],["find","Найти товар"],["reports","Аналитика"],["history","Журнал"],["system","Система"]];return'<header class="top"><div class="brand"><div><strong>▤ Образцы тканей</strong><div class="small">Артикул для человека · EPC для системы</div></div><span class="small">ДЕМО · без 1С и C5</span></div><nav class="nav">'+pages.map(function(p){return b(p[1],"nav:"+p[0],ui.page===p[0]?"on":"")}).join("")+'</nav></header>'}
+function frame(body){document.getElementById("app").innerHTML=nav()+'<main class="wrap"><div class="banner">ИНТЕРАКТИВНЫЙ МАКЕТ v9 · Данные вымышлены · Реальные 1С, Chainway C5 и RFID SDK не подключены.</div>'+(ui.stack.length?'<div class="back">'+b("← Назад","back","ghost")+'</div>':"")+(ui.notice?'<div class="notice good">'+esc(ui.notice)+'</div>':"")+body+'</main>';wire()}
+function go(p){if(ui.page!==p)ui.stack.push(ui.page);ui.page=p;ui.notice="";render()}
+function back(){ui.page=ui.stack.pop()||"warehouse";ui.notice="";render()}
+function countNo(){return db.products.filter(function(p){return !byProduct(p.id).length}).length}
+function warehouse(){var unchecked=R.filter(function(r){return !latest(r.id)}).length;frame(head("Весь склад","Сводка по всем полкам. Рабочую полку выбирайте только перед операцией.")+
+'<div class="grid4"><div class="metric"><b>'+active().length+'</b><small>Активных экземпляров</small></div><div class="metric"><b>'+countNo()+'</b><small>Товаров без образца</small></div><div class="metric"><b>'+totalIssues("wrong")+'</b><small>Чужих по последним проверкам</small></div><div class="metric"><b>'+totalIssues("missing")+'</b><small>Не найдены при проверке</small></div></div>'+
+'<section class="panel" style="margin-top:15px"><div class="row between"><h2>Полки и последние проверки</h2>'+b("Начать работу","nav:work","primary")+'</div>'+
+table(["Полка","Числится","Последняя проверка","Чужие","Не найдены","Действие"],R.map(function(r){var s=latest(r.id);return tr(['<b>'+r.id+'</b><br><small>'+esc(r.name)+'</small>',String(active().filter(function(x){return x.loc===r.id}).length),s?new Date(s.finishedAt).toLocaleString("ru-RU"):"Не проверялась",s?String(issues(r.id,"wrong").length):"—",s?String(issues(r.id,"missing").length):"—",b("Работать","rack:"+r.id,"primary")+" "+b("Проверить","check:"+r.id)])}))+
+'<div class="notice">Показатели «чужие» и «не найдены» основаны на последней завершённой проверке каждой полки. Отсутствие при проверке не означает удаление образца.</div></section>'+
+'<div class="row">'+b("Товары без образцов","report:no")+b("Кандидаты с остатком 0","report:zero")+b("Все расхождения","report:wrong")+'</div>')}
+function work(){var s=latest(db.rack);frame(rackBanner()+head("Что нужно сделать?","Выберите одну задачу. После операции вернитесь сюда.")+
+'<div class="grid">'+
+'<button class="task" data-a="create"><span class="symbol">＋</span><span><strong>Добавить образцы</strong><small>Сканировать 10–100 товарных ШК подряд, создать экземпляры на этой полке</small></span></button>'+
+'<button class="task" data-a="inspection"><span class="symbol">▣</span><span><strong>Проверить полку</strong><small>Считывать EPC подряд, сравнить фактические и учётные места</small></span></button>'+
+'<button class="task" data-a="issues"><span class="symbol">↔</span><span><strong>Исправить места</strong><small>Разобрать чужие и не найденные образцы</small></span></button>'+
+'<button class="task" data-a="rfid"><span class="symbol">◉</span><span><strong>Привязать RFID</strong><small>Найти артикул, выбрать физический экземпляр, считать его EPC</small></span></button></div>'+
+'<section class="panel" style="margin-top:15px"><h2>Последняя проверка этой полки</h2>'+(s?'<div class="grid4"><div class="metric"><b>'+s.seen.length+'</b><small>Уникальных сканов</small></div><div class="metric"><b>'+issues(db.rack,"wrong").length+'</b><small>Чужие</small></div><div class="metric"><b>'+issues(db.rack,"missing").length+'</b><small>Не найдены</small></div><div class="metric"><b>'+active().filter(function(x){return x.loc===db.rack&&!x.epc}).length+'</b><small>Без EPC</small></div></div>':'<div class="notice">Полка ещё не проверялась.</div>')+
+'<div class="row" style="margin-top:15px">'+b("Найти товар по артикулу","nav:find")+b("Убрать образцы из учёта","remove","danger")+b("Весь склад","nav:warehouse")+'</div></section>')}
+function shelf(){frame(head("Выберите рабочую полку","Полка будет использоваться при создании, проверке и исправлениях.")+'<section class="panel">'+field("rackscan","Сканируйте код полки + Enter","RACK:B-01-02","",true)+'<div class="grid">'+R.map(function(r){return'<button class="task" data-a="setrack:'+r.id+'"><span><strong>'+r.id+'</strong><small>'+esc(r.name)+'</small></span></button>'}).join("")+'</div></section>')}
+function create(){var qty=db.queue.reduce(function(n,q){return n+q.qty},0),bad=db.queue.some(function(q){return !q.pid});frame(rackBanner()+head("Добавить образцы","Сканируйте товарный штрихкод или введите артикул и Enter. Каждый скан добавляется автоматически.")+
+'<div class="steps"><span class="current">1. Сканировать товары</span><span>2. Проверить количество</span><span>3. Создать на полке</span></div>'+
+'<section class="panel"><div class="row between"><h2>Товары в партии</h2><div class="count">'+qty+' шт.</div></div>'+
+field("createscan","Товарный ШК / артикул + Enter","4600000000001 или ART-0001","",true)+
+'<div class="notice">Один товарный ШК может встречаться несколько раз: это будут разные физические образцы одного артикула. Новые этикетки печатать не нужно.</div>'+
+'<div class="row">'+b("Демо: добавить 100 товаров","demo100")+b("Очистить список","clearqueue","",!qty)+b("Отменить","cancelcreate")+'</div>'+
+table(["Артикул","Товар","Количество","Действие"],db.queue.map(function(q,i){var p=product(q.pid);return tr(['<b>'+esc(p?p.article:q.code)+'</b>',esc(p?p.name:"Код не найден"),b("−","dec:"+i)+" <b>"+q.qty+"</b> "+b("+","inc:"+i),b("Убрать","del:"+i)])}))+
+'<div class="footerbar"><b>На полку '+esc(db.rack)+' · '+qty+' образцов</b><span class="spacer"></span>'+b("Создать "+qty+" образцов","commitcreate","primary",!qty||bad)+'</div></section>')}
+function created(){var list=db.lastCreated.map(sample).filter(Boolean),map={};list.forEach(function(s){var p=product(s.pid);if(!map[s.pid])map[s.pid]={p:p,n:0};map[s.pid].n++});frame(rackBanner()+head("Партия создана","Записи образцов созданы и связаны с товарами по артикулам. Печать этикеток не требуется.")+
+'<section class="panel"><div class="grid4"><div class="metric"><b>'+list.length+'</b><small>Создано экземпляров</small></div><div class="metric"><b>'+Object.keys(map).length+'</b><small>Артикулов</small></div><div class="metric"><b>'+list.filter(function(x){return !x.epc}).length+'</b><small>Пока без EPC</small></div><div class="metric"><b>'+esc(db.rack)+'</b><small>Учётная полка</small></div></div>'+
+'<div class="notice good">Образцы уже существуют в демосправочнике. Привязка EPC — отдельная операция, когда считывается RFID-метка конкретного экземпляра.</div>'+
+table(["Артикул","Товар","Новых образцов"],Object.keys(map).map(function(k){var x=map[k];return tr([esc(x.p.article),esc(x.p.name),String(x.n)])}))+
+'<div class="row" style="margin-top:15px">'+b("Привязать EPC","rfid","primary")+b("Добавить ещё","create")+b("Вернуться к работе","nav:work")+'</div></section>')}
+function find(){var q=ui.search.trim().toLowerCase(),products=db.products.filter(function(p){return !q||[p.article,p.name,p.barcode].some(function(v){return v.toLowerCase().includes(q)})});frame(head("Найти товар","Поиск по артикулу, названию или общему товарному ШК. У одного товара может быть несколько образцов.")+
+'<section class="panel">'+field("findinput","Артикул, товарный ШК или название","ART-0001",ui.search,true)+
+'<p class="muted">Найдено артикулов: '+products.length+'. Показаны первые 40.</p>'+
+table(["Артикул","Товар","Образцов","Остаток 1С (демо)","Действие"],products.slice(0,40).map(function(p){return tr(['<b>'+esc(p.article)+'</b>',esc(p.name),String(byProduct(p.id).length),String(p.stock),b("Открыть","product:"+p.id,"primary")])}))+'</section>')}
+function productPage(){var p=product(ui.detail);if(!p){back();return}var list=byProduct(p.id);frame(head(p.article+" · "+p.name,"Товарный ШК общий для рулона и всех образцов этого артикула.")+
+'<section class="panel"><div class="grid4"><div class="metric"><b>'+list.length+'</b><small>Активных образцов</small></div><div class="metric"><b>'+list.filter(function(x){return !!x.epc}).length+'</b><small>С EPC</small></div><div class="metric"><b>'+list.filter(function(x){return !x.epc}).length+'</b><small>Без EPC</small></div><div class="metric"><b>'+p.stock+'</b><small>Остаток (демо)</small></div></div>'+
+'<div class="notice">Товарный ШК: '+esc(p.barcode)+'. Он не идентифицирует конкретный экземпляр, если образцов несколько.</div>'+
+table(["Экземпляр (служебно)","Учётная полка","RFID","Действие"],list.map(function(s){return tr([esc(s.id),esc(s.loc),s.epc?pill("EPC привязан","green"):pill("Нет EPC","yellow"),b("Привязать EPC","rfidselect:"+s.id)])}))+
+'<div class="row" style="margin-top:14px">'+b("Привязать EPC","rfidproduct:"+p.id,"primary")+b("Добавить образец этого артикула","queueproduct:"+p.id)+b("Назад к поиску","back")+'</div></section>')}
+function rfid(){var p=product(ui.epcPid),list=p?byProduct(p.id):[],chosen=sample(ui.epcSample);frame(rackBanner()+head("Привязать RFID к образцу","Сначала артикул, затем конкретный физический экземпляр и EPC, считанный с его метки.")+
+'<div class="steps"><span class="current">1. Артикул</span><span>2. Экземпляр</span><span>3. EPC</span></div>'+
+'<section class="panel">'+field("rfidarticle","Артикул или товарный ШК + Enter","ART-0001",p?p.article:"",true)+
+(p?'<div class="notice"><b>'+esc(p.article)+' · '+esc(p.name)+'</b><br>Активных образцов: '+list.length+'. Если их несколько, выберите именно тот физический экземпляр, чью метку сейчас читаете.</div>'+
+table(["Выбрать","Учётная полка","EPC","Служебный ID"],list.map(function(s){return tr([b(ui.epcSample===s.id?"✓ Выбран":"Выбрать","rfidselect:"+s.id,ui.epcSample===s.id?"primary":""),esc(s.loc),s.epc?esc(s.epc):pill("Не привязан","yellow"),esc(s.id)])})): '<div class="notice">Введите артикул и нажмите Enter.</div>')+
+(chosen&&chosen.active&&p&&chosen.pid===p.id?field("epcinput","EPC, считанный с RFID-метки + Enter","E200...", "",true)+
+'<div class="notice warn">Это ручная демонстрация привязки. Реальное считывание и запись EPC через Chainway C5 ещё не подключены. Нельзя считать EPC вымышленным или автоматически генерировать его.</div>':"")+
+'<div class="row">'+b("Найти другой артикул","rfidclear")+b("Вернуться к работе","nav:work")+'</div></section>')}
+function inspection(){var s=running(),mine=s&&s.rack===db.rack;frame(rackBanner()+head(mine?"Идёт проверка полки":"Проверить полку","Сканирование — наблюдение. Оно само не перемещает и не удаляет образцы.")+
+'<div class="steps"><span class="'+(mine?"":"current")+'">1. Начать</span><span class="'+(mine?"current":"")+'">2. Сканировать EPC подряд</span><span>3. Завершить</span><span>4. Разобрать расхождения</span></div>'+
+'<section class="panel">'+(!mine?
+'<div class="notice">После начала программа запомнит список экземпляров, которые сейчас числятся на '+esc(db.rack)+'. Отсутствующие определятся только после завершения проверки.</div>'+
+(s?'<div class="notice warn">Уже начата проверка '+esc(s.rack)+'. Сначала завершите её.</div>'+b("Перейти к активной проверке","resume","primary"):
+b("Начать проверку "+db.rack,"startinspection","primary")):
+'<div class="grid4"><div class="metric"><b>'+s.expected.length+'</b><small>Ожидается</small></div><div class="metric"><b>'+s.seen.length+'</b><small>Найдено разных EPC</small></div><div class="metric"><b>'+s.seen.filter(function(x){return sample(x)&&sample(x).loc!==s.rack}).length+'</b><small>Чужих</small></div><div class="metric"><b>'+s.unclear.length+'</b><small>Неоднозначных сканов</small></div></div>'+
+field("inspectscan","Сканируйте EPC подряд + Enter","E200DEMO00000001","",true)+
+'<div class="notice good">Каждый скан автоматически добавляется в проверку. Повторы одного EPC не увеличивают количество. Поле снова готово к следующему скану.</div>'+
+'<div class="row">'+b("Демо: 12 EPC подряд","demoinspect")+b("Показать состояние C5","c5inline")+b("Завершить проверку","finishinspection","primary")+b("Отменить проверку","cancelinspection","danger")+'</div>'+
+(ui.showC5?'<div class="notice warn"><b>Chainway C5 — только имитация.</b> Нет реального подключения к SDK, считывателю, Wi-Fi API или офлайн-очереди. Сканирование здесь вводится с клавиатуры.</div>':"")+
+table(["Время","Артикул","Результат"],s.seen.slice(-25).reverse().map(function(sid){var x=sample(sid),p=product(x.pid);return tr([new Date(s.startedAt).toLocaleTimeString("ru-RU"),esc(p.article),x.loc===s.rack?pill("На месте","green"):pill("Чужой","red")])}))+
+(s.unclear.length?'<div class="notice warn">Неоднозначных или неизвестных сканов: '+s.unclear.length+'. Товарный ШК не может различить несколько экземпляров одного артикула. Нужен EPC.</div>':""))+'</section>')}
+function result(){var s=latest(db.rack);if(!s){go("work");return}var wrong=issues(db.rack,"wrong"),missing=issues(db.rack,"missing");frame(rackBanner()+head("Итоги проверки","Проверка завершена. Учётные места не изменились. Расхождения можно разобрать сейчас или позже.")+
+'<section class="panel"><div class="grid4"><div class="metric"><b>'+s.seen.length+'</b><small>Обнаружено</small></div><div class="metric"><b>'+wrong.length+'</b><small>Чужие</small></div><div class="metric"><b>'+missing.length+'</b><small>Не найдены</small></div><div class="metric"><b>'+s.expected.length+'</b><small>Ожидалось</small></div></div>'+
+'<div class="notice warn">«Не найден» означает только отсутствие в завершённой проверке. Это не основание для автоматического удаления.</div>'+
+'<div class="row">'+b("Разобрать чужие ("+wrong.length+")","issue:wrong","primary",!wrong.length)+b("Разобрать не найденные ("+missing.length+")","issue:missing","",!missing.length)+b("Вернуться к работе","nav:work")+'</div></section>')}
+function issuePage(){var list=issues(db.rack,ui.filter),selected=ui.selected.filter(function(x){return list.includes(x)});frame(rackBanner()+head("Исправить места","Работайте с артикулами. Система применяет изменения к выбранным экземплярам.")+
+'<section class="panel"><div class="tabs">'+b("Чужие ("+issues(db.rack,"wrong").length+")","issue:wrong",ui.filter==="wrong"?"on":"")+b("Не найдены ("+issues(db.rack,"missing").length+")","issue:missing",ui.filter==="missing"?"on":"")+'</div>'+
+'<div class="notice '+(ui.filter==="missing"?"warn":"")+'">'+(ui.filter==="wrong"?"Эти образцы обнаружены на "+esc(db.rack)+", но числятся на других полках.":"Эти образцы числятся на "+esc(db.rack)+", но не были считаны при последней завершённой проверке. Их нельзя удалять без отдельного решения.")+'</div>'+
+'<div class="row between"><h3>Список · '+list.length+'</h3><div>'+b("Выбрать все "+list.length,"selectall")+b("Снять выбор","selectnone")+'</div></div>'+
+table(["Выбрать","Артикул / товар","Учётная полка","Обнаружен","EPC"],list.map(function(sid){var s=sample(sid),p=product(s.pid);return tr(['<input type="checkbox" class="check" data-check="'+esc(sid)+'" '+(selected.includes(sid)?"checked":"")+'>','<b>'+esc(p.article)+'</b><br><small>'+esc(p.name)+'</small>',esc(s.loc),ui.filter==="wrong"?esc(db.rack):"Не найден",s.epc?'<small>'+esc(s.epc)+'</small>':pill("Нет EPC","yellow")])}))+
+'<div class="footerbar"><b>Выбрано: '+selected.length+'</b><span class="spacer"></span>'+
+(ui.filter==="wrong"?b("Закрепить на этой полке","fixhere","primary",!selected.length):b("Подтвердить: нашёл на этой полке","markfound","primary",!selected.length))+
+b("Переместить на другую полку","choosemove","",!selected.length)+b("Убрать из учёта","removechosen","danger",!selected.length)+'</div></section>')}
+function chooseMove(){frame(head("Куда переместить выбранные образцы?","Перемещение изменяет учётное место только после подтверждения.")+'<section class="panel"><p>Выбрано экземпляров: <b>'+ui.selected.length+'</b></p><div class="field"><label>Полка назначения</label><select class="input" id="movetarget">'+R.map(function(r){return'<option value="'+r.id+'">'+r.id+" · "+esc(r.name)+'</option>'}).join("")+'</select></div><div class="row">'+b("Подтвердить перемещение","confirmmove","primary")+b("Назад без изменений","back")+'</div></section>')}
+function removePage(){var p=ui.detail?product(ui.detail):null;var list=active().filter(function(s){return p?s.pid===p.id:s.loc===db.rack});frame(rackBanner()+head("Убрать образцы из активного учёта","Удаление необратимо для активного учёта. История сохраняется. Нулевой остаток товара не удаляет образцы автоматически.")+
+'<section class="panel"><div class="notice warn">Сначала выберите именно те физические экземпляры, которые действительно убираете. Артикул может иметь несколько экземпляров.</div>'+
+table(["Выбрать","Артикул / товар","Полка","EPC"],list.slice(0,100).map(function(s){var p=product(s.pid);return tr(['<input type="checkbox" class="check" data-check="'+s.id+'" '+(ui.selected.includes(s.id)?"checked":"")+'>','<b>'+esc(p.article)+'</b><br><small>'+esc(p.name)+'</small>',esc(s.loc),s.epc?esc(s.epc):"Нет EPC"])}))+
+'<div class="footerbar"><b>Выбрано: '+ui.selected.length+'</b><span class="spacer"></span>'+b("Снять выбор","selectnone")+b("Убрать "+ui.selected.length+" образцов","removechosen","danger",!ui.selected.length)+'</div></section>')}
+function reports(){var tab=ui.report,items=[];if(tab==="no")items=db.products.filter(function(p){return !byProduct(p.id).length}).map(function(p){return{p:p}});else if(tab==="zero")items=active().filter(function(s){return product(s.pid).stock===0}).map(function(s){return{p:product(s.pid),s:s}});else if(tab==="all")items=active().map(function(s){return{p:product(s.pid),s:s}});else R.forEach(function(r){issues(r.id,tab).forEach(function(sid){var s=sample(sid);items.push({p:product(s.pid),s:s,r:r.id})})});frame(head("Аналитика по всему складу","По артикулам, образцам, остаткам и последним завершённым проверкам.")+
+'<section class="panel"><div class="tabs">'+[["no","Без образца"],["wrong","Чужие"],["missing","Не найдены"],["zero","Остаток 0"],["all","Все образцы"]].map(function(x){return b(x[1],"report:"+x[0],tab===x[0]?"on":"")}).join("")+'</div>'+
+'<div class="notice">'+(tab==="zero"?"Остатки здесь вымышленные. Ноль — только кандидат для решения, а не команда удалить.":tab==="no"?"Артикулы, для которых нет ни одного активного физического образца.":"Данные сгруппированы по артикулам; EPC служит для определения конкретного экземпляра.")+'</div>'+
+'<p>Всего: <b>'+items.length+'</b>. Показаны первые 60.</p>'+
+table(["Артикул","Товар","Учётная полка","Остаток","Действие"],items.slice(0,60).map(function(x){return tr(['<b>'+esc(x.p.article)+'</b>',esc(x.p.name),x.s?esc(x.s.loc):"Нет образца",String(x.p.stock),b("Открыть артикул","product:"+x.p.id,"primary")])}))+'</section>')}
+function history(){frame(head("Журнал событий","История действий в этом браузерном макете. Реальный сервер и неизменяемый аудит не подключены.")+
+'<section class="panel">'+table(["Время","Событие","Описание"],db.events.slice().reverse().slice(0,100).map(function(e){return tr([new Date(e.at).toLocaleString("ru-RU"),esc(e.action),esc(e.detail)])}))+'</section>')}
+function system(){frame(head("Система и RFID","Технический раздел. Он не нужен для обычной работы на полке.")+
+'<section class="panel"><div class="grid4"><div class="metric"><b>Демо</b><small>Каталог 1С</small></div><div class="metric"><b>Нет</b><small>Подключение Chainway C5</small></div><div class="metric"><b>'+active().filter(function(s){return !s.epc}).length+'</b><small>Образцов без EPC</small></div><div class="metric"><b>'+db.events.length+'</b><small>Событий в деможурнале</small></div></div>'+
+'<div class="notice warn">Не реализованы: реальный SDK Chainway, UHF-чтение и запись EPC, API, TLS, фоновая служба, чтение каталога 1С и резервное копирование БД. Данные сохраняются только в localStorage браузера.</div>'+
+'<div class="row">'+b("Скачать демоданные JSON","export")+b("Сбросить демомакет","reset","danger")+'</div></section>')}
+function render(){var pages={warehouse:warehouse,work:work,shelf:shelf,create:create,created:created,find:find,product:productPage,rfid:rfid,inspection:inspection,result:result,issues:issuePage,choosemove:chooseMove,remove:removePage,reports:reports,history:history,system:system};(pages[ui.page]||warehouse)()}
+function notify(s){ui.notice=s;render()}
+function commitMove(ids,target,reason){if(!ids.length)return;var label=ids.map(function(x){return product(sample(x).pid).article}).join(", ");if(!confirm("Переместить "+ids.length+" образцов на "+target+"?\nАртикулы: "+label.slice(0,250)))return;ids.forEach(function(sid){var x=sample(sid);if(x&&x.active){x.loc=target;x.version++}});log("Перемещение",ids,"На полку "+target);ui.selected=[];ui.page="work";notify("Перемещено: "+ids.length+". Учётные места обновлены.")}
+function removeSelected(){var ids=ui.selected.filter(function(x){return sample(x)&&sample(x).active});if(!ids.length)return;if(!confirm("Исключить "+ids.length+" физических образцов из активного учёта?\nЭто не отменяется. История сохранится."))return;ids.forEach(function(sid){var x=sample(sid);x.active=false;x.version++;x.removedAt=now();x.epc=null});log("Исключение",ids,"Исключено "+ids.length+" экземпляров");ui.selected=[];ui.page="work";notify("Исключено из активного учёта: "+ids.length+".")}
+function doScanCreate(code){var p=lookup(code),q=db.queue.find(function(x){return p?x.pid===p.id:x.code===code});if(q)q.qty++;else db.queue.push({code:code,pid:p?p.id:null,qty:1});save();ui.notice=p?"Добавлен артикул "+p.article+". Можно сканировать следующий.":"Неизвестный ШК/артикул: "+code+". Уберите ошибочную строку.";render()}
+function doScanInspect(code){var s=running();if(!s)return;var x=active().find(function(z){return z.epc&&z.epc.toLowerCase()===code.toLowerCase()});if(!x){var p=lookup(code);if(p){var list=byProduct(p.id);if(list.length===1)x=list[0];else{s.unclear.push(code);save();notify("У артикула "+p.article+" несколько экземпляров. Считайте уникальный EPC.");return}}else{s.unclear.push(code);save();notify("Неизвестный EPC. Скан не добавлен.");return}}
+if(s.seen.includes(x.id)){notify("Повтор EPC: "+product(x.pid).article+". Уже учтён.");return}
+s.seen.push(x.id);save();notify("Добавлен: "+product(x.pid).article+(x.loc===s.rack?" · на месте":" · чужой образец")+". Сканируйте следующий.")}
+function doBindEpc(code){var x=sample(ui.epcSample),p=product(ui.epcPid);if(!x||!x.active||!p||x.pid!==p.id)return notify("Сначала выберите экземпляр нужного артикула.");code=code.trim().toUpperCase();if(!/^[A-Z0-9]{8,64}$/.test(code))return notify("EPC должен содержать 8–64 символа A–Z, 0–9 (демопроверка).");if(active().some(function(s){return s.id!==x.id&&s.epc===code}))return notify("Этот EPC уже привязан к другому активному экземпляру.");if(!confirm("Привязать EPC "+code+" к артикулу "+p.article+"?\nЭкземпляр: "+x.id+"\nУбедитесь, что это метка именно этого физического образца."))return;x.epc=code;x.version++;log("Привязка EPC",[x.id],p.article+" · EPC "+code);notify("EPC привязан к экземпляру артикула "+p.article+".")}
+function legacyAction(a){var v;if(a==="back")return back();if(a.startsWith("nav:")){ui.selected=[];return go(a.slice(4))}if(a.startsWith("rack:")||a.startsWith("check:")){var check=a.startsWith("check:");db.rack=a.slice(check?6:5);save();return go(check?"inspection":"work")}if(a==="shelf")return go("shelf");if(a.startsWith("setrack:")){if(running())return notify("Сначала завершите начатую проверку.");db.rack=a.slice(8);save();return go("work")}
+if(["create","inspection","rfid","issues","remove"].includes(a)){ui.selected=[];if(a==="rfid"){ui.epcPid=null;ui.epcSample=null}return go(a)}
+if(a==="demo100"){db.queue=db.products.slice(0,100).map(function(p){return{code:p.barcode,pid:p.id,qty:1}});save();return notify("В списке 100 разных артикулов. Ничего ещё не создано.")}
+if(a==="clearqueue"){if(confirm("Очистить очередь создания?")){db.queue=[];save();render()}return}
+if(a==="cancelcreate"){if(db.queue.length&&!confirm("Отменить создание и очистить очередь?"))return;db.queue=[];save();return go("work")}
+if(a.startsWith("inc:")||a.startsWith("dec:")||a.startsWith("del:")){var i=Number(a.split(":")[1]),q=db.queue[i];if(!q)return;if(a.startsWith("inc:"))q.qty++;else if(a.startsWith("dec:"))q.qty--;else q.qty=0;if(q.qty<=0)db.queue.splice(i,1);save();return render()}
+if(a==="commitcreate"){var qty=db.queue.reduce(function(n,x){return n+x.qty},0);if(!qty||db.queue.some(function(x){return !x.pid}))return;if(!confirm("Создать "+qty+" физических образцов на полке "+db.rack+"?\nЭтикетки не печатаются."))return;var ids=[];db.queue.forEach(function(q){for(var j=0;j<q.qty;j++){var sid="S-"+String(db.next++).padStart(6,"0");db.samples.push({id:sid,pid:q.pid,loc:db.rack,epc:null,active:true,version:1,createdAt:now()});ids.push(sid)}});db.queue=[];db.lastCreated=ids;log("Создание",ids,"Создано "+ids.length+" экземпляров на "+db.rack);return go("created")}
+if(a.startsWith("product:")){ui.detail=Number(a.slice(8));return go("product")}
+if(a.startsWith("queueproduct:")){var p=product(Number(a.slice(13)));db.queue.push({code:p.barcode,pid:p.id,qty:1});save();return go("create")}
+if(a.startsWith("rfidproduct:")){ui.epcPid=Number(a.slice(12));ui.epcSample=null;return go("rfid")}
+if(a.startsWith("rfidselect:")){var sid=a.slice(11),x=sample(sid);ui.epcPid=x.pid;ui.epcSample=sid;return go("rfid")}
+if(a==="rfidclear"){ui.epcPid=null;ui.epcSample=null;return render()}
+if(a==="startinspection"){if(running())return notify("Другая проверка уже начата.");db.sessions.push({id:id(),rack:db.rack,status:"active",expected:active().filter(function(x){return x.loc===db.rack}).map(function(x){return x.id}),seen:[],unclear:[],startedAt:now(),finishedAt:null});save();return render()}
+if(a==="resume"){db.rack=running().rack;save();return render()}
+if(a==="demoinspect"){var s=running();if(!s)return;active().filter(function(x){return !!x.epc}).slice(0,12).forEach(function(x){if(!s.seen.includes(x.id))s.seen.push(x.id)});save();return notify("Демо: добавлены 12 уникальных EPC.")}
+if(a==="c5inline"){ui.showC5=!ui.showC5;return render()}
+if(a==="finishinspection"){var s=running();if(!s)return;if(!confirm("Завершить проверку "+s.rack+"?\nПосле завершения будут определены не найденные образцы. Учётные места не изменятся."))return;s.status="done";s.finishedAt=now();log("Проверка",s.seen,"Полка "+s.rack+" · считано "+s.seen.length);return go("result")}
+if(a==="cancelinspection"){var s=running();if(!s)return;if(!confirm("Отменить текущую проверку? Её наблюдения будут потеряны."))return;s.status="cancelled";s.finishedAt=now();save();return go("work")}
+if(a.startsWith("issue:")){ui.filter=a.slice(6);ui.selected=[];return go("issues")}
+if(a==="selectall"){ui.selected=issues(db.rack,ui.filter).slice();return render()}
+if(a==="selectnone"){ui.selected=[];return render()}
+if(a==="fixhere")return commitMove(ui.selected,db.rack,"Исправление места");
+if(a==="markfound"){if(!ui.selected.length)return;if(!confirm("Подтверждаете, что физически нашли все "+ui.selected.length+" выбранных образцов на "+db.rack+"?"))return;var s=latest(db.rack);ui.selected.forEach(function(sid){if(!s.seen.includes(sid))s.seen.push(sid)});log("Подтверждение обнаружения",ui.selected,"Физически найдены на "+db.rack);ui.selected=[];return notify("Обнаружение подтверждено. Учётное место не менялось.")}
+if(a==="choosemove")return go("choosemove");
+if(a==="confirmmove"){var t=document.getElementById("movetarget").value;return commitMove(ui.selected,t,"Перемещение")}
+if(a==="removechosen")return removeSelected();
+if(a.startsWith("report:")){ui.report=a.slice(7);return go("reports")}
+if(a==="export"){var blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),aEl=document.createElement("a");aEl.href=url;aEl.download="fabric-samples-demo-v9.json";aEl.click();setTimeout(function(){URL.revokeObjectURL(url)},1000);return}
+if(a==="reset"){if(confirm("Сбросить ВСЕ данные демомакета?")){db=seed();ui.page="warehouse";ui.stack=[];ui.selected=[];save();render()}return}
+}
+function legacyWire(){document.querySelectorAll("[data-a]").forEach(function(el){el.onclick=function(){action(el.dataset.a)}});document.querySelectorAll("[data-check]").forEach(function(el){el.onchange=function(){var sid=el.dataset.check;if(el.checked&&!ui.selected.includes(sid))ui.selected.push(sid);if(!el.checked)ui.selected=ui.selected.filter(function(x){return x!==sid});render()}});function scan(name,fn){var el=document.getElementById(name);if(el){el.onkeydown=function(e){if(e.key==="Enter"){e.preventDefault();var v=el.value.trim();if(!v)return;fn(v)}}}}scan("createscan",doScanCreate);scan("inspectscan",doScanInspect);scan("epcinput",doBindEpc);scan("rfidarticle",function(v){var p=lookup(v);if(!p)return notify("Артикул или ШК не найден.");ui.epcPid=p.id;ui.epcSample=null;render()});scan("rackscan",function(v){v=v.replace(/^RACK:/i,"").toUpperCase();if(!R.some(function(x){return x.id===v}))return notify("Полка не найдена.");if(running())return notify("Завершите текущую проверку.");db.rack=v;save();go("work")});var f=document.getElementById("findinput");if(f){f.oninput=function(){ui.search=f.value;render();var e=document.getElementById("findinput");e.focus();e.setSelectionRange(e.value.length,e.value.length)}}var focus={create:"createscan",inspection:"inspectscan",rfid:"rfidarticle",shelf:"rackscan"}[ui.page];if(focus)document.getElementById(focus)?.focus()}
+
+/* v10: simplified workflow and safe, explicit stock-based selection. Browser demo only. */
+function seed(){
+ var d=seedV9();d.schema=10;d.resolutions=[];d.afterObservations=[];d.epcWrites=[];d.nextEpc=900000;
+ d.products.forEach(function(p,i){if(i%7===0)p.stock=0;else if(i%9===0)p.stock=.45;else if(i%11===0)p.stock=.8;else p.stock=(i%29)+1});
+ d.samples.forEach(function(s){s.epcHistory=s.epc?[{epc:s.epc,from:s.createdAt,to:null}]:[]});
+ d.sessions.forEach(function(s){s.seenLocations={};s.seen.forEach(function(sid){var x=d.samples.find(function(z){return z.id===sid});if(x)s.seenLocations[sid]=x.loc});s.unclear=s.unclear||[]});
+ return d;
+}
+ui.threshold=1;ui.stockSelection=[];ui.rfidFeedback="";ui.stockFilter="all";
+db.resolutions=db.resolutions||[];db.afterObservations=db.afterObservations||[];db.epcWrites=db.epcWrites||[];db.nextEpc=db.nextEpc||900000;
+function nav(){
+ var pages=[["warehouse","Склад"],["work","Операции"],["find","Артикулы"],["stock","Отбор по остаткам"],["reports","Отчёты"],["history","Журнал"]];
+ return '<header class="top"><div class="brand"><div><strong>▤ Образцы тканей</strong><div class="small">Работа по артикулам · уникальность по RFID</div></div><span class="small">МАКЕТ v10 · автономно</span></div><nav class="nav">'+pages.map(function(p){return b(p[1],"nav:"+p[0],ui.page===p[0]?"on":"")}).join("")+'</nav></header>';
+}
+function frame(body){
+ var s=running(),context='<div class="fixed-context"><span>РАБОЧАЯ ПОЛКА</span><strong>'+esc(db.rack)+'</strong>'+b("Сменить","shelf")+(s?'<span class="pill yellow">Проверка '+esc(s.rack)+' не завершена</span>'+b("Продолжить проверку","resumeinspection","primary"):'')+'</div>';
+ document.getElementById("app").innerHTML=nav()+'<main class="wrap"><div class="banner">Демонстрация интерфейса v10. Остатки и товары вымышлены. Нет соединения с 1С, Chainway C5, RFID SDK или сервером. Запись метки ниже только имитируется.</div>'+context+(ui.stack.length?'<div class="back">'+b("← Назад","back","ghost")+'</div>':"")+(ui.notice?'<div class="notice good">'+esc(ui.notice)+'</div>':"")+body+'</main>';wire();
+}
+function go(p){if(ui.page===p)return render();var roots=["warehouse","work","find","stock","reports","history","system"];if(roots.includes(p))ui.stack=[];else ui.stack.push(ui.page);ui.page=p;ui.notice="";render()}
+function back(){ui.page=ui.stack.pop()||"work";ui.notice="";render()}
+function snapshotWrong(s){if(!s)return[];return s.seen.filter(function(sid){var x=sample(sid);return x&&s.seenLocations&&s.seenLocations[sid]&&s.seenLocations[sid]!==s.rack})}
+function snapshotMissing(s){if(!s)return[];return s.expected.filter(function(sid){return !s.seen.includes(sid)})}
+function issueResolved(s,sid,type){return db.resolutions.some(function(r){return r.session===s.id&&r.sid===sid&&r.type===type})}
+function issues(r,type){var s=latest(r);if(!s)return[];var ids=type==="wrong"?snapshotWrong(s):snapshotMissing(s);return ids.filter(function(sid){var x=sample(sid);return x&&x.active&&!issueResolved(s,sid,type)})}
+function resolveOne(s,sid,type,method){if(!s||issueResolved(s,sid,type))return;db.resolutions.push({id:id(),session:s.id,rack:s.rack,sid:sid,type:type,method:method,at:now()})}
+function warehouse(){
+ var notChecked=R.filter(function(r){return !latest(r.id)}).length,without=active().filter(function(s){return !s.epc}).length;
+ frame(head("Склад — обзор","Состояние всего склада. Начните с нужной операции; рабочая полка сохраняется.")+
+ '<div class="grid4"><div class="metric"><b>'+active().length+'</b><small>Образцов в учёте</small></div><div class="metric"><b>'+without+'</b><small>Без записанной RFID</small></div><div class="metric"><b>'+totalIssues("wrong")+'</b><small>Чужие: не исправлены</small></div><div class="metric"><b>'+totalIssues("missing")+'</b><small>Не найдены: не разобраны</small></div></div>'+
+ '<section class="panel" style="margin-top:15px"><div class="row between"><h2>Быстрые действия</h2>'+b("Все операции","nav:work","primary")+'</div><div class="grid">'+
+ '<button class="task" data-a="create"><span class="symbol">＋</span><span><strong>Добавить образцы</strong><small>Потоковое сканирование товарных ШК</small></span></button>'+
+ '<button class="task" data-a="rfid"><span class="symbol">◉</span><span><strong>Записать RFID</strong><small>ШК товара → запись EPC → проверка метки</small></span></button>'+
+ '<button class="task" data-a="inspection"><span class="symbol">▣</span><span><strong>Проверить полку</strong><small>Считывание EPC, без изменения учёта</small></span></button>'+
+ '<button class="task" data-a="nav:stock"><span class="symbol">⌕</span><span><strong>Отобрать по остатку</strong><small>Задать порог в метрах и подтвердить исключение</small></span></button></div></section>'+
+ '<section class="panel"><h2>Полки и расхождения</h2>'+table(["Полка","В учёте","Последняя проверка","Чужие","Не найдены","Открыть"],R.map(function(r){var s=latest(r.id);return tr(['<b>'+r.id+'</b>',String(active().filter(function(x){return x.loc===r.id}).length),s?new Date(s.finishedAt).toLocaleString("ru-RU"):"Не проверялась",String(issues(r.id,"wrong").length),String(issues(r.id,"missing").length),b("Работать","rack:"+r.id,"primary")])}))+
+ '<div class="footnote">Проверок ещё не было: '+notChecked+' полок. Расхождения — только незакрытые по последним завершённым проверкам; история наблюдений не изменяется.</div></section>');
+}
+function work(){
+ var s=latest(db.rack),n=active().filter(function(x){return x.loc===db.rack&&!x.epc}).length;
+ frame(head("Операции на полке","Одна операция за раз. Сканирование и запись выполняются потоком; подтверждение требуется при изменении учёта.")+
+ '<div class="grid">'+
+ '<button class="task" data-a="create"><span class="symbol">＋</span><span><strong>1. Создать образцы</strong><small>ШК / артикул + Enter → партия → одно подтверждение</small></span></button>'+
+ '<button class="task" data-a="rfid"><span class="symbol">◉</span><span><strong>2. Записать RFID</strong><small>ШК → свободный экземпляр → записать и проверить EPC</small></span></button>'+
+ '<button class="task" data-a="inspection"><span class="symbol">▣</span><span><strong>3. Проверить полку</strong><small>Сканировать EPC подряд → завершить → разобрать</small></span></button>'+
+ '<button class="task" data-a="issues"><span class="symbol">↔</span><span><strong>4. Исправить расхождения</strong><small>Физически вернуть или изменить учётную полку</small></span></button></div>'+
+ '<section class="panel" style="margin-top:15px"><div class="statline"><span>Без EPC на полке: <b>'+n+'</b></span><span>Чужих: <b>'+issues(db.rack,"wrong").length+'</b></span><span>Не найдено: <b>'+issues(db.rack,"missing").length+'</b></span><span>Проверка: <b>'+(s?new Date(s.finishedAt).toLocaleDateString("ru-RU"):"не проводилась")+'</b></span></div>'+
+ '<div class="row">'+b("Переместить по артикулу / EPC","directmove")+b("Исключить вручную","remove","danger")+b("Отбор по остатку 1С","nav:stock")+'</div></section>');
+}
+function created(){
+ var list=db.lastCreated.map(sample).filter(Boolean),map={};list.forEach(function(s){var p=product(s.pid);if(!map[s.pid])map[s.pid]={p:p,n:0};map[s.pid].n++});
+ frame(head("Партия создана","Учётные записи созданы. Следующий этап — запись RFID-меток на физические образцы.")+
+ '<section class="panel"><div class="grid4"><div class="metric"><b>'+list.length+'</b><small>Создано</small></div><div class="metric"><b>'+Object.keys(map).length+'</b><small>Артикулов</small></div><div class="metric"><b>'+list.filter(function(s){return !s.epc}).length+'</b><small>Нужна запись EPC</small></div><div class="metric"><b>'+esc(db.rack)+'</b><small>Полка</small></div></div>'+
+ table(["Артикул","Наименование","Новых экземпляров"],Object.keys(map).map(function(k){var v=map[k];return tr([esc(v.p.article),esc(v.p.name),String(v.n)])}))+
+ '<div class="footerbar">'+b("Перейти к записи RFID","rfid","primary")+b("Сканировать следующую партию","create")+b("Завершить работу","nav:work")+'</div></section>');
+}
+function productPage(){
+ var p=product(ui.detail);if(!p){back();return}var list=byProduct(p.id);
+ frame(head(p.article+" · "+p.name,"Штрихкод товара общий для всех физических экземпляров. Уникальность обеспечивается EPC после записи.")+
+ '<section class="panel"><div class="statline"><span>Остаток 1С (демо): <b>'+p.stock+' м</b></span><span>Активных образцов: <b>'+list.length+'</b></span><span>Без EPC: <b>'+list.filter(function(s){return !s.epc}).length+'</b></span></div>'+
+ '<div class="notice">Товарный штрихкод: <b>'+esc(p.barcode)+'</b>. Служебные ID не печатаются и не нужны оператору для обычной работы.</div>'+
+ table(["Экземпляр (служебно)","Полка","RFID","Действие"],list.map(function(s){return tr([esc(s.id),esc(s.loc),s.epc?pill("EPC записан","green"):pill("Нет EPC","yellow"),s.epc?b("Переместить","movedetail:"+s.id):b("Записать RFID","writeproduct:"+p.id,"primary")])}))+
+ '<div class="row" style="margin-top:14px">'+b("Записать RFID для артикула","writeproduct:"+p.id,"primary")+b("Создать ещё образец","queueproduct:"+p.id)+b("К поиску","nav:find")+'</div></section>');
+}
+function rfid(){
+ var p=product(ui.epcPid),untagged=p?byProduct(p.id).filter(function(s){return !s.epc}):[],chosen=untagged[0]||null;
+ ui.epcSample=chosen?chosen.id:null;
+ frame(head("Запись RFID на образцы","Режим: сканировать товарный ШК → поднести ОДНУ метку → записать уникальный EPC → считать для проверки.")+
+ '<section class="panel"><div class="steps"><span class="current">1. ШК / артикул</span><span>2. Запись EPC</span><span>3. Проверка записи</span><span>4. Следующий образец</span></div>'+
+ field("rfidarticle","Сканируйте товарный ШК или артикул + Enter","4600000000001 / ART-0001",p?p.article:"",true)+
+ (p?'<div class="notice"><b>'+esc(p.article)+' · '+esc(p.name)+'</b><div class="statline"><span>Всего: '+byProduct(p.id).length+'</span><span>Без RFID: '+untagged.length+'</span><span>Уже с RFID: '+(byProduct(p.id).length-untagged.length)+'</span></div></div>':'<div class="notice">Сканируйте товар. Система автоматически подберёт свободный, ещё не маркированный экземпляр этого артикула.</div>')+
+ (p&&chosen?'<div class="actioncard"><h3>Готово к записи метки</h3><p>Артикул '+esc(p.article)+' · учётная полка '+esc(chosen.loc)+'. На C5 должна быть выделена только одна физическая метка.</p>'+
+ b("ДЕМО: записать EPC и проверить","demowrite","primary")+
+ '<div class="footnote">В настоящем приложении эту команду выполняет Chainway C5: генерация EPC сервером, запись на метку, чтение обратно, проверка и фиксация привязки. Здесь вместо оборудования — имитация.</div></div>':p?'<div class="notice warn">Нет свободных экземпляров без RFID. Нельзя перезаписывать уже привязанные метки автоматически. При необходимости сначала создайте новый образец.</div>':"")+
+ (ui.rfidFeedback?'<div class="notice good">'+esc(ui.rfidFeedback)+'</div>':"")+
+ '<div class="row" style="margin-top:12px">'+b("Следующий артикул","rfidclear")+b("К операциям","nav:work")+'</div></section>');
+}
+function doScanInspect(code){
+ var s=running();if(!s)return;code=code.trim().toUpperCase();var x=active().find(function(z){return z.epc&&z.epc.toUpperCase()===code});
+ if(!x){s.unclear=s.unclear||[];s.unclear.push({code:code,at:now(),reason:lookup(code)?"Товарный ШК не является EPC":"Неизвестный EPC"});save();return notify("Не распознан уникальный EPC. Скан сохранён отдельно, но не засчитан.")}
+ if(s.seen.includes(x.id))return notify("Повтор "+product(x.pid).article+": уже учтён.");
+ s.seen.push(x.id);s.seenLocations=s.seenLocations||{};s.seenLocations[x.id]=x.loc;save();notify("Считан "+product(x.pid).article+(x.loc===s.rack?" · на месте":" · чужой")+". Можно сканировать следующий.");
+}
+function inspection(){
+ var s=running(),mine=s&&s.rack===db.rack;
+ frame(head(mine?"Проверка выполняется":"Проверка полки","Только чтение EPC. Ни одно сканирование не перемещает и не исключает образец.")+
+ '<section class="panel">'+(!mine?
+ (s?'<div class="notice warn">Уже идёт проверка '+esc(s.rack)+'. Продолжите её, прежде чем начинать другую.</div>'+b("Продолжить","resumeinspection","primary"):
+ '<div class="notice">На старте фиксируется снимок ожидаемых образцов на '+esc(db.rack)+'. Результаты останутся неизменными после исправлений.</div>'+b("Начать проверку","startinspection","primary")):
+ '<div class="grid4"><div class="metric"><b>'+s.expected.length+'</b><small>Ожидается</small></div><div class="metric"><b>'+s.seen.length+'</b><small>Уникальных EPC</small></div><div class="metric"><b>'+snapshotWrong(s).length+'</b><small>Чужие</small></div><div class="metric"><b>'+(s.unclear||[]).length+'</b><small>Не распознано</small></div></div>'+
+ field("inspectscan","Сканируйте EPC + Enter","E200DEMO00000001","",true)+
+ '<div class="toolbar">'+b("Демо: 12 EPC","demoinspect")+b("Завершить проверку","finishinspection","primary")+b("Отменить","cancelinspection","danger")+'</div>'+
+ '<div class="footnote">Сканер готов к следующему коду после каждого Enter. Повторы не учитываются; товарные ШК не принимаются как EPC.</div>'+
+ table(["Артикул","Учётная полка на момент скана","Результат"],s.seen.slice(-30).reverse().map(function(sid){var x=sample(sid),p=x?product(x.pid):null,loc=s.seenLocations&&s.seenLocations[sid];return tr([p?esc(p.article):"Неизвестно",esc(loc||"—"),loc===s.rack?pill("На месте","green"):pill("Чужой","red")])}))+
+ ((s.unclear||[]).length?'<div class="notice warn">Не распознано: '+s.unclear.length+'. Эти сканы сохранены отдельно и не считаются найденными экземплярами.</div>':""))+'</section>');
+}
+function result(){
+ var s=latest(db.rack);if(!s)return go("work");var w=snapshotWrong(s),m=snapshotMissing(s);
+ frame(head("Проверка завершена","Исторический снимок зафиксирован. Исправления ведутся отдельно и не меняют результаты сканирования.")+
+ '<section class="panel"><div class="grid4"><div class="metric"><b>'+s.seen.length+'</b><small>Считано EPC</small></div><div class="metric"><b>'+w.length+'</b><small>Чужие в снимке</small></div><div class="metric"><b>'+m.length+'</b><small>Не найдены в снимке</small></div><div class="metric"><b>'+(s.unclear||[]).length+'</b><small>Не распознано</small></div></div>'+
+ '<div class="statline"><span>Не исправлено чужих: <b>'+issues(db.rack,"wrong").length+'</b></span><span>Не разобрано пропавших: <b>'+issues(db.rack,"missing").length+'</b></span></div>'+
+ '<div class="row">'+b("Исправить чужие","issue:wrong","primary",!issues(db.rack,"wrong").length)+b("Разобрать не найденные","issue:missing","",!issues(db.rack,"missing").length)+b("К операциям","nav:work")+'</div></section>');
+}
+function issuePage(){
+ var list=issues(db.rack,ui.filter),selected=ui.selected.filter(function(x){return list.includes(x)}),isWrong=ui.filter==="wrong";
+ frame(head("Разбор расхождений","Сначала физически проверьте образцы, затем выберите точное действие. Результат проверки не переписывается.")+
+ '<section class="panel"><div class="tabs">'+b("Чужие · "+issues(db.rack,"wrong").length,"issue:wrong",isWrong?"on":"")+b("Не найдены · "+issues(db.rack,"missing").length,"issue:missing",!isWrong?"on":"")+'</div>'+
+ '<div class="notice">'+(isWrong?"Эти образцы найдены на "+esc(db.rack)+", хотя учтены на других полках. Выберите: физически вернули на место или оставили здесь и исправили учёт.":"Эти образцы не считаны при проверке. Сначала найдите физический экземпляр; отсутствие скана не означает исключение.")+'</div>'+
+ '<div class="row between"><h3>Не разобрано: '+list.length+'</h3><div>'+b("Выбрать все","selectall","",!list.length)+b("Снять выбор","selectnone")+'</div></div>'+
+ table(["Выбор","Артикул / товар","Числится","Фактически при проверке","RFID"],list.map(function(sid){var x=sample(sid),p=product(x.pid);return tr(['<input type="checkbox" class="check" data-check="'+esc(sid)+'" '+(selected.includes(sid)?"checked":"")+'>','<b>'+esc(p.article)+'</b><br><small>'+esc(p.name)+'</small>',esc(x.loc),isWrong?esc(db.rack):"Не найден",x.epc?pill("Считан","green"):pill("Нет EPC","yellow")])}))+
+ '<div class="footerbar"><b>Выбрано: '+selected.length+'</b><span class="spacer"></span>'+
+ (isWrong?b("Вернул физически на учётную полку","returnhome","primary",!selected.length)+b("Оставил здесь — исправить учёт","fixhere","",!selected.length):
+ b("Нашёл здесь","markfound","primary",!selected.length))+
+ b(isWrong?"Переместил на другую полку":"Нашёл на другой полке","choosemove","",!selected.length)+'</div>'+
+ '<div class="footnote">Массовые исправления требуют одного подтверждения всей выбранной партии. Исключение образцов вынесено в отдельную операцию.</div></section>');
+}
+function stockCandidates(){
+ var t=Number(ui.threshold),valid=Number.isFinite(t)&&t>=0,products=db.products.filter(function(p){return valid&&p.stock<t&&byProduct(p.id).length}),rows=[];
+ products.forEach(function(p){byProduct(p.id).forEach(function(s){rows.push({p:p,s:s})})});
+ var selected=ui.selected.filter(function(sid){return rows.some(function(x){return x.s.id===sid})});
+ frame(head("Отбор образцов по остатку 1С","Вы задаёте порог в метрах. Система показывает кандидатов, но ничего не исключает автоматически.")+
+ '<section class="panel"><div class="row"><div class="field" style="margin:0;max-width:250px"><label for="stockthreshold">Показать остаток меньше, м</label><input id="stockthreshold" class="input" type="number" min="0" step="0.1" value="'+esc(ui.threshold)+'"></div>'+
+ '<div class="actioncard"><b>Правило: остаток строго меньше '+esc(ui.threshold)+' м</b><p>Источник в макете — вымышленные значения. В реальной системе остатки читаются из 1С без записи обратно.</p></div></div>'+
+ '<div class="statline"><span>Артикулов-кандидатов: <b>'+products.length+'</b></span><span>Физических образцов: <b>'+rows.length+'</b></span><span>Выбрано вручную: <b>'+selected.length+'</b></span></div>'+
+ '<div class="notice warn">Отбор — это рекомендация к физической проверке и уборке. Выберите только реально изъятые образцы. Если одного артикула несколько, различайте физические экземпляры по RFID.</div>'+
+ '<div class="toolbar">'+b("Выбрать всех кандидатов","stockall","",!rows.length)+b("Снять выбор","stocknone","",!selected.length)+b("Обновить список","stockrefresh")+'</div>'+
+ table(["Выбор","Артикул / товар","Остаток, м","Учётная полка","RFID / экземпляр"],rows.slice(0,300).map(function(x){return tr(['<input type="checkbox" class="check" data-check="'+esc(x.s.id)+'" '+(selected.includes(x.s.id)?"checked":"")+'>','<b>'+esc(x.p.article)+'</b><br><small>'+esc(x.p.name)+'</small>',String(x.p.stock),esc(x.s.loc),x.s.epc?'<small>'+esc(x.s.epc)+'</small>':pill("Нет EPC","yellow")+' <small>'+esc(x.s.id)+'</small>'])}))+
+ (rows.length>300?'<div class="notice warn">Показаны первые 300 экземпляров. Уточните порог или используйте поиск по артикулу, чтобы обработать остальные.</div>':"")+
+ '<div class="footerbar"><b>К исключению: '+selected.length+'</b><span class="spacer"></span>'+b("Подтвердить исключение выбранных","stockremove","danger",!selected.length)+'</div></section>');
+}
+function moveDirect(){
+ var x=sample(ui.moveSample),p=x?product(x.pid):null;
+ frame(head("Переместить образец","Сначала определите физический экземпляр по EPC. Товарный ШК не различает копии одного артикула.")+
+ '<section class="panel">'+field("movescan","Считайте EPC образца + Enter","E200DEMO00000001","",true)+
+ (x&&x.active?'<div class="notice"><b>'+esc(p.article)+'</b> · '+esc(p.name)+'<br>Учётная полка: '+esc(x.loc)+'</div>'+
+ '<div class="field"><label for="movetarget">Куда физически переместили</label><select id="movetarget" class="input">'+R.filter(function(r){return r.id!==x.loc}).map(function(r){return'<option value="'+esc(r.id)+'">'+esc(r.id)+'</option>'}).join("")+'</select></div>'+
+ b("Подтвердить перемещение","confirmdirect","primary"):'<div class="notice">Для однозначного перемещения считайте EPC. Без записанной RFID сначала выполните маркировку.</div>')+'</section>');
+}
+function commitMove(ids,target,reason){
+ ids=ids.filter(function(sid){var x=sample(sid);return x&&x.active&&x.loc!==target});
+ if(!ids.length)return notify("Нет образцов, которым нужно менять учётную полку.");
+ if(!R.some(function(r){return r.id===target}))return notify("Полка назначения не найдена.");
+ if(!confirm("Подтвердить, что физически переместили "+ids.length+" образцов на "+target+"?\nИзменить учётное место выбранных экземпляров?"))return;
+ var s=latest(db.rack),old=ids.map(function(sid){var x=sample(sid);return{sid:sid,from:x.loc,to:target,epc:x.epc}});
+ ids.forEach(function(sid){var x=sample(sid);x.loc=target;x.version++;if(s&&issues(s.rack,"wrong").includes(sid))resolveOne(s,sid,"wrong","Учёт перенесён на "+target);if(s&&issues(s.rack,"missing").includes(sid)){db.afterObservations.push({id:id(),session:s.id,sid:sid,loc:target,at:now()});resolveOne(s,sid,"missing","Найден и перенесён на "+target)}});
+ log("Перемещение",ids,JSON.stringify(old));ui.selected=[];ui.moveSample=null;go("work");notify("Перемещено: "+ids.length+". Учётные места исправлены.");
+}
+function removeSelected(){
+ var ids=ui.selected.filter(function(sid){var x=sample(sid);return x&&x.active});if(!ids.length)return;
+ if(!confirm("Вы ФИЗИЧЕСКИ убрали "+ids.length+" выбранных образцов?\nПодтвердить окончательное исключение из активного учёта?\nОперация необратима. EPC и история сохраняются."))return;
+ var old=ids.map(function(sid){var x=sample(sid);return{sid:sid,article:product(x.pid).article,loc:x.loc,epc:x.epc}});
+ ids.forEach(function(sid){var x=sample(sid);x.active=false;x.version++;x.removedAt=now();(x.epcHistory||[]).forEach(function(z){if(!z.to)z.to=x.removedAt});R.forEach(function(r){var s=latest(r.id);if(s){if(issues(r.id,"wrong").includes(sid))resolveOne(s,sid,"wrong","Исключён");if(issues(r.id,"missing").includes(sid))resolveOne(s,sid,"missing","Исключён")}})});
+ log("Исключение",ids,JSON.stringify(old));ui.selected=[];go("work");notify("Исключено "+ids.length+" образцов. EPC и история сохранены.");
+}
+function demoWrite(){
+ var p=product(ui.epcPid),x=sample(ui.epcSample);if(!p||!x||!x.active||x.pid!==p.id||x.epc)return notify("Нет свободного экземпляра для записи.");
+ var code;do{code="E200V10"+String(db.nextEpc++).padStart(12,"0")}while(db.samples.some(function(z){return z.epc===code||(z.epcHistory||[]).some(function(y){return y.epc===code})}));
+ x.epc=code;x.epcHistory=x.epcHistory||[];x.epcHistory.push({epc:code,from:now(),to:null});x.version++;
+ db.epcWrites.push({id:id(),sample:x.id,epc:code,status:"SIMULATED_WRITE_AND_READBACK",at:now()});
+ log("RFID: демо запись + проверка",[x.id],p.article+" · "+code+" · без реального C5");
+ ui.rfidFeedback="ИМИТАЦИЯ: EPC "+code+" записан и проверен для "+p.article+". Реальная метка не менялась.";
+ var next=byProduct(p.id).find(function(s){return !s.epc});ui.epcSample=next?next.id:null;save();render();
+}
+function wire(){
+ legacyWire();
+ var el=document.getElementById("rfidarticle");if(el)el.onkeydown=function(e){if(e.key!=="Enter")return;e.preventDefault();var p=lookup(el.value);if(!p)return notify("Артикул или ШК не найден в демокаталоге.");ui.epcPid=p.id;ui.rfidFeedback="";render()};
+ var th=document.getElementById("stockthreshold");if(th)th.onchange=function(){var v=Number(th.value);if(!Number.isFinite(v)||v<0)return notify("Введите порог не меньше 0 метров.");ui.threshold=v;ui.selected=[];render()};
+ var m=document.getElementById("movescan");if(m)m.onkeydown=function(e){if(e.key!=="Enter")return;e.preventDefault();var x=active().find(function(z){return z.epc&&z.epc.toUpperCase()===m.value.trim().toUpperCase()});if(!x)return notify("EPC не найден. Товарный ШК не определяет физический экземпляр.");ui.moveSample=x.id;render()};
+ if(ui.page==="directmove"&&m)m.focus();
+}
+function action(a){
+ if(a==="resumeinspection"){var s=running();if(!s)return notify("Активной проверки нет.");db.rack=s.rack;save();return go("inspection")}
+ if(a==="demowrite")return demoWrite();
+ if(a==="rfidclear"){ui.epcPid=null;ui.epcSample=null;ui.rfidFeedback="";return render()}
+ if(a.startsWith("writeproduct:")){ui.epcPid=Number(a.slice(13));ui.epcSample=null;ui.rfidFeedback="";return go("rfid")}
+ if(a.startsWith("rfidselect:")){var x=sample(a.slice(11));if(!x)return;ui.epcPid=x.pid;ui.epcSample=null;return go("rfid")}
+ if(a==="rfid"){ui.epcPid=null;ui.epcSample=null;ui.rfidFeedback="";return go("rfid")}
+ if(a==="startinspection"){if(running())return notify("Сначала завершите текущую проверку.");var exp=active().filter(function(x){return x.loc===db.rack});db.sessions.push({id:id(),rack:db.rack,status:"active",expected:exp.map(function(x){return x.id}),expectedLocations:Object.fromEntries(exp.map(function(x){return[x.id,x.loc]})),seen:[],seenLocations:{},unclear:[],startedAt:now(),finishedAt:null});save();return render()}
+ if(a==="demoinspect"){var s=running();if(!s)return;active().filter(function(x){return x.epc}).slice(0,12).forEach(function(x){if(!s.seen.includes(x.id)){s.seen.push(x.id);s.seenLocations[x.id]=x.loc}});save();return notify("Демо: добавлено до 12 уникальных EPC.")}
+ if(a==="finishinspection"){var s=running();if(!s)return;if(!confirm("Завершить проверку "+s.rack+"? Снимок останется неизменным; места не изменятся."))return;s.status="done";s.finishedAt=now();log("Проверка",s.seen,"Снимок "+s.rack+"; чужих "+snapshotWrong(s).length+"; не найдено "+snapshotMissing(s).length);return go("result")}
+ if(a==="returnhome"){var s=latest(db.rack),ids=ui.selected.filter(function(sid){return issues(db.rack,"wrong").includes(sid)});if(!ids.length)return;if(!confirm("Вы физически ВЕРНУЛИ "+ids.length+" образцов на их учётные полки?\nУчётные места не изменятся."))return;ids.forEach(function(sid){resolveOne(s,sid,"wrong","Физически возвращён на учётную полку")});log("Возврат на место",ids,"Физическое исправление без изменения учётных мест");ui.selected=[];return notify("Подтверждён физический возврат: "+ids.length+".")}
+ if(a==="markfound"){var s=latest(db.rack),ids=ui.selected.filter(function(sid){return issues(db.rack,"missing").includes(sid)});if(!ids.length)return;if(!confirm("Физически нашли "+ids.length+" образцов на "+db.rack+"?"))return;ids.forEach(function(sid){db.afterObservations.push({id:id(),session:s.id,sid:sid,loc:db.rack,at:now()});resolveOne(s,sid,"missing","Найден после проверки")});log("Найдено после проверки",ids,"Наблюдение после закрытия снимка "+s.id);ui.selected=[];return notify("Образцы найдены; снимок проверки не изменён.")}
+ if(a==="fixhere")return commitMove(ui.selected,db.rack,"Исправить учёт");
+ if(a==="confirmmove"){var el=document.getElementById("movetarget");return commitMove(ui.selected,el?el.value:"","Перемещение")}
+ if(a==="removechosen")return removeSelected();
+ if(a==="directmove"){ui.moveSample=null;return go("directmove")}
+ if(a.startsWith("movedetail:")){ui.moveSample=a.slice(11);return go("directmove")}
+ if(a==="confirmdirect"){var el=document.getElementById("movetarget");return commitMove([ui.moveSample],el?el.value:"","Прямое перемещение")}
+ if(a==="stockrefresh")return render();
+ if(a==="stockall"){var t=Number(ui.threshold);ui.selected=active().filter(function(s){return product(s.pid).stock<t}).slice(0,300).map(function(s){return s.id});return render()}
+ if(a==="stocknone"){ui.selected=[];return render()}
+ if(a==="stockremove"){var t=Number(ui.threshold),valid=ui.selected.filter(function(sid){var x=sample(sid);return x&&x.active&&product(x.pid).stock<t});ui.selected=valid;return removeSelected()}
+ if(a==="nav:stock"){ui.selected=[];return go("stock")}
+ if(a==="nav:system")return go("system");
+ if(a.startsWith("nav:")){ui.selected=[];return go(a.slice(4))}
+ if(a==="remove"){ui.selected=[];return go("remove")}
+ if(a==="issues"){ui.selected=[];ui.filter="wrong";return go("issues")}
+ if(a==="rfidproduct:")return;
+ return legacyAction(a);
+}
+
+save();render();
+})();
+</script></body></html>
