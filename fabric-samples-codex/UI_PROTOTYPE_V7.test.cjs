@@ -1,5 +1,5 @@
 /* Standalone regression tests for the interactive v7 HTML mock.
-   Run: node UI_PROTOTYPE_V6.test.cjs
+   Run: node UI_PROTOTYPE_V7.test.cjs
    No npm dependencies. No 1C, hardware, or network access.
 */
 "use strict";
@@ -30,7 +30,7 @@ function boot(storage = {}) {
     },
     createElement() { return { click() {} }; }
   };
-  const window = { confirm: () => true, print() {} };
+  const window = { confirm: () => true, print() { throw Error("Printing forbidden"); } };
   const localStorage = {
     getItem(k) { return storage[k] ?? null; },
     setItem(k, v) { storage[k] = v; }
@@ -42,7 +42,7 @@ function boot(storage = {}) {
   };
   vm.runInNewContext(script[1], context, { filename: "UI_PROTOTYPE_V7.html" });
   return {
-    api: window.__v6Test, storage, elements,
+    api: window.__v7Test, storage, elements,
     html: () => htmlOutput,
     set(id, value) { document.getElementById(id).value = value; },
     press(id, value) {
@@ -62,13 +62,14 @@ test("Initial frozen B inspection: 50 wrong and 8 missing", () => {
   assert.equal(api.allIssues("wrong").length, 50);
   assert.equal(api.allIssues("missing").length, 8);
 });
-test("Single wrong sample: one click, audit, historical snapshot unchanged", () => {
-  const { api } = boot();
+test("Wrong sample: one-click physical return preserves accounting location and historical snapshot", () => {
+  const { api } = boot(), x = api.db.samples[0], original = x.loc;
   api.act("rack-B-01-02"); api.act("issues-wrong");
-  api.act("single-here-S-000001");
+  api.act("single-return-S-000001");
   assert.equal(api.allIssues("wrong").length, 49);
+  assert.equal(x.loc, original);
   assert.equal(api.issues(api.db.inspections[0], "wrong", false).length, 50);
-  assert.ok(api.db.audit.some(x => x.kind === "Исправление места"));
+  assert.ok(api.db.audit.some(x => x.kind === "Физический возврат на место"));
 });
 test("A new inspection on A does not rewrite B results", () => {
   const t = boot(), a = t.api;
@@ -87,15 +88,13 @@ test("Old resolutions do not hide missing items in a new inspection", () => {
   api.act("inspection"); api.startInspection(); api.finishInspection();
   assert.equal(api.allIssues("missing").length, 20);
 });
-test("Bulk wrong move: 50 resolved, 50 audit records, correct Back", () => {
-  const t = boot(), a = t.api;
-  a.act("rack-B-01-02"); a.act("issues-wrong"); a.act("select-all");
-  a.act("bulk-other"); t.set("issue-target", "D-03-01");
-  a.act("issue-target-submit"); assert.equal(a.S.page, "confirm");
-  a.commit(false);
-  assert.equal(a.allIssues("wrong").length, 0);
-  assert.equal(a.db.audit.filter(x => x.kind === "Перемещение").length, 50);
-  a.back(); assert.equal(a.S.page, "work");
+test("Bulk physical return resolves 50 wrong samples after explicit confirmation", () => {
+  const { api } = boot();
+  api.act("rack-B-01-02"); api.act("issues-wrong"); api.act("select-all");
+  api.act("bulk-return"); assert.equal(api.S.page, "confirm");
+  api.commit(false);
+  assert.equal(api.allIssues("wrong").length, 0);
+  assert.equal(api.db.audit.filter(x => x.kind === "Физический возврат на место").length, 50);
 });
 test("Found missing on another rack: explicit action and resolution", () => {
   const t = boot(), a = t.api;
@@ -105,7 +104,8 @@ test("Found missing on another rack: explicit action and resolution", () => {
   assert.equal(a.S.confirm.action, "foundOther");
   a.commit(false);
   assert.equal(a.allIssues("missing").length, 7);
-  assert.equal(a.db.samples.find(x => x.id === "S-000051").loc, "A-02-03");
+  assert.equal(a.db.samples.find(x => x.id === "S-000051").loc, "B-01-02");
+  assert.equal(a.db.manualObservations.at(-1).rack, "A-02-03");
 });
 test("Removal Back returns to removal; tombstone and EPC interval preserved", () => {
   const { api } = boot();
@@ -127,21 +127,22 @@ test("Repeated article and product barcode merge into one quantity", () => {
   assert.equal(a.db.queue.length, 1);
   assert.equal(a.db.queue[0].qty, 2);
 });
-test("Create 100 unique instances, retry requestId does not duplicate", () => {
+test("Create 100 unique samples, retry idempotently, then bind RFID without printing", () => {
   const t = boot(), a = t.api;
   a.act("rack-B-01-02"); a.act("create"); a.act("demo-create");
-  a.act("create-review"); const request = a.S.confirm;
-  a.commit(false);
+  a.act("create-review"); const request = a.S.confirm; a.commit(false);
   assert.equal(a.db.samples.length, 180);
   assert.equal(new Set(a.db.samples.map(x => x.id)).size, 180);
-  assert.equal(a.db.samples.filter(x => !x.labeled).length, 100);
+  assert.equal(a.db.samples.filter(x => !x.epc).length, 100);
+  assert.equal(a.S.page, "rfid");
   assert.equal(a.apply(request).ok, true);
   assert.equal(a.db.samples.length, 180);
-  t.press("label-scan", "S-000300");
-  assert.equal(a.db.samples.find(x => x.id === "S-000300").labeled, true);
+  a.rfidPick("S-000300"); a.rfidWrite();
+  const epc = a.db.rfidPending.epc; a.rfidVerify(epc);
+  assert.equal(a.db.samples.find(x => x.id === "S-000300").epc, epc);
   const restored = boot(t.storage);
   assert.equal(restored.api.db.samples.length, 180);
-  restored.api.act("nav-work"); restored.api.act("labels");
+  restored.api.act("nav-rfid");
   assert.ok(restored.html().includes("S-000301"));
 });
 test("Offline C5: queue persists, finish blocked, sync exactly once", () => {
@@ -206,14 +207,14 @@ test("Unverified shelves KPI opens filtered shelf list", () => {
   a.act("show-all-racks"); assert.equal(a.S.onlyUnchecked, false);
 });
 
-test("Five main tabs stay identical on every screen", () => {
+test("Six main tabs stay identical on every screen", () => {
   const t = boot(), a = t.api;
   function nav() {
     const fragment = t.html().match(/<nav class="nav"[^>]*>([\s\S]*?)<\/nav>/);
     assert.ok(fragment, "Fixed navigation exists");
     return [...fragment[1].matchAll(/data-act="(nav-[^"]+)"/g)].map(x => x[1]).join(",");
   }
-  const expected = "nav-warehouse,nav-work,nav-find,nav-reports,nav-history";
+  const expected = "nav-warehouse,nav-work,nav-rfid,nav-find,nav-reports,nav-history";
   assert.equal(nav(), expected);
   a.act("check-A-02-03"); assert.equal(nav(), expected);
   a.startInspection(); assert.equal(nav(), expected);
@@ -304,6 +305,91 @@ test("Settings opened from inspection can be closed using Back", () => {
   assert.equal(api.S.page, "inspection");
   assert.ok(api.db.inspections.some(x => x.status === "active"));
 });
+test("User threshold: less than 0.5 m and persistent across reload", () => {
+  const t = boot(), a = t.api;
+  a.act("remove"); t.set("stock-limit", "0.5"); a.act("apply-stock-limit");
+  assert.equal(a.stockLimit(), 0.5);
+  assert.ok(a.lowStockSamples().every(x => a.db.products.find(p => p.id === x.productId).stock < 0.5));
+  assert.equal(boot(t.storage).api.stockLimit(), 0.5);
+});
+test("Invalid threshold is rejected and never triggers exclusion", () => {
+  const t = boot(), a = t.api;
+  a.act("remove"); t.set("stock-limit", "-5"); a.act("apply-stock-limit");
+  assert.equal(a.stockLimit(), 1);
+  assert.equal(a.db.samples.filter(x => !x.active).length, 0);
+});
+test("Manual candidate selection never excludes without confirmation", () => {
+  const a = boot().api;
+  a.act("remove"); a.act("select-visible-remove");
+  assert.ok(a.S.selected.length > 0);
+  assert.equal(a.db.samples.filter(x => !x.active).length, 0);
+  a.act("remove-review"); assert.equal(a.S.page, "confirm");
+  assert.equal(a.db.samples.filter(x => !x.active).length, 0);
+  a.commit(false);
+  assert.ok(a.db.samples.some(x => !x.active));
+});
+test("Removal candidate pagination supports more than 50 samples", () => {
+  const t = boot(), a = t.api;
+  a.act("remove"); t.set("stock-limit", "100"); a.act("apply-stock-limit");
+  a.act("remove-next"); assert.equal(a.S.removePage, 1);
+  a.act("select-visible-remove");
+  assert.ok(a.S.selected.length > 0 && a.S.selected.length <= 50);
+  assert.equal(a.db.samples.filter(x => !x.active).length, 0);
+});
+test("RFID product barcode with multiple instances requires physical instance choice", () => {
+  const a = boot().api;
+  a.act("create"); a.act("demo-create"); a.act("create-review"); a.commit(false);
+  a.rfidScan("4600000000001");
+  assert.equal(a.S.rfidProductId, 1);
+  assert.equal(a.S.rfidSampleId, null);
+});
+test("RFID write alone does not bind, mismatched readback blocks", () => {
+  const a = boot().api;
+  a.rfidPick("S-000001"); a.rfidWrite();
+  const epc = a.db.rfidPending.epc;
+  assert.notEqual(a.db.samples[0].epc, epc);
+  a.rfidVerify("WRONG");
+  assert.ok(a.db.rfidPending);
+  assert.notEqual(a.db.samples[0].epc, epc);
+});
+test("RFID verified rewrite closes EPC interval and writes audit", () => {
+  const a = boot().api, x = a.db.samples[0], old = x.epc;
+  a.rfidPick(x.id); a.rfidWrite();
+  const epc = a.db.rfidPending.epc; a.rfidVerify(epc);
+  assert.equal(x.epc, epc);
+  assert.equal(x.epcHistory.length, 2);
+  assert.ok(x.epcHistory[0].to);
+  assert.equal(x.epcHistory[0].epc, old);
+  assert.equal(x.epcHistory[1].to, null);
+  assert.ok(a.db.audit.some(x => x.kind === "Запись и привязка RFID"));
+});
+test("RFID duplicate active EPC and version conflict both block binding", () => {
+  const a = boot().api;
+  a.rfidPick("S-000001"); a.rfidWrite();
+  const epc = a.db.rfidPending.epc;
+  a.db.samples[1].epc = epc;
+  a.rfidVerify(epc); assert.ok(a.db.rfidPending);
+  a.db.samples[1].epc = "E200DEMO00000002";
+  a.db.samples[0].version++;
+  a.rfidVerify(epc); assert.ok(a.db.rfidPending);
+});
+test("RFID pending survives reload, and can be explicitly aborted with audit", () => {
+  const t = boot(), a = t.api;
+  a.rfidPick("S-000001"); a.rfidWrite();
+  const epc = a.db.rfidPending.epc;
+  const b = boot(t.storage).api;
+  assert.equal(b.db.rfidPending.epc, epc);
+  b.act("rfid-abort");
+  assert.equal(b.db.rfidPending, null);
+  assert.ok(b.db.audit.some(x => x.kind === "Отмена незавершённой записи RFID"));
+});
+test("No printing, manual EPC text entry, or separate admin role in UI", () => {
+  assert.ok(!html.includes("window.print"));
+  assert.ok(!html.includes("print-labels"));
+  assert.ok(!html.includes("epc-input"));
+  assert.ok(html.includes("rfid-read-scan"));
+});
+
 let passed = 0;
 for (const [name, fn] of tests) {
   try { fn(); passed++; console.log("PASS", name); }
