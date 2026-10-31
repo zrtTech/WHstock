@@ -381,6 +381,31 @@ function action(a){
  return legacyAction(a);
 }
 
+
+/* Large catalog views: bounded pages, stable navigation and useful empty states. */
+function find(){
+ var q=ui.search.trim().toLowerCase(),products=db.products.filter(function(p){return !q||[p.article,p.name,p.barcode].some(function(v){return v.toLowerCase().includes(q)})}),pages=Math.max(1,Math.ceil(products.length/40));ui.findPage=Math.min(ui.findPage,pages-1);
+ frame(head("Артикулы и физические образцы","Поиск по артикулу, названию и товарному ШК. Товарный код не определяет экземпляр.")+
+ '<section class="panel">'+field("findinput","Поиск по артикулу / товарному ШК","ART-0001",ui.search,true)+
+ '<p class="compact">Артикулов: '+products.length+' · страница '+(ui.findPage+1)+' из '+pages+'</p>'+
+ table(["Артикул","Товар","Образцов","Остаток 1С, м","Открыть"],products.slice(ui.findPage*40,(ui.findPage+1)*40).map(function(p){return tr(['<b>'+esc(p.article)+'</b>',esc(p.name),String(byProduct(p.id).length),String(p.stock),b("Карточка","product:"+p.id,"primary")])}))+
+ (!products.length?'<div class="notice">Совпадений нет. Проверьте артикул или товарный ШК.</div>':"")+
+ '<div class="toolbar">'+b("← Предыдущая","findprev","",ui.findPage===0)+b("Следующая →","findnext","",ui.findPage>=pages-1)+'</div></section>');
+}
+function reports(){
+ var tab=ui.report,items=[];if(tab==="no")items=db.products.filter(function(p){return !byProduct(p.id).length}).map(function(p){return{p:p}});
+ else if(tab==="zero")items=active().filter(function(s){return product(s.pid).stock===0}).map(function(s){return{p:product(s.pid),s:s}});
+ else if(tab==="all")items=active().map(function(s){return{p:product(s.pid),s:s}});
+ else R.forEach(function(r){issues(r.id,tab).forEach(function(sid){var s=sample(sid);items.push({p:product(s.pid),s:s,r:r.id})})});
+ var pages=Math.max(1,Math.ceil(items.length/30));ui.reportPage=Math.min(ui.reportPage,pages-1);
+ frame(head("Отчёты","По артикулам, образцам и открытым расхождениям. Для отбора по остатку используйте отдельный экран.")+
+ '<section class="panel"><div class="tabs">'+[["no","Без образца"],["wrong","Чужие"],["missing","Не найдены"],["zero","Остаток 0"],["all","Все образцы"]].map(function(x){return b(x[1],"report:"+x[0],tab===x[0]?"on":"")}).join("")+'</div>'+
+ '<p class="compact">Записей: '+items.length+' · страница '+(ui.reportPage+1)+' из '+pages+'</p>'+
+ table(["Артикул","Товар","Учётная полка","Остаток, м","Действие"],items.slice(ui.reportPage*30,(ui.reportPage+1)*30).map(function(x){return tr(['<b>'+esc(x.p.article)+'</b>',esc(x.p.name),x.s?esc(x.s.loc):"Нет образца",String(x.p.stock),b("Карточка","product:"+x.p.id)])}))+
+ (!items.length?'<div class="notice good">Записей в этой категории нет.</div>':"")+
+ '<div class="toolbar">'+b("← Предыдущая","reportprev","",ui.reportPage===0)+b("Следующая →","reportnext","",ui.reportPage>=pages-1)+b("Настроить порог остатков","nav:stock")+'</div></section>');
+}
+
 function render(){var pages={warehouse:warehouse,work:work,shelf:shelf,create:create,created:created,find:find,product:productPage,rfid:rfid,inspection:inspection,result:result,issues:issuePage,choosemove:chooseMove,remove:removePage,reports:reports,history:history,system:system,stock:stockCandidates,directmove:moveDirect};(pages[ui.page]||warehouse)()}
 save();render();
 })();
