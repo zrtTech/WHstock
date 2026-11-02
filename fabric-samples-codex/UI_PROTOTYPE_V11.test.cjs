@@ -1,0 +1,23 @@
+"use strict";
+const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path"),vm=require("node:vm");
+const html=fs.readFileSync(path.join(__dirname,"UI_PROTOTYPE_V11.html"),"utf8");
+const script=html.match(/<script>([\s\S]*?)<\/script>/);assert.ok(script,"Inline JS");
+let rendered="",printed=0,store={},elements={};
+const root={set innerHTML(v){rendered=v},get innerHTML(){return rendered}};
+const document={getElementById(k){if(k==="app")return root;if(!rendered.includes('id="'+k+'"'))return null;return elements[k]||=( {value:"",focus(){},setSelectionRange(){}} )},querySelectorAll(){return[]},createElement(){return{click(){}}}};
+const window={print(){printed++},confirm(){return true}},localStorage={getItem(k){return store[k]||null},setItem(k,v){store[k]=v}};
+const ctx={window,document,localStorage,confirm:()=>true,Blob:class{},URL:{createObjectURL(){return""},revokeObjectURL(){}},setTimeout(){}};
+vm.runInNewContext(script[1],ctx,{filename:"UI_PROTOTYPE_V11.html"});
+const api=window.__v11Test;assert.ok(api,"Test API");let passed=0;function test(name,fn){fn();passed++;console.log("OK "+name)}
+test("Windows не записывает EPC вручную",()=>{assert.ok(!html.includes("function doBindEpc"));assert.ok(!html.includes('scan("epcinput"'));assert.ok(!html.includes("Привязать EPC"))});
+test("RFID экран только показывает полученные данные",()=>{api.action("rfid");assert.ok(rendered.includes("Запись и привязка EPC выполняются только"));assert.ok(!rendered.includes('id="epcinput"'))});
+test("QR экран доступен без создания образцов",()=>{api.action("qr");assert.ok(rendered.includes("Печать QR места"));assert.ok(rendered.includes("RACK:B-01-02"));assert.ok(rendered.includes("<svg"))});
+test("QR имеет матрицу 21×21",()=>{const q=api.qrMatrix("RACK:B-01-02");assert.equal(q.length,21);assert.ok(q.every(r=>r.length===21));assert.ok(q.flat().some(Boolean))});
+test("QR печать вызывает диалог",()=>{api.action("qr-print");assert.equal(printed,1)});
+test("Получение готового EPC с C5",()=>{const s=api.db.samples.find(s=>!s.epc),p=api.db.products.find(p=>p.id===s.pid),epc="E200"+s.id.replace(/\D/g,"").padStart(20,"0");const ev={eventId:"c5-001",sampleId:s.id,barcode:p.barcode,epc,readBackEpc:epc,confirmed:true,expectedVersion:s.version};const x=api.receiveC5Binding(ev);assert.equal(x.ok,true);assert.equal(s.epc,epc);assert.equal(api.receiveC5Binding(ev).duplicate,true);globalThis.ev=ev;globalThis.linked=s});
+test("Повтор eventId с другим содержимым отклоняется",()=>{assert.equal(api.receiveC5Binding({...globalThis.ev,epc:"E20000000000000000000001"}).ok,false)});
+test("Один EPC нельзя привязать к двум экземплярам",()=>{const s=api.db.samples.find(s=>s.active&&!s.epc),p=api.db.products.find(p=>p.id===s.pid);const ev={eventId:"c5-002",sampleId:s.id,barcode:p.barcode,epc:globalThis.ev.epc,readBackEpc:globalThis.ev.epc,confirmed:true,expectedVersion:s.version};assert.equal(api.receiveC5Binding(ev).ok,false)});
+test("Неподтверждённое контрольное чтение отклоняется",()=>{const s=api.db.samples.find(s=>s.active&&!s.epc),p=api.db.products.find(p=>p.id===s.pid),epc:"E20000000000000000000077";assert.equal(api.receiveC5Binding({eventId:"c5-003",sampleId:s.id,barcode:p.barcode,epc,readBackEpc:"OTHER",confirmed:true,expectedVersion:s.version}).ok,false)});
+test("У нескольких экземпляров одного артикула общий товарный ШК",()=>{const p=api.db.products.find(p=>api.db.samples.filter(s=>s.pid===p.id).length>1);assert.ok(p);const arr=api.db.samples.filter(s=>s.pid===p.id);assert.ok(arr.length>1);assert.ok(arr[0].id!==arr[1].id)});
+test("Конфликт версии не перезаписывает EPC",()=>{const s=api.db.samples.find(s=>s.active&&!s.epc),p=api.db.products.find(p=>p.id===s.pid),epc="E20000000000000000000088";const x=api.receiveC5Binding({eventId:"c5-004",sampleId:s.id,barcode:p.barcode,epc,readBackEpc:epc,confirmed:true,expectedVersion:999});assert.equal(x.ok,false);assert.equal(s.epc,null)});
+console.log("PASS "+passed+" tests");
