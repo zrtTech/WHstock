@@ -7,7 +7,7 @@
 (function(){
 "use strict";
 var KEY="fabric-prototype-v12";
-var R=Array.from({length:8},function(_,i){return ["L","R"].flatMap(function(side){return [1,2,3,4].map(function(row){return{id:String(i+1)+side+row,name:"Стеллаж "+(i+1)+" · "+(side==="L"?"левая":"правая")+" сторона · ряд "+row+" (сверху вниз)"}})})});
+var R=Array.from({length:8},function(_,i){return ["L","R"].flatMap(function(side){return [1,2,3,4].map(function(row){return{id:String(i+1)+side+row,name:"Стеллаж "+(i+1)+" · "+(side==="L"?"левая":"правая")+" сторона · ряд "+row+" (сверху вниз)"}})})}).flat();
 var names=["Лён натуральный","Блэкаут графит","Велюр песочный","Сатин белый","Рогожка серая","Шенилл оливковый","Хлопок экрю","Жаккард синий","Тюль молочный","Габардин бежевый"];
 function esc(x){return String(x==null?"":x).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function id(){return "e"+Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
